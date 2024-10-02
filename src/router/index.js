@@ -1,31 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginComponent from '@/components/Login.vue'
-import SignUpComponent from '@/components/SignUp.vue'
-import MapComponent from '@/components/map.vue'
-import ResetPasswordComponent from '@/components/ResetPassword.vue' //추가한 부분
-
+import LoginView from '@/views/Login.vue'
+import SignUpView from '@/views/SignUp.vue'
+import MapView from '@/views/map.vue'
+import ResetPasswordView from '@/views/ResetPassword.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Login',
-    component: LoginComponent
+    component: LoginView
   },
   {
     path: '/signup',
     name: 'SignUp',
-    component: SignUpComponent
+    component: SignUpView
   },
   {
     path: '/map',
     name: 'map',
-    component: MapComponent
+    component: MapView
   },
   { 
     path: '/reset-password',
     name : 'ResetPassword',
-    component: ResetPasswordComponent 
-  } //추가한 부분
+    component: ResetPasswordView 
+  }
 ]
 
 const router = createRouter({
