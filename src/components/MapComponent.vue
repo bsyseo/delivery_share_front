@@ -19,25 +19,25 @@
 </template>
 
 <script>
-/* global naver */ // Inform ESLint about the global naver object
-
+/* global naver */
 import { ref, onValue } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, database } from '@/main'; // main.js에서 Firebase 설정 가져오기
+import { auth, database } from '@/main';
 
 export default {
   name: 'MapComponent',
   data() {
     return {
       userName: '', // 사용자의 이름을 저장할 변수
+      map: null, // 지도 객체
+      markers: [], // 마커 배열
     };
   },
   mounted() {
-    // 네이버 지도 SDK가 로드되었는지 확인하고, 로드 후 initMap 실행
+    // 네이버 지도 SDK가 로드되었는지 확인하고 로드 후 initMap 실행
     if (typeof naver !== 'undefined') {
       this.initMap();
     } else {
-      // SDK가 아직 로드되지 않았을 경우
       const script = document.createElement('script');
       script.src = 'https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=i3rhpr81uf';
       script.onload = this.initMap;
@@ -47,7 +47,6 @@ export default {
     // 로그인된 사용자를 확인
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // 사용자 UID를 사용하여 데이터베이스에서 이름을 가져옴
         const userRef = ref(database, 'users/' + user.uid + '/name');
         onValue(userRef, (snapshot) => {
           this.userName = snapshot.val();
@@ -59,41 +58,49 @@ export default {
     initMap() {
       // 네이버 지도 객체 생성
       const mapOptions = {
-        center: new naver.maps.LatLng(35.153114, 128.099379), // 초기 좌표 (경상국립대학교 가좌캠퍼스)
+        center: new naver.maps.LatLng(35.153114, 128.099379),
         zoom: 16
       };
-      const map = new naver.maps.Map('map', mapOptions);
+      this.map = new naver.maps.Map('map', mapOptions);
 
       // 마커 추가
+      this.addMarker(35.153114, 128.099379, '경상국립대학교 가좌캠퍼스');
+      this.addMarker(35.154401, 128.092888, '항공우주산학협력관'); 
+    },
+    addMarker(lat, lng, content) {
       const marker = new naver.maps.Marker({
-        position: new naver.maps.LatLng(35.153114, 128.099379),
-        map: map
+        position: new naver.maps.LatLng(lat, lng),
+        map: this.map
       });
 
       // 정보창 추가
       const infoWindow = new naver.maps.InfoWindow({
-        content: '<div style="padding:10px;">경상국립대학교 가좌캠퍼스</div>'
+        content: `<div style="padding:10px;">${content}</div>`
       });
 
-      // 마커 클릭 시 정보창 열기
-      naver.maps.Event.addListener(marker, 'click', function () {
-        infoWindow.open(map, marker);
+      // 마커 클릭 이벤트
+      naver.maps.Event.addListener(marker, 'click', () => {
+        // 주문 페이지로 이동하면서 마커 이름 전달
+        this.$router.push({ name: 'order', params: { markerName: content } });
+        infoWindow.open(this.map, marker);
       });
-    }
+
+      this.markers.push(marker);
+    },
   }
 };
 </script>
 
 <style scoped>
+/* 기존 스타일 유지 */
 .map-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #BFDC99; /* 페이지 배경색 설정 */
+  background-color: #BFDC99;
   padding: 20px 0;
 }
 
-/* 헤더 스타일 */
 .header {
   background-color: white;
   padding: 20px 40px;
@@ -114,7 +121,6 @@ export default {
   color: #777;
 }
 
-/* DELIVERY SPOT 텍스트 스타일 */
 .delivery-spot {
   margin-bottom: 10px;
 }
@@ -127,21 +133,19 @@ export default {
   color: #444;
 }
 
-/* 지도 컨테이너 스타일 */
 .map-wrapper {
-  background-color: white; /* 지도 배경색 */
-  border-radius: 20px; /* 경계 둥글게 */
+  background-color: white;
+  border-radius: 20px;
   overflow: hidden;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px; /* 지도 주변 여백 */
-  max-width: 1200px; /* 최대 너비 설정 */
-  width: 90%; /* 화면 너비의 90% */
+  padding: 20px;
+  max-width: 1200px;
+  width: 90%;
 }
 
-/* 지도 자체 스타일 */
 #map {
   width: 100%;
-  height: 500px; /* 지도의 높이 */
+  height: 500px;
   border-radius: 15px;
 }
 </style>
