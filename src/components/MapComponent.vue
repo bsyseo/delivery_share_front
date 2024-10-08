@@ -30,7 +30,7 @@ export default {
     return {
       userName: '', // 사용자의 이름을 저장할 변수
       map: null, // 지도 객체
-      markers: [], // 마커 배열
+      markers: [] // 마커 배열
     };
   },
   mounted() {
@@ -86,13 +86,12 @@ export default {
       });
 
       this.markers.push(marker);
-    },
+    }
   }
 };
 </script>
 
 <style scoped>
-/* 기존 스타일 유지 */
 .map-container {
   display: flex;
   flex-direction: column;

@@ -1,16 +1,16 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/views/Login.vue'
-import SignUpView from '@/views/SignUp.vue'
-import MapView from '@/views/map.vue'
-import orderView from '@/views/order.vue'
-import ResetPasswordView from '@/views/Reset_IDnPW.vue'
-import ResetPasswordComponent from '@/components/ResetPasswordComponent.vue'
-import BusinessComponent from '@/views/BusinessComponent.vue' // 비즈니스 사용자 페이지
-import BusinessInformation from '@/views/BusinessInformation.vue' // 사업자 정보 페이지
-import BusinessMenu from '@/views/BusinessMenu.vue' // 메뉴 등록 페이지
-import BusinessTypeSelect from '@/views/BusinessTypeSelect.vue' // 가게 타입 선택 페이지
-import BusinessAdvertisement from '@/views/BusinessAdvertisement.vue' // 광고 신청 페이지
-import AdminComponent from '@/views/AdminComponent.vue' // 관리자 페이지
+import { createRouter, createWebHistory } from 'vue-router';
+import LoginView from '@/views/Login.vue';
+import SignUpView from '@/views/SignUp.vue';
+import MapView from '@/views/map.vue';
+import orderView from '@/views/order.vue';
+import ResetPasswordView from '@/views/Reset_IDnPW.vue';
+import ResetPasswordComponent from '@/components/ResetPasswordComponent.vue';
+import BusinessView from '@/views/Business.vue'; // 비즈니스 사용자 페이지
+import BusinessInformation from '@/components/BusinessInformation.vue'; // 사업자 정보 페이지
+import BusinessMenu from '@/components/BusinessMenu.vue'; // 메뉴 등록 페이지
+import BusinessTypeSelect from '@/components/BusinessTypeSelect.vue'; // 가게 타입 선택 페이지
+import BusinessAdvertisement from '@/components/BusinessAdvertisement.vue'; // 광고 신청 페이지
+import AdminComponent from '@/views/AdminComponent.vue'; // 관리자 페이지
 import AdminOrderManagement from '@/views/AdminOrderManagement.vue';
 import AdminCouponManagement from '@/views/AdminCouponManagement.vue';
 import AdminAdvertisementManagement from '@/views/AdminAdvertisementManagement.vue';
@@ -20,7 +20,6 @@ import AdminUserManagement from '@/views/AdminUserManagement.vue';
 import AdminStoreManagement from '@/views/AdminStoreManagement.vue';
 import AdminTemporary from '@/views/AdminTemporary.vue';
 import AdminConnectionStatistics from '@/views/AdminConnectionStatistics.vue';
-
 
 const routes = [
   {
@@ -41,7 +40,7 @@ const routes = [
   {
     path: '/business',
     name: 'Business',
-    component: BusinessComponent // business 사용자가 보는 페이지
+    component: BusinessView // business 사용자가 보는 페이지
   },
   {
     path: '/admin',
@@ -128,11 +127,11 @@ const routes = [
     name: 'AdminConnectionStatistics',
     component: AdminConnectionStatistics
   }
-]
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes
-})
+});
 
-export default router
+export default router;
