@@ -1,13 +1,7 @@
 <template>
   <div class="business-info-container">
-    <h1>사업자 정보 등록 페이지</h1>
+    <h1>사업자 정보 등록</h1>
     <form @submit.prevent="submitBusinessInfo">
-      <!-- 사업자명 -->
-      <div class="form-group">
-        <label for="business-name">사업자명</label>
-        <input type="text" id="business-name" v-model="businessName" placeholder="사업자명을 입력하세요" required />
-      </div>
-
       <!-- 대표자명 -->
       <div class="form-group">
         <label for="owner-name">대표자명</label>
@@ -17,27 +11,62 @@
       <!-- 연락처 -->
       <div class="form-group">
         <label for="contact">연락처</label>
-        <input type="tel" id="contact" v-model="contact" placeholder="연락처를 입력하세요 (010-0000-0000)" required />
+        <input type="tel" id="contact" v-model="contact" placeholder="010-0000-0000" required />
       </div>
 
       <!-- 사업자 등록번호 -->
       <div class="form-group">
         <label for="registration-number">사업자 등록번호</label>
-        <input type="text" id="registration-number" v-model="registrationNumber" placeholder="등록번호를 입력하세요 (10자리)" required />
+        <input type="text" id="registration-number" v-model="registrationNumber" placeholder="등록번호 10자리" required />
       </div>
 
       <!-- 사업장 주소 -->
       <div class="form-group">
         <label for="address">사업장 주소</label>
-        <input type="text" id="address" v-model="address" placeholder="주소를 입력하세요" required />
+        <input type="text" id="address" v-model="address" placeholder="사업장 주소를 입력하세요" required />
+      </div>
+
+      <!-- 운영 시간 -->
+      <div class="form-group">
+        <label for="operation-hours">운영 시간</label>
+        <input type="text" id="operation-hours" v-model="operationHours" placeholder="예: 오전 9시 ~ 오후 6시" required />
+      </div>
+
+      <!-- 휴무일 선택 -->
+      <div class="form-group">
+        <label for="closed-days">휴무일</label>
+        <input type="date" id="closed-days" v-model="selectedClosedDay" @change="addClosedDay" placeholder="휴무일을 선택하세요" />
+        <ul>
+          <li v-for="(day, index) in closedDays" :key="index">
+            {{ day }} <button @click="removeClosedDay(index)">삭제</button>
+          </li>
+        </ul>
       </div>
 
       <!-- 사업자등록증 -->
       <div class="form-group">
         <label for="business-license">사업자등록증 업로드</label>
-        <input type="file" id="business-license" @change="handleFileUpload" accept="image/*" required />
+        <input type="file" id="business-license" @change="handleFileUpload('businessLicense')" accept="image/*, application/pdf" required />
         <div v-if="businessLicensePreview" class="preview-container">
           <img :src="businessLicensePreview" alt="사업자등록증 미리보기" class="preview-image" />
+        </div>
+      </div>
+
+      <!-- 영업신고증 -->
+      <div class="form-group">
+        <label for="business-permit">영업신고증 업로드</label>
+        <input type="file" id="business-permit" @change="handleFileUpload('businessPermit')" accept="image/*, application/pdf" required />
+        <div v-if="businessPermitPreview" class="preview-container">
+          <img :src="businessPermitPreview" alt="영업신고증 미리보기" class="preview-image" />
+        </div>
+      </div>
+
+      <!-- 통장사본 -->
+      <div class="form-group">
+        <label for="bank-account">통장사본 업로드</label>
+        <input type="file" id="bank-account" @change="handleFileUpload('bankAccount')" accept="image/*, application/pdf" required />
+        <div v-if="bankAccountPreview" class="preview-container">
+          <img :src="bankAccountPreview" alt="통장사본 미리보기" class="preview-image" />
         </div>
       </div>
 
@@ -48,63 +77,70 @@
 </template>
 
 <script>
-// Firebase 관련 기능 가져오기
-import { database } from '@/firebase.js'; // firebase.js에서 database 가져오기
-import { ref, set } from "firebase/database"; // Firebase Database에서 ref, set 함수 사용
+import { database } from '@/firebase.js';
+import { ref, set } from "firebase/database";
 
 export default {
   name: 'BusinessInformation',
   data() {
     return {
-      businessName: '',
       ownerName: '',
       contact: '',
       registrationNumber: '',
       address: '',
-      businessLicense: null, // 사업자등록증 파일 저장
-      businessLicensePreview: null, // 미리보기 이미지 저장
+      operationHours: '', // 사용자가 직접 입력할 운영 시간 필드
+      selectedClosedDay: '',
+      closedDays: [],
+      businessLicense: null,
+      businessLicensePreview: null,
+      businessPermit: null,
+      businessPermitPreview: null,
+      bankAccount: null,
+      bankAccountPreview: null,
     };
   },
   methods: {
-    handleFileUpload(event) {
+    handleFileUpload(field) {
       const file = event.target.files[0];
       if (file) {
-        this.businessLicense = file;
+        this[field] = file;
 
-        // 미리보기 이미지 생성
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = (e) => {
-          this.businessLicensePreview = e.target.result;
+          this[`${field}Preview`] = e.target.result;
         };
       }
     },
+    addClosedDay() {
+      if (this.selectedClosedDay && !this.closedDays.includes(this.selectedClosedDay)) {
+        this.closedDays.push(this.selectedClosedDay);
+      }
+      this.selectedClosedDay = '';
+    },
+    removeClosedDay(index) {
+      this.closedDays.splice(index, 1);
+    },
     async submitBusinessInfo() {
-      if (this.businessLicense) {
+      if (this.businessLicense && this.businessPermit && this.bankAccount) {
         try {
-          // Firebase에 데이터 저장하기
-          const businessInfoRef = ref(database, 'businesses/' + this.registrationNumber); // 등록번호를 키로 사용
+          const businessInfoRef = ref(database, 'businesses/' + this.registrationNumber);
           await set(businessInfoRef, {
-            businessName: this.businessName,
             ownerName: this.ownerName,
             contact: this.contact,
             registrationNumber: this.registrationNumber,
-            address: this.address
+            address: this.address,
+            operationHours: this.operationHours, // 사용자가 입력한 운영 시간을 저장
+            closedDays: this.closedDays
           });
 
           alert('사업자 정보가 등록되었습니다.');
-          console.log('사업자명:', this.businessName);
-          console.log('대표자명:', this.ownerName);
-          console.log('연락처:', this.contact);
-          console.log('등록번호:', this.registrationNumber);
-          console.log('주소:', this.address);
-          console.log('사업자등록증 파일:', this.businessLicense.name);
         } catch (error) {
           console.error('사업자 정보 저장 중 오류 발생:', error);
           alert('사업자 정보를 저장하는 데 실패했습니다.');
         }
       } else {
-        alert('사업자등록증을 업로드해 주세요.');
+        alert('필수 서류를 모두 업로드해 주세요.');
       }
     }
   }
@@ -115,83 +151,86 @@ export default {
 .business-info-container {
   max-width: 600px;
   margin: 50px auto;
-  padding: 20px;
-  border-radius: 30px;
-  background-color: #f9f9f9;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
+  padding: 40px;
+  border-radius: 15px;
+  background-color: #f1f1f1;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+  font-family: 'NanumSquareRound', sans-serif;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 20px;
-  font-size: 24px;
-  color: #333;
+  font-size: 28px;
+  color: #4A4A4A;
+  margin-bottom: 25px;
 }
 
 .form-group {
-  text-align: left;
-  padding: 5px;
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 20px;
 }
 
 label {
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 8px;
 }
 
 input[type="text"],
 input[type="tel"],
-input[type="file"] {
-  padding: 15px;
+input[type="file"],
+input[type="time"],
+input[type="date"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
   font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 15px;
-  outline: none;
 }
 
 input[type="file"] {
-  padding: 5px;
+  padding: 8px;
   font-size: 14px;
 }
 
 .preview-container {
   margin-top: 10px;
+  text-align: center;
 }
 
 .preview-image {
   max-width: 100%;
-  max-height: 200px;
+  max-height: 150px;
   border: 1px solid #ccc;
   border-radius: 10px;
 }
 
 .submit-button {
-  width: 60%;
-  margin-top: 2vh;
-  padding: 12px;
-  font-size: 18px;
+  display: block;
+  width: 100%;
+  padding: 15px;
+  background-color: #4CAF50;
   color: #fff;
-  background-color: #BFDC99;
+  font-size: 18px;
   border: none;
-  border-radius: 15px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s;
 }
 
 .submit-button:hover {
-  background-color: #97B762;
+  background-color: #45A049;
 }
 
-@font-face {
-  font-family: 'NanumSquareRound';
-  src: url('@/assets/font/NANUMSQUARER.OTF') format('opentype');
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  margin: 5px 0;
 }
 
 * {
-  font-family: 'NanumSquareRound', sans-serif;
+  box-sizing: border-box;
 }
 </style>
