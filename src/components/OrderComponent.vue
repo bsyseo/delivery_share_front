@@ -11,46 +11,46 @@
         <div class="order-box">
           <!-- 첫째 줄 이미지 -->
           <div class="image-grid">
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('한식')">
               <img src="@/assets/free-icon-bibimbap-2276931.png" alt="한식">
               <p>한식</p>
             </div>
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('중식')">
               <img src="@/assets/free-icon-chinese-food-3449347.png" alt="중식">
               <p>중식</p>
             </div>
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('일식')">
               <img src="@/assets/sushi_1f363.png" alt="일식">
               <p>일식</p>
             </div>
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('치킨')">
               <img src="@/assets/poultry-leg_1f357.png" alt="치킨">
               <p>치킨</p>
             </div>
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('피자')">
               <img src="@/assets/pizza_1f355.png" alt="피자">
               <p>피자</p>
             </div>
           </div>
           <!-- 둘째 줄 이미지 -->
           <div class="image-grid">
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('아시안푸드')">
               <img src="@/assets/cooked-rice_1f35a.png" alt="아시안푸드">
               <p>아시안푸드</p>
             </div>
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('패스트푸드')">
               <img src="@/assets/hamburger_1f354.png" alt="패스트푸드">
               <p>패스트푸드</p>
             </div>
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('양식')">
               <img src="@/assets/spaghetti_1f35d.png" alt="양식">
               <p>양식</p>
             </div>
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('디저트')">
               <img src="@/assets/shortcake_1f370.png" alt="디저트">
               <p>디저트</p>
             </div>
-            <div class="image-item">
+            <div class="image-item" @click="showMenuDetails('건강식')">
               <img src="@/assets/green-salad_1f957.png" alt="건강식">
               <p>건강식</p>
             </div>
@@ -59,37 +59,36 @@
 
         <!-- 초록색 박스 내부의 네모 버튼 -->
         <div class="order-box2">
-          <div class="button-container">
-            <button class="button red">예약 만들기</button>
-            <button class="button red">대기 현황</button>
-            <button class="button green">가게 검색</button>
-            <button class="button green">배달비 무료</button>
-            <button class="button green">쿠폰</button>
-            <button class="button green">배달비 무료</button>
-          </div>
+
           <!-- 흰색 박스 -->
           <div class="white-box"></div>
+          <div class="white-box"></div>
+          <div class="white-box"></div>
+        </div>
+        <!--옵션-->
+        <div class=option>
+          <div class="button-container">
+            <button class="button green" @click="$router.push({ name: 'MakingOrder' })">예약 만들기</button>
+            <button class="button green">오늘의 이벤트</button>
+            <button class="button green">배달비 무료</button>
+            <button class="button green">우리 동네 인기 가게</button>
+            <button class="button green">가게 검색</button>
+          </div>
         </div>
       </slot>
     </div>
 
     <!-- 박스들 (상단 6개: 직사각형, 하단 6개: 직사각형) -->
-    <div class="bottom-grid">
+    <div v-if="selectedMenu" class="bottom-grid">
       <!-- 상단 로고 박스 (6개) -->
-      <div class="logo-box"></div>
-      <div class="logo-box"></div>
-      <div class="logo-box"></div>
-      <div class="logo-box"></div>
-      <div class="logo-box"></div>
-      <div class="logo-box"></div>
+      <div class="logo-box" v-for="(item, index) in menuDetails[selectedMenu].logos" :key="index">
+        <p>{{ item }}</p>
+      </div>
 
       <!-- 하단 시간표 박스 (6개) -->
-      <div class="time-box"></div>
-      <div class="time-box"></div>
-      <div class="time-box"></div>
-      <div class="time-box"></div>
-      <div class="time-box"></div>
-      <div class="time-box"></div>
+      <div class="time-box" v-for="(item, index) in menuDetails[selectedMenu].times" :key="index">
+        <p>{{ item }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -99,8 +98,26 @@ export default {
   name: 'RoundedInnerDropShadowBox',
   data() {
     return {
-      localMarkerName: '' // 초기 값
+      localMarkerName: '', // 초기 값
+      selectedMenu: '', // 선택된 메뉴
+      menuDetails: {
+        '한식': { logos: ['Logo 1', 'Logo 2', 'Logo 3', 'Logo 4', 'Logo 5', 'Logo 6'], times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
+        '중식': { logos: ['Logo A', 'Logo B', 'Logo C', 'Logo D', 'Logo E', 'Logo F'], times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
+        '일식': { logos: ['Logo X', 'Logo Y', 'Logo Z', 'Logo W', 'Logo V', 'Logo U'], times: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00'] },
+        '치킨': { logos: ['치킨 1', '치킨 2', '치킨 3', '치킨 4', '치킨 5', '치킨 6'], times: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] },
+        '피자': { logos: ['피자 1', '피자 2', '피자 3', '피자 4', '피자 5', '피자 6'], times: ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00'] },
+        '아시안푸드': { logos: ['Asian 1', 'Asian 2', 'Asian 3', 'Asian 4', 'Asian 5', 'Asian 6'], times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
+        '패스트푸드': { logos: ['Fast 1', 'Fast 2', 'Fast 3', 'Fast 4', 'Fast 5', 'Fast 6'], times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
+        '양식': { logos: ['Western 1', 'Western 2', 'Western 3', 'Western 4', 'Western 5', 'Western 6'], times: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00'] },
+        '디저트': { logos: ['Dessert 1', 'Dessert 2', 'Dessert 3', 'Dessert 4', 'Dessert 5', 'Dessert 6'], times: ['15:00', '16:00', '17:00', '18:00', '19:00', '20:00'] },
+        '건강식': { logos: ['Healthy 1', 'Healthy 2', 'Healthy 3', 'Healthy 4', 'Healthy 5', 'Healthy 6'], times: ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00'] }
+      }
     };
+  },
+  methods: {
+    showMenuDetails(menu) {
+      this.selectedMenu = menu;
+    }
   },
   created() {
     // 마운트될 때 params로 전달된 주소 데이터를 받아 localMarkerName에 할당
@@ -122,7 +139,7 @@ export default {
 /* 헤더 스타일 */
 .header {
   width: 100%;
-  height: 8vh;
+  height: 5vh;
   padding: 5px;
   background-color: #EFFAD6;
   border-radius: 10px;
@@ -152,7 +169,7 @@ export default {
 /* 초록색 박스 내부 스타일 */
 .order-box {
   width: 80%;
-  margin: 10px auto;
+  margin: 5px auto;
   padding: 5px;
   background-color: #BFDC99;
   border-radius: 25px;
@@ -163,23 +180,24 @@ export default {
 .image-grid {
   display: flex;
   justify-content: space-around;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
 }
 
 .image-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  cursor: pointer;
 }
 
 .image-item img {
-  width: 50px; 
-  height: 50px;
+  width: 40px; 
+  height: 40px;
   object-fit: cover;
 }
 
 .image-item p {
-  margin-top: 5px;
+  margin-top: 3px;
   font-size: 14px;
   text-align: center;
 }
@@ -198,13 +216,17 @@ export default {
   align-items: center;
 }
 
+.option {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 .button-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
   grid-gap: 10px;
-  width: 65%;
-  padding: 10px;
+  width: auto;
+  padding: 5px;
 }
 
 .button {
@@ -217,13 +239,6 @@ export default {
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-.button.red {
-  background-color: #F8C1C1;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
 }
 
 .button.green {
@@ -240,7 +255,7 @@ export default {
 
 .white-box {
   width: 30%;
-  height: 130px;
+  height: 120px;
   background-color: white;
   border-radius: 15px;
   box-shadow: 
@@ -263,6 +278,8 @@ export default {
 .time-box {
   height: 250px;
   width: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
   background-color: #FAF3E0;
   border-radius: 17px;
   box-shadow: 
@@ -276,8 +293,6 @@ export default {
   padding: 20px;
   background-color: #97B762;
   border-radius: 0 0 100px 100px;
-  overflow-y: auto;
-  overflow-x: hidden;
   box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
 }
 

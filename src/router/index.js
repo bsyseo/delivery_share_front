@@ -20,6 +20,7 @@ import AdminUserManagement from '@/views/AdminUserManagement.vue';
 import AdminStoreManagement from '@/views/AdminStoreManagement.vue';
 import AdminTemporary from '@/views/AdminTemporary.vue';
 import AdminConnectionStatistics from '@/views/AdminConnectionStatistics.vue';
+import MakingOrderView from '@/views/MakingOrder.vue';
 
 const routes = [
   {
@@ -126,6 +127,11 @@ const routes = [
     path: '/admin/connection-statistics',
     name: 'AdminConnectionStatistics',
     component: AdminConnectionStatistics
+  },
+  {
+    path: '/making_order',
+    name: 'MakingOrder',
+    component: MakingOrderView
   }
 ];
 
