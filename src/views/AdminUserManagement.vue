@@ -36,6 +36,7 @@
             <th>이메일</th>
             <th>전화번호</th>
             <th>주소</th>
+            <th>승인 여부</th>
           </tr>
         </thead>
         <tbody>
@@ -44,11 +45,15 @@
             <td>{{ business.email }}</td>
             <td>{{ business.phone }}</td>
             <td>{{ business.address }}</td>
+            <td>
+              <input type="checkbox" :checked="business.approved === 'yes'" @change="toggleApproval(business)">
+            </td>
           </tr>
         </tbody>
       </table>
       <p v-else>자영업자 정보가 없습니다.</p>
     </div>
+
 
     <!-- 관리자 목록 -->
     <div class="user-block">
@@ -77,7 +82,7 @@
 </template>
 
 <script>
-import { ref, get, child } from 'firebase/database';
+import { ref, get, child, update } from 'firebase/database';
 import { database } from '@/main'; // Firebase 초기화가 되어있는지 확인
 
 export default {
@@ -111,7 +116,8 @@ export default {
               phone: user.phone,
               address: user.address || '주소 정보 없음',
               role: user.role,
-              registeredAt: user.registeredAt || new Date().getTime()
+              registeredAt: user.registeredAt || new Date().getTime(),
+              approved: user.approved || 'no' // 승인 정보 추가
             };
 
             if (user.role === 'consumer') {
@@ -136,6 +142,20 @@ export default {
       } catch (error) {
         console.error('데이터를 불러오는 중 오류 발생:', error);
       }
+    },
+    toggleApproval(user) {
+      const newValue = user.approved === 'yes' ? 'no' : 'yes';
+      const updates = {};
+      updates[`users/${user.id}/approved`] = newValue;
+
+      update(ref(database), updates)
+        .then(() => {
+          user.approved = newValue; // 로컬 상태 업데이트
+        })
+        .catch(error => {
+          console.error('승인 상태 업데이트 실패:', error);
+          alert('승인 상태 업데이트에 실패했습니다.');
+        });
     }
   },
   mounted() {
@@ -143,6 +163,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .admin-user-management {

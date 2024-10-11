@@ -8,7 +8,6 @@ import ResetPasswordComponent from '@/components/ResetPasswordComponent.vue';
 import BusinessView from '@/views/Business.vue'; // 비즈니스 사용자 페이지
 import BusinessInformation from '@/components/BusinessInformation.vue'; // 사업자 정보 페이지
 import BusinessMenu from '@/components/BusinessMenu.vue'; // 메뉴 등록 페이지
-import BusinessTypeSelect from '@/components/BusinessTypeSelect.vue'; // 가게 타입 선택 페이지
 import BusinessAdvertisement from '@/components/BusinessAdvertisement.vue'; // 광고 신청 페이지
 import AdminComponent from '@/views/AdminComponent.vue'; // 관리자 페이지
 import AdminOrderManagement from '@/views/AdminOrderManagement.vue';
@@ -72,11 +71,6 @@ const routes = [
     path: '/business_menu',
     name: 'business_menu',
     component: BusinessMenu // 메뉴 등록 페이지로 이동
-  },
-  {
-    path: '/business_typeselect',
-    name: 'business_typeselect',
-    component: BusinessTypeSelect // 가게 타입 선택 페이지로 이동
   },
   {
     path: '/business_advertisement',

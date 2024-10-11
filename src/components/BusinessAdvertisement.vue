@@ -256,8 +256,10 @@ textarea {
 .submit-button {
   padding: 12px;
   font-size: 18px;
-  background-color: #4CAF50;
-  color: #fff;
+  background-color: #BFDC99;
+  box-shadow: 
+    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* drop shadow */
+  color: #2d2d2d;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -266,6 +268,6 @@ textarea {
 }
 
 .submit-button:hover {
-  background-color: #45A049;
+  background-color: #BFDC99;
 }
 </style>

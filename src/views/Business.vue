@@ -46,3 +46,15 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+@font-face {
+  font-family: 'NanumSquareRound';
+  src: url('@/assets/font/NANUMSQUAREROUNDOTFL.OTF') format('opentype');
+}
+
+.head {
+
+  font-family: 'NanumSquareRound', sans-serif;
+}
+</style>

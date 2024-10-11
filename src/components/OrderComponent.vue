@@ -32,6 +32,7 @@
               <p>피자</p>
             </div>
           </div>
+
           <!-- 둘째 줄 이미지 -->
           <div class="image-grid">
             <div class="image-item" @click="showMenuDetails('아시안푸드')">
@@ -59,14 +60,13 @@
 
         <!-- 초록색 박스 내부의 네모 버튼 -->
         <div class="order-box2">
-
-          <!-- 흰색 박스 -->
           <div class="white-box"></div>
           <div class="white-box"></div>
           <div class="white-box"></div>
         </div>
-        <!--옵션-->
-        <div class=option>
+
+        <!-- 옵션 -->
+        <div class="option">
           <div class="button-container">
             <button class="button green" @click="$router.push({ name: 'MakingOrder' })">예약 만들기</button>
             <button class="button green">오늘의 이벤트</button>
@@ -78,28 +78,35 @@
       </slot>
     </div>
 
-    <!-- 박스들 (상단 6개: 직사각형, 하단 6개: 직사각형) -->
+    <!-- 로고 박스와 타임 박스를 한 쌍으로 표시 -->
     <div v-if="selectedMenu" class="bottom-grid">
-      <!-- 상단 로고 박스 (6개) -->
-      <div class="logo-box" v-for="(item, index) in menuDetails[selectedMenu].logos" :key="index">
-        <p>{{ item }}</p>
-      </div>
+      <div v-for="(logo, index) in menuDetails[selectedMenu]?.logos || []" :key="index" class="logo-time-pair">
+        <!-- 상단 로고 박스 -->
+        <div class="logo-box">
+          <img v-if="logoUrl" :src="logoUrl" alt="Store Logo" />
+          <p v-else>{{ logo }}</p>
+        </div>
 
-      <!-- 하단 시간표 박스 (6개) -->
-      <div class="time-box" v-for="(item, index) in menuDetails[selectedMenu].times" :key="index">
-        <p>{{ item }}</p>
+        <!-- 하단 시간표 박스 -->
+        <div class="time-box">
+          <p>{{ menuDetails[selectedMenu]?.times[index] }}</p>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { getAuth } from 'firebase/auth'; // Firebase 인증
+import { ref, get } from 'firebase/database'; // Firebase 실시간 데이터베이스
+import { database } from '@/firebase'; // Firebase 인스턴스
+
 export default {
-  name: 'RoundedInnerDropShadowBox',
+  name: 'OrderComponent',
   data() {
     return {
-      localMarkerName: '', // 초기 값
       selectedMenu: '', // 선택된 메뉴
+      logoUrl: null, // 로고 URL 저장
       menuDetails: {
         '한식': { logos: ['Logo 1', 'Logo 2', 'Logo 3', 'Logo 4', 'Logo 5', 'Logo 6'], times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
         '중식': { logos: ['Logo A', 'Logo B', 'Logo C', 'Logo D', 'Logo E', 'Logo F'], times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
@@ -115,17 +122,34 @@ export default {
     };
   },
   methods: {
-    showMenuDetails(menu) {
-      this.selectedMenu = menu;
-    }
-  },
-  created() {
-    // 마운트될 때 params로 전달된 주소 데이터를 받아 localMarkerName에 할당
-    if (this.$route.params.markerName) {
-      this.localMarkerName = this.$route.params.markerName;
+    showMenuDetails(menuType) {
+      this.selectedMenu = menuType;
+      this.fetchLogo(menuType); // 메뉴 타입에 맞는 로고 가져오기
+    },
+    fetchLogo(menuType) {
+      const auth = getAuth(); // Firebase Auth
+      const user = auth.currentUser; // 현재 로그인된 사용자 정보 가져오기
+
+      if (user) {
+        const logoRef = ref(database, `users/${user.uid}/logos/${menuType}`); // Firebase Database에서 사용자의 로고 경로 참조
+
+        get(logoRef) // Firebase Database에서 로고 URL을 가져옴
+          .then((snapshot) => {
+            if (snapshot.exists()) {
+              this.logoUrl = snapshot.val(); // 로고 URL 가져오기
+            } else {
+              this.logoUrl = null; // 로고가 없을 경우 null로 설정
+            }
+          })
+          .catch((error) => {
+            console.error("로고 불러오기 실패:", error);
+            this.logoUrl = null;
+          });
+      }
     }
   }
 };
+
 </script>
 
 <style scoped>
@@ -143,27 +167,12 @@ export default {
   padding: 5px;
   background-color: #EFFAD6;
   border-radius: 10px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.header label {
-  margin-right: 10px;
-}
-
-.header input {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 16px;
-  width: 60%;
-  background-color: #f5f5f5;
+  box-shadow: 
+    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
+    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
 }
 
 /* 초록색 박스 내부 스타일 */
@@ -176,7 +185,6 @@ export default {
   box-shadow: 0px 3.14px 3.14px 0px rgba(0, 0, 0, 0.25);
 }
 
-/* 이미지 그리드 스타일 */
 .image-grid {
   display: flex;
   justify-content: space-around;
@@ -209,13 +217,14 @@ export default {
   padding: 1vh 3vw; 
   height: 20vh; 
   background-color: #BFDC99;
-  border-radius: 2vw; /* 반지름도 비율에 따라 조정 */
+  border-radius: 2vw;
   box-shadow: 0px 3.14px 3.14px 0px rgba(0, 0, 0, 0.25);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+/* 옵션 버튼 스타일 */
 .option {
   display: flex;
   justify-content: center;
@@ -225,7 +234,6 @@ export default {
 .button-container {
   display: flex;
   grid-gap: 10px;
-  width: auto;
   padding: 5px;
 }
 
@@ -259,32 +267,41 @@ export default {
   background-color: white;
   border-radius: 15px;
   box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
+    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
 }
 
-/* 상단 박스 스타일 (세로 폭을 줄임) */
+/* 상단 박스 스타일 */
 .logo-box {
   height: 150px;
   width: 180px;
   background-color: white;
   border-radius: 17px;
   box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
+    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-box img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
 }
 
 /* 하단 박스 스타일 */
 .time-box {
-  height: 250px;
+  height: 100px;
   width: 180px;
+  margin-top: 10px;
   overflow-y: auto;
-  overflow-x: hidden;
   background-color: #FAF3E0;
   border-radius: 17px;
   box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
+    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
 }
 
 .rounded-inner-drop-shadow-box {
@@ -294,6 +311,14 @@ export default {
   background-color: #97B762;
   border-radius: 0 0 100px 100px;
   box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* 로고와 시간표를 한 쌍으로 표시 */
+.logo-time-pair {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .bottom-grid {

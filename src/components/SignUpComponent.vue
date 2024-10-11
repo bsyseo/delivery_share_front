@@ -25,47 +25,58 @@
 </template>
 
 <script>
-import { auth, database } from "@/firebase"; // firebase.js에서 auth와 database를 가져옴
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { ref, set } from "firebase/database";
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { database } from '@/main';
+import { ref, set } from 'firebase/database';
 
 export default {
+  name: 'SignUpComponent',
   data() {
     return {
-      name: "",
-      adress: "",
-      email: "",
-      password: "",
-      role: "",
-      phone: "",
-    };
+      email: '',
+      password: '',
+      name: '',
+      address: '',
+      phone: '',
+      role: 'consumer',
+      isSignedUp: false
+    }
   },
   methods: {
-    async signUp() {
-      try {
-        // Firebase Authentication을 통해 유저 생성
-        const userCredential = await createUserWithEmailAndPassword(auth, this.email, this.password);
-
-        // 유저 정보
-        const userId = userCredential.user.uid;
-
-        // Realtime Database에 추가 정보 저장
-        await set(ref(database, 'users/' + userId), {
-          name: this.name,
-          address: this.address,
-          role: this.role,
-          phone: this.phone,
-          email: this.email
-        });
-
-        alert('Sign up successful!');
-      } catch (error) {
-        console.error("Error during sign up:", error);
-        alert(error.message);
+    signUp() {
+      if (!this.name || !this.address || !this.phone || !this.email || !this.password || !this.role) {
+        alert('모든 필드값을 채워주세요!');
+        return;
       }
+
+      const authInstance = getAuth();
+      createUserWithEmailAndPassword(authInstance, this.email, this.password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          // 사용자 정보와 함께 APPROVED 항목을 데이터베이스에 저장
+          set(ref(database, 'users/' + user.uid), {
+            name: this.name,
+            address: this.address,
+            phone: this.phone,
+            email: this.email,
+            role: this.role,
+            approved: 'no'  // 'no'로 초기화
+          })
+          .then(() => {
+            alert('회원가입이 성공적으로 완료되었습니다!');
+            this.isSignedUp = true;
+            this.$router.push('/');
+          })
+          .catch((error) => {
+            console.error('데이터베이스 저장 오류:', error);
+          });
+        })
+        .catch((error) => {
+          console.error('회원가입 오류:', error);
+        });
     }
   }
-};
+}
 </script>
 
 <style scoped>

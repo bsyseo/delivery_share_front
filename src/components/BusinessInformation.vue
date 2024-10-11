@@ -77,8 +77,10 @@
 </template>
 
 <script>
+import { getAuth, onAuthStateChanged } from "firebase/auth"; // Firebase Auth 가져오기
 import { database } from '@/firebase.js';
 import { ref, set } from "firebase/database";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage 관련 함수 가져오기
 
 export default {
   name: 'BusinessInformation',
@@ -122,30 +124,61 @@ export default {
       this.closedDays.splice(index, 1);
     },
     async submitBusinessInfo() {
-      if (this.businessLicense && this.businessPermit && this.bankAccount) {
-        try {
-          const businessInfoRef = ref(database, 'businesses/' + this.registrationNumber);
-          await set(businessInfoRef, {
-            ownerName: this.ownerName,
-            contact: this.contact,
-            registrationNumber: this.registrationNumber,
-            address: this.address,
-            operationHours: this.operationHours, // 사용자가 입력한 운영 시간을 저장
-            closedDays: this.closedDays
-          });
+      const auth = getAuth(); // Firebase Auth 객체 생성
+      const storage = getStorage(); // Firebase Storage 객체 생성
 
-          alert('사업자 정보가 등록되었습니다.');
-        } catch (error) {
-          console.error('사업자 정보 저장 중 오류 발생:', error);
-          alert('사업자 정보를 저장하는 데 실패했습니다.');
+      onAuthStateChanged(auth, async (user) => { // 로그인한 사용자 확인
+        if (user) {
+          const uid = user.uid; // 로그인한 사용자의 uid 가져오기
+
+          if (this.businessLicense && this.businessPermit && this.bankAccount) {
+            try {
+              // 파일을 Firebase Storage에 업로드
+              const businessLicenseUrl = await this.uploadFileToStorage(storage, uid, 'businessLicense', this.businessLicense);
+              const businessPermitUrl = await this.uploadFileToStorage(storage, uid, 'businessPermit', this.businessPermit);
+              const bankAccountUrl = await this.uploadFileToStorage(storage, uid, 'bankAccount', this.bankAccount);
+
+              // Firebase Database에 사업자 정보 저장
+              const businessInfoRef = ref(database, 'store/' + uid);
+              await set(businessInfoRef, {
+                ownerName: this.ownerName,
+                contact: this.contact,
+                registrationNumber: this.registrationNumber,
+                operationHours: this.operationHours, // 사용자가 입력한 운영 시간을 저장
+                closedDays: this.closedDays,
+                registrant_uid: uid, // 사용자 uid 저장
+                businessLicenseUrl, // 업로드된 파일 URL 저장
+                businessPermitUrl, // 업로드된 파일 URL 저장
+                bankAccountUrl // 업로드된 파일 URL 저장
+              });
+
+              const storeAddressRef = ref(database, `store/${uid}/store_address`);
+              await set(storeAddressRef, this.address);
+
+              alert('사업자 정보가 등록되었습니다.');
+            } catch (error) {
+              console.error('사업자 정보 저장 중 오류 발생:', error);
+              alert('사업자 정보를 저장하는 데 실패했습니다.');
+            }
+          } else {
+            alert('필수 서류를 모두 업로드해 주세요.');
+          }
+        } else {
+          alert('로그인이 필요합니다.');
         }
-      } else {
-        alert('필수 서류를 모두 업로드해 주세요.');
-      }
+      });
+    },
+    // Firebase Storage에 파일 업로드하는 메서드
+    async uploadFileToStorage(storage, uid, fieldName, file) {
+      const fileRef = storageRef(storage, `businessinfo/${uid}/${fieldName}.${file.name.split('.').pop()}`); // 파일 확장자 유지
+      await uploadBytes(fileRef, file); // 파일 업로드
+      const fileUrl = await getDownloadURL(fileRef); // 업로드된 파일의 다운로드 URL 가져오기
+      return fileUrl;
     }
   }
 };
 </script>
+
 
 <style scoped>
 .business-info-container {
