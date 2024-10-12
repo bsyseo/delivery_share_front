@@ -80,16 +80,17 @@
 
     <!-- 로고 박스와 타임 박스를 한 쌍으로 표시 -->
     <div v-if="selectedMenu" class="bottom-grid">
-      <div v-for="(logo, index) in menuDetails[selectedMenu]?.logos || []" :key="index" class="logo-time-pair">
+      <div v-for="(time, index) in menuDetails[selectedMenu]?.times" :key="index" class="logo-time-pair">
         <!-- 상단 로고 박스 -->
         <div class="logo-box">
-          <img v-if="logoUrl" :src="logoUrl" alt="Store Logo" />
-          <p v-else>{{ logo }}</p>
+          <!-- 로고 이미지가 있을 경우에만 표시 -->
+          <img v-if="logos[index]" :src="logos[index]" alt="Store Logo" />
+          <div v-else>로고 없음</div> <!-- 로고가 없을 때 빈 박스를 표시 -->
         </div>
 
         <!-- 하단 시간표 박스 -->
         <div class="time-box">
-          <p>{{ menuDetails[selectedMenu]?.times[index] }}</p>
+          <p>{{ time || '시간 없음' }}</p> <!-- 시간이 없을 때 '시간 없음' 표시 -->
         </div>
       </div>
     </div>
@@ -97,59 +98,52 @@
 </template>
 
 <script>
-import { getAuth } from 'firebase/auth'; // Firebase 인증
-import { ref, get } from 'firebase/database'; // Firebase 실시간 데이터베이스
-import { database } from '@/firebase'; // Firebase 인스턴스
+import { ref, get } from 'firebase/database';
+import { database } from '@/firebase'; // Firebase 설정 파일 경로
 
 export default {
   name: 'OrderComponent',
   data() {
     return {
       selectedMenu: '', // 선택된 메뉴
-      logoUrl: null, // 로고 URL 저장
+      logos: [], // Firebase에서 가져온 로고 URL 배열
       menuDetails: {
-        '한식': { logos: ['Logo 1', 'Logo 2', 'Logo 3', 'Logo 4', 'Logo 5', 'Logo 6'], times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
-        '중식': { logos: ['Logo A', 'Logo B', 'Logo C', 'Logo D', 'Logo E', 'Logo F'], times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
-        '일식': { logos: ['Logo X', 'Logo Y', 'Logo Z', 'Logo W', 'Logo V', 'Logo U'], times: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00'] },
-        '치킨': { logos: ['치킨 1', '치킨 2', '치킨 3', '치킨 4', '치킨 5', '치킨 6'], times: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] },
-        '피자': { logos: ['피자 1', '피자 2', '피자 3', '피자 4', '피자 5', '피자 6'], times: ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00'] },
-        '아시안푸드': { logos: ['Asian 1', 'Asian 2', 'Asian 3', 'Asian 4', 'Asian 5', 'Asian 6'], times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
-        '패스트푸드': { logos: ['Fast 1', 'Fast 2', 'Fast 3', 'Fast 4', 'Fast 5', 'Fast 6'], times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
-        '양식': { logos: ['Western 1', 'Western 2', 'Western 3', 'Western 4', 'Western 5', 'Western 6'], times: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00'] },
-        '디저트': { logos: ['Dessert 1', 'Dessert 2', 'Dessert 3', 'Dessert 4', 'Dessert 5', 'Dessert 6'], times: ['15:00', '16:00', '17:00', '18:00', '19:00', '20:00'] },
-        '건강식': { logos: ['Healthy 1', 'Healthy 2', 'Healthy 3', 'Healthy 4', 'Healthy 5', 'Healthy 6'], times: ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00'] }
+        '한식': { times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
+        '중식': { times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
+        '일식': { times: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00'] },
+        '치킨': { times: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] },
+        '피자': { times: ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00'] },
+        '아시안푸드': { times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
+        '패스트푸드': { times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
+        '양식': { times: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00'] },
+        '디저트': { times: ['15:00', '16:00', '17:00', '18:00', '19:00', '20:00'] },
+        '건강식': { times: ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00'] }
       }
     };
   },
   methods: {
     showMenuDetails(menuType) {
       this.selectedMenu = menuType;
-      this.fetchLogo(menuType); // 메뉴 타입에 맞는 로고 가져오기
+      this.fetchLogos(menuType); // 선택된 메뉴에 맞는 로고 가져오기
     },
-    fetchLogo(menuType) {
-      const auth = getAuth(); // Firebase Auth
-      const user = auth.currentUser; // 현재 로그인된 사용자 정보 가져오기
+    fetchLogos(menuType) {
+      const logosRef = ref(database, `menus/${menuType}/logos`); // Firebase Database에서 로고 경로 참조
 
-      if (user) {
-        const logoRef = ref(database, `users/${user.uid}/logos/${menuType}`); // Firebase Database에서 사용자의 로고 경로 참조
-
-        get(logoRef) // Firebase Database에서 로고 URL을 가져옴
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              this.logoUrl = snapshot.val(); // 로고 URL 가져오기
-            } else {
-              this.logoUrl = null; // 로고가 없을 경우 null로 설정
-            }
-          })
-          .catch((error) => {
-            console.error("로고 불러오기 실패:", error);
-            this.logoUrl = null;
-          });
-      }
+      get(logosRef) // Firebase Database에서 로고 URL 배열을 가져옴
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            this.logos = snapshot.val(); // 로고 URL 배열 가져오기
+          } else {
+            this.logos = []; // 로고가 없을 경우 빈 배열로 설정
+          }
+        })
+        .catch((error) => {
+          console.error("로고 불러오기 실패:", error);
+          this.logos = [];
+        });
     }
   }
 };
-
 </script>
 
 <style scoped>

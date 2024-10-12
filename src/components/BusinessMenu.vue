@@ -126,15 +126,27 @@ export default {
 
       const auth = getAuth();
       const userId = auth.currentUser.uid;
-      const logoStorageRef = storageRef(getStorage(), `logos/${userId}/${this.selectedStoreType}`);
 
-      uploadBytes(logoStorageRef, this.logoFile).then(() => {
-        getDownloadURL(logoStorageRef).then((url) => {
-          const logoRef = ref(database, `users/${userId}/logos/${this.selectedStoreType}`);
-          set(logoRef, url);
-          alert('로고가 성공적으로 저장되었습니다.');
+      // Firebase Storage에 로고 파일을 업로드
+      const logoStorageRef = storageRef(getStorage(), `logos/${userId}/${this.selectedStoreType}`);
+      uploadBytes(logoStorageRef, this.logoFile)
+        .then(() => getDownloadURL(logoStorageRef)) // 업로드가 완료되면 다운로드 URL을 가져옴
+        .then((url) => {
+          // Firebase Realtime Database에 가게 타입과 로고 URL을 저장
+          const storeDataRef = ref(database, `users/${userId}/storeInfo`);
+
+          // 가게 타입과 로고 URL, 사용자 이름을 저장
+          set(storeDataRef, {
+            logoUrl: url,
+            storeType: this.selectedStoreType,
+            name: auth.currentUser.displayName // 자영업자의 이름을 저장
+          });
+
+          alert('가게 타입과 로고가 성공적으로 저장되었습니다.');
+        })
+        .catch((error) => {
+          console.error('로고 업로드 실패:', error);
         });
-      });
     },
     saveMenu() {
       const auth = getAuth();
@@ -203,11 +215,11 @@ export default {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          const logoRef = ref(database, `users/${user.uid}/storeLogo`);
+          const logoRef = ref(database, `users/${user.uid}/storeInfo/${this.selectedStoreType}/logoUrl`);
           onValue(logoRef, (snapshot) => {
             const data = snapshot.val();
-            if (data && data.logoUrl) {
-              this.storeLogoPreview = data.logoUrl;
+            if (data) {
+              this.storeLogoPreview = data;
             }
           });
         }
@@ -223,6 +235,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .menu-container {
