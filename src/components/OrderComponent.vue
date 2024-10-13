@@ -80,26 +80,46 @@
 
     <!-- 로고 박스와 타임 박스를 한 쌍으로 표시 -->
     <div v-if="selectedMenu" class="bottom-grid">
-      <div v-for="(time, index) in menuDetails[selectedMenu]?.times" :key="index" class="logo-time-pair">
+      <div v-for="(orderList, storeUid) in orders" :key="storeUid" class="logo-time-pair">
         <!-- 상단 로고 박스 -->
         <div class="logo-box">
           <!-- 로고 이미지가 있을 경우에만 표시 -->
-          <img v-if="logos[index]" :src="logos[index]" alt="Store Logo" />
+          <img v-if="logos[storeUid]" :src="logos[storeUid]" alt="Store Logo" />
           <div v-else>로고 없음</div> <!-- 로고가 없을 때 빈 박스를 표시 -->
         </div>
 
         <!-- 하단 시간표 박스 -->
         <div class="time-box">
-          <p>{{ time || '시간 없음' }}</p> <!-- 시간이 없을 때 '시간 없음' 표시 -->
+          <p v-for="order in orderList.slice(0, 4)" :key="order.id" @click="openPopup(order)">
+            {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
+          </p>
+          <!-- 스크롤을 추가하여 4개 이상의 시간이 있을 경우 더 볼 수 있게 함 -->
+          <div v-if="orderList.length > 4" class="more-orders">
+            <p v-for="order in orderList.slice(4)" :key="order.id" class="scrollable-order" @click="openPopup(order)">
+              {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
+            </p>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- 팝업 컴포넌트 -->
+    <div v-if="isPopupOpen" class="popup">
+      <div class="popup-content">
+        <h3>예약 정보</h3>
+        <p>메뉴 이름: {{ popupOrder.menu || selectedMenu }}</p> <!-- selectedMenu 값이 팝업에 표시됨 -->
+        <p>수량: {{ popupOrder.quantity }}</p>
+        <p>예약 시간: {{ formatReservationTime(popupOrder.reservationTime) }}</p>
+        <button @click="closePopup">닫기</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, get } from 'firebase/database';
+import { ref, query, orderByChild, get, remove } from 'firebase/database';
 import { database } from '@/firebase'; // Firebase 설정 파일 경로
+import moment from 'moment-timezone'; // Moment.js 사용
 
 export default {
   name: 'OrderComponent',
@@ -107,42 +127,98 @@ export default {
     return {
       selectedMenu: '', // 선택된 메뉴
       logos: [], // Firebase에서 가져온 로고 URL 배열
-      menuDetails: {
-        '한식': { times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
-        '중식': { times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
-        '일식': { times: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00'] },
-        '치킨': { times: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] },
-        '피자': { times: ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00'] },
-        '아시안푸드': { times: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'] },
-        '패스트푸드': { times: ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00'] },
-        '양식': { times: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00'] },
-        '디저트': { times: ['15:00', '16:00', '17:00', '18:00', '19:00', '20:00'] },
-        '건강식': { times: ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00'] }
-      }
+      orders: [], // Firebase에서 가져온 주문 목록
+      isPopupOpen: false, // 팝업 표시 여부
+      popupOrder: {} // 팝업에 표시할 주문 정보
     };
   },
   methods: {
     showMenuDetails(menuType) {
       this.selectedMenu = menuType;
-      this.fetchLogos(menuType); // 선택된 메뉴에 맞는 로고 가져오기
+      this.fetchOrders(); // 메뉴 타입이 선택되면 주문 목록 가져오기
     },
-    fetchLogos(menuType) {
-      const logosRef = ref(database, `menus/${menuType}/logos`); // Firebase Database에서 로고 경로 참조
+    fetchOrders() {
+      const ordersRef = query(ref(database, 'orders'), orderByChild('reservationTime'));
 
-      get(logosRef) // Firebase Database에서 로고 URL 배열을 가져옴
+      get(ordersRef)
         .then((snapshot) => {
           if (snapshot.exists()) {
-            this.logos = snapshot.val(); // 로고 URL 배열 가져오기
+            const allOrders = snapshot.val();
+            const now = moment().tz('Asia/Seoul');
+            const groupedOrders = {};
+
+            Object.keys(allOrders).forEach((key) => {
+              const order = allOrders[key];
+              const orderTime = moment(order.reservationTime);
+              // 예약 시간이 1시간 이상 지났으면 삭제
+              if (now.diff(orderTime, 'hours') >= 1) {
+                remove(ref(database, `orders/${key}`));
+              } else if (
+                order.reservationTime &&
+                order.storeType === this.selectedMenu && // 선택된 메뉴와 storeType이 일치하는 주문만 필터링
+                order.reservationTime > now.toISOString() // 현재 시간 이후의 주문만 필터링
+              ) {
+                const storeUid = order.storeUid;
+                if (!groupedOrders[storeUid]) {
+                  groupedOrders[storeUid] = [];
+                }
+                groupedOrders[storeUid].push({
+                  id: key,
+                  ...order,
+                });
+              }
+            });
+
+            // 각 storeUid별로 시간순 정렬 후 최대 4개의 주문만 표시
+            Object.keys(groupedOrders).forEach((storeUid) => {
+              groupedOrders[storeUid].sort(
+                (a, b) => new Date(a.reservationTime) - new Date(b.reservationTime)
+              );
+            });
+
+            this.orders = groupedOrders;
+            this.fetchLogos(); // 로고도 같이 가져옴
           } else {
-            this.logos = []; // 로고가 없을 경우 빈 배열로 설정
+            this.orders = {};
           }
         })
         .catch((error) => {
-          console.error("로고 불러오기 실패:", error);
-          this.logos = [];
+          console.error('주문 정보를 가져오는 데 실패했습니다:', error);
         });
+    },
+    
+    fetchLogos() {
+      Object.keys(this.orders).forEach((storeUid) => {
+        const logoRef = ref(database, `store/${storeUid}/logo`);
+        get(logoRef)
+          .then((snapshot) => {
+            if (snapshot.exists()) {
+              this.logos = { ...this.logos, [storeUid]: snapshot.val() };
+            } else {
+              this.$set(this.logos, storeUid, '');
+            }
+          })
+          .catch((error) => {
+            console.error('로고를 가져오는 데 실패했습니다:', error);
+            this.$set(this.logos, storeUid, '');
+          });
+      });
+    },
+    
+    formatReservationTime(reservationTime) {
+      const time = moment(reservationTime).tz('Asia/Seoul');
+      return time.format('HH:mm');
+    },
+
+    openPopup(order) {
+      this.popupOrder = order; // 선택된 주문 정보 저장
+      this.isPopupOpen = true; // 팝업 열기
+    },
+
+    closePopup() {
+      this.isPopupOpen = false; // 팝업 닫기
     }
-  }
+  },
 };
 </script>
 
@@ -280,22 +356,32 @@ export default {
 }
 
 .logo-box img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
+  width: 80%;
+  height: 80%;
+  object-fit: contain; /* 이미지를 비율을 맞추면서 박스에 맞추기 */
 }
 
 /* 하단 박스 스타일 */
 .time-box {
-  height: 100px;
+  height: 120px;
   width: 180px;
   margin-top: 10px;
-  overflow-y: auto;
+  overflow-y: auto; /* 스크롤 활성화 */
   background-color: #FAF3E0;
   border-radius: 17px;
   box-shadow: 
     0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
     inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
+}
+
+.more-orders {
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.scrollable-order {
+  color: #333;
+  padding: 5px 0;
 }
 
 .rounded-inner-drop-shadow-box {
@@ -324,4 +410,38 @@ export default {
   margin: 30px auto;
 }
 
+/* 팝업 스타일 */
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.popup-content button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.popup-content button:hover {
+  background-color: #45a049;
+}
 </style>

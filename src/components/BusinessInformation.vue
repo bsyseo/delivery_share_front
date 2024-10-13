@@ -150,7 +150,6 @@ export default {
                 storeName : this.storeName,
                 ownerName: this.ownerName,
                 contact: this.contact,
-                registrationNumber: this.registrationNumber,
                 operationHours: this.operationHours, // 사용자가 입력한 운영 시간을 저장
                 closedDays: this.closedDays,
                 approved: 'no',  // 'no'로 초기화

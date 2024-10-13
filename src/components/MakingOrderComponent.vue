@@ -29,10 +29,17 @@
           </select>
         </div>
 
+        <!-- 주문 수량 선택 -->
+        <div class="form-group" v-if="selectedMenu">
+          <label for="quantity">주문 수량</label>
+          <input type="number" id="quantity" v-model="menuQuantity" min="1" required />
+        </div>
+
         <!-- Pickup time -->
         <div class="form-group" v-if="selectedMenu">
-          <label for="pickup-time">예약 시간 선택</label>
-          <input type="datetime-local" id="pickup-time" v-model="pickupTime" required />
+          <label for="pickup-time">예약 시간 선택 (30분 단위)</label>
+          <input type="datetime-local" id="pickup-time" v-model="pickupTime" @input="validateTime" required />
+          <p class="time-adjustment-message" v-if="timeAdjustmentMessage">{{ timeAdjustmentMessage }}</p>
         </div>
 
         <button type="submit" class="submit-button" :disabled="!isFormValid">예약하기</button>
@@ -42,20 +49,25 @@
 </template>
 
 <script>
-import { ref, get } from 'firebase/database';
-import { database } from '@/firebase'; // Firebase 설정 파일 경로
+// Firebase 관련 함수들 import
+import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Firebase Auth 함수
+import { ref, set, push, get } from 'firebase/database'; 
+import { database } from '@/firebase';
+import moment from 'moment-timezone';
 
 export default {
   name: 'MakingOrderComponent',
   data() {
     return {
       categories: ['한식', '중식', '일식', '치킨', '피자', '아시안푸드', '패스트푸드', '양식', '디저트', '건강식'],
-      stores: [], // 가게 목록
-      menus: [],  // 선택된 가게의 메뉴 목록
-      selectedCategory: '', // 선택된 카테고리
-      selectedStore: '',    // 선택된 가게
-      selectedMenu: '',     // 선택된 메뉴
-      pickupTime: '',       // 예약 시간
+      stores: [],
+      menus: [],
+      selectedCategory: '',
+      selectedStore: '',
+      selectedMenu: '',
+      pickupTime: '',
+      menuQuantity: 1,
+      timeAdjustmentMessage: ''
     };
   },
   computed: {
@@ -65,18 +77,15 @@ export default {
   },
   methods: {
     fetchStores() {
-      // Firebase에서 모든 사용자 데이터를 가져온 후, 선택된 카테고리와 일치하는 가게를 필터링
-      const usersRef = ref(database, 'users');
-      get(usersRef).then((snapshot) => {
+      const storesRef = ref(database, 'store');
+      get(storesRef).then((snapshot) => {
         if (snapshot.exists()) {
-          const allUsers = snapshot.val();
-          // 모든 사용자를 탐색하면서 storeType이 선택한 카테고리와 일치하는 가게를 필터링
-          this.stores = Object.keys(allUsers)
-            .filter(key => allUsers[key].storeInfo && allUsers[key].storeInfo.storeType === this.selectedCategory)
+          const allStores = snapshot.val();
+          this.stores = Object.keys(allStores)
+            .filter(key => allStores[key].storeType === this.selectedCategory)
             .map(key => ({
               id: key,
-              name: allUsers[key].storeInfo.storeName, // storeInfo에 저장된 storeName 사용
-              phone: allUsers[key].phone, // 필요에 따라 추가 정보도 가져옴
+              name: allStores[key].storeName,
             }));
         } else {
           this.stores = [];
@@ -85,12 +94,11 @@ export default {
         console.error('가게 목록을 불러오는 데 실패했습니다:', error);
       });
 
-      this.selectedStore = ''; // 기존 선택을 초기화
+      this.selectedStore = '';
       this.menus = [];
     },
     fetchMenus() {
-      // Firebase에서 선택된 가게의 메뉴를 가져오는 로직
-      const menuRef = ref(database, `users/${this.selectedStore.id}/menus`);
+      const menuRef = ref(database, `store/${this.selectedStore.id}/menu`);
       get(menuRef).then((snapshot) => {
         if (snapshot.exists()) {
           this.menus = Object.keys(snapshot.val()).map(key => ({
@@ -104,35 +112,78 @@ export default {
         console.error('메뉴 목록을 불러오는 데 실패했습니다:', error);
       });
 
-      this.selectedMenu = ''; // 기존 선택을 초기화
+      this.selectedMenu = '';
+    },
+    validateTime() {
+      const inputTime = moment.tz(this.pickupTime, 'Asia/Seoul');
+      const minutes = inputTime.minutes();
+      if (minutes < 15) {
+        inputTime.minutes(0);
+      } else if (minutes < 45) {
+        inputTime.minutes(30);
+      } else {
+        inputTime.minutes(0).add(1, 'hours');
+      }
+      this.pickupTime = inputTime.format('YYYY-MM-DDTHH:mm');
+      this.timeAdjustmentMessage = `${inputTime.format('HH:mm')}으로 설정되었습니다.`;
     },
     submitOrder() {
-      console.log('주문 세부 정보:', this.selectedCategory, this.selectedStore.storeName, this.selectedMenu.name);
-      console.log('예약 시간:', this.pickupTime);
-
-      // 주문 데이터 처리 로직
-      this.$emit('orderSubmitted', {
-        category: this.selectedCategory,
-        store: this.selectedStore.storeName, // storeName 사용
-        menu: this.selectedMenu.name,
-        time: this.pickupTime
+      const auth = getAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const createdAt = moment().tz('Asia/Seoul').format();
+          const orderRef = ref(database, 'orders');
+          const newOrderRef = push(orderRef);
+          const orderId = newOrderRef.key;
+          const orderData = {
+            creatorUid: user.uid,
+            createdAt: createdAt,
+            storeUid: this.selectedStore.id,
+            storeType: this.selectedCategory,
+            status: 'pending',
+            reservationTime: this.pickupTime
+          };
+          set(newOrderRef, orderData).then(() => {
+            const memberRef = ref(database, `orders/${orderId}/member/${user.uid}`);
+            const memberData = {
+              menu: this.selectedMenu.name,
+              quantity: this.menuQuantity
+            };
+            set(memberRef, memberData).then(() => {
+              alert('주문이 완료되었습니다.');
+              this.resetForm();
+              this.$emit('orderCreated', orderData);
+            }).catch((error) => {
+              console.error('주문자 데이터를 저장하는 중 오류 발생:', error);
+            });
+          }).catch((error) => {
+            console.error('주문 정보를 저장하는 중 오류 발생:', error);
+          });
+        } else {
+          alert('로그인이 필요합니다.');
+        }
       });
-
-      alert('주문 예약이 완료되었습니다.');
+    },
+    resetForm() {
+      this.selectedCategory = '';
+      this.selectedStore = '';
+      this.selectedMenu = '';
+      this.pickupTime = '';
+      this.menuQuantity = 1;
+      this.timeAdjustmentMessage = '';
     }
   }
 };
 </script>
 
 <style scoped>
-/* 스타일 부분은 기존 코드와 동일하게 유지 */
+/* 기존 스타일 유지 */
 .wrapper {
   display: flex;
-  justify-content: center; /* 수평 중앙 정렬 */
-  align-items: center; /* 수직 중앙 정렬 */
-  height: 100vh; /* 화면 전체 높이를 차지 */
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
-
 .making-order-form {
   display: flex;
   flex-direction: column;
@@ -145,24 +196,21 @@ export default {
   max-width: 500px;
   width: 100%;
 }
-
 .form-group {
-  background-color: white; /* 각 입력 폼의 배경을 하얗게 */
+  background-color: white;
   padding: 20px;
   text-align: center;
   border-radius: 10px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   width: 100%;
 }
-
 label {
   font-size: 16px;
   color: #333;
   margin-bottom: 10px;
   font-weight: bold;
 }
-
 input, select, textarea {
   width: 100%;
   padding: 12px;
@@ -173,16 +221,13 @@ input, select, textarea {
   margin-top: 10px;
   box-sizing: border-box;
 }
-
 input:focus, select:focus, textarea:focus {
-  border-color: #4CAF50; /* 초록색 포커스 테두리 */
+  border-color: #4CAF50;
   outline: none;
 }
-
 .submit-button {
   padding: 12px;
   margin-top: 15px;
-  
   background-color: #4CAF50;
   color: white;
   border: none;
@@ -191,16 +236,19 @@ input:focus, select:focus, textarea:focus {
   font-size: 16px;
   transition: background-color 0.3s ease, transform 0.2s ease;
   width: 100%;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
-
 .submit-button:hover {
   background-color: #45a049;
-  transform: translateY(-3px); /* 버튼이 살짝 떠오르는 효과 */
+  transform: translateY(-3px);
 }
-
 .submit-button:disabled {
   background-color: #d1d5db;
   cursor: not-allowed;
+}
+.time-adjustment-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
 }
 </style>
