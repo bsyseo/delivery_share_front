@@ -75,7 +75,7 @@ export default {
             .filter(key => allUsers[key].storeInfo && allUsers[key].storeInfo.storeType === this.selectedCategory)
             .map(key => ({
               id: key,
-              name: allUsers[key].name, // storeInfo에 저장된 가게 이름 사용
+              name: allUsers[key].storeInfo.storeName, // storeInfo에 저장된 storeName 사용
               phone: allUsers[key].phone, // 필요에 따라 추가 정보도 가져옴
             }));
         } else {
@@ -107,13 +107,13 @@ export default {
       this.selectedMenu = ''; // 기존 선택을 초기화
     },
     submitOrder() {
-      console.log('주문 세부 정보:', this.selectedCategory, this.selectedStore.name, this.selectedMenu.name);
+      console.log('주문 세부 정보:', this.selectedCategory, this.selectedStore.storeName, this.selectedMenu.name);
       console.log('예약 시간:', this.pickupTime);
 
       // 주문 데이터 처리 로직
       this.$emit('orderSubmitted', {
         category: this.selectedCategory,
-        store: this.selectedStore.name,
+        store: this.selectedStore.storeName, // storeName 사용
         menu: this.selectedMenu.name,
         time: this.pickupTime
       });

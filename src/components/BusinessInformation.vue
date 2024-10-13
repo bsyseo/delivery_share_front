@@ -2,6 +2,11 @@
   <div class="business-info-container">
     <h1>사업자 정보 등록</h1>
     <form @submit.prevent="submitBusinessInfo">
+      <!-- 가게명 -->
+      <div class="form-group">
+        <label for="store-name">가게명</label>
+        <input type="text" id="store-name" v-model="storeName" placeholder="가게명을 입력하세요" required />
+      </div>
       <!-- 대표자명 -->
       <div class="form-group">
         <label for="owner-name">대표자명</label>
@@ -86,6 +91,7 @@ export default {
   name: 'BusinessInformation',
   data() {
     return {
+      storeName: '',
       ownerName: '',
       contact: '',
       registrationNumber: '',
@@ -141,11 +147,13 @@ export default {
               // Firebase Database에 사업자 정보 저장
               const businessInfoRef = ref(database, 'store/' + uid);
               await set(businessInfoRef, {
+                storeName : this.storeName,
                 ownerName: this.ownerName,
                 contact: this.contact,
                 registrationNumber: this.registrationNumber,
                 operationHours: this.operationHours, // 사용자가 입력한 운영 시간을 저장
                 closedDays: this.closedDays,
+                approved: 'no',  // 'no'로 초기화
                 registrant_uid: uid, // 사용자 uid 저장
                 businessLicenseUrl, // 업로드된 파일 URL 저장
                 businessPermitUrl, // 업로드된 파일 URL 저장

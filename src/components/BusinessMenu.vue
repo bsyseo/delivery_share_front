@@ -25,7 +25,7 @@
         <input type="file" @change="onFileChange" />
         <div v-if="storeLogoPreview" class="logo-preview">
           <h4>로고 미리보기:</h4>
-          <img :src="storeLogoPreview" alt="가게 로고 미리보기" />
+          <img :src="storeLogoPreview" alt="가게 로고 미리보기" @click="openModal(storeLogoPreview)" />
         </div>
         <button type="submit">로고 저장</button>
       </div>
@@ -44,7 +44,7 @@
       <input type="file" @change="onFileChangeForMenu" />
       <div v-if="menuImagePreview" class="image-preview">
         <h4>이미지 미리보기:</h4>
-        <img :src="menuImagePreview" alt="메뉴 이미지 미리보기" />
+        <img :src="menuImagePreview" alt="메뉴 이미지 미리보기" @click="openModal(menuImagePreview)" />
       </div>
       <button @click="saveMenu">메뉴 저장</button>
     </div>
@@ -56,9 +56,16 @@
         <li v-for="menu in menus" :key="menu.id">
           <strong>{{ menu.name }}</strong> - {{ menu.price }}원
           <p>{{ menu.description }}</p>
-          <img v-if="menu.imageUrl" :src="menu.imageUrl" alt="메뉴 이미지" />
+          <img v-if="menu.imageUrl" :src="menu.imageUrl" alt="메뉴 이미지" @click="openModal(menu.imageUrl)" />
         </li>
       </ul>
+    </div>
+
+    <!-- 이미지 모달 팝업 -->
+    <div v-if="isModalOpen" class="modal-overlay" @click="closeModal">
+      <div class="modal-content">
+        <img :src="modalImage" alt="큰 이미지" class="modal-image" />
+      </div>
     </div>
   </div>
 </template>
@@ -81,7 +88,9 @@ export default {
       menuImage: null,
       menuImagePreview: null,
       storeLogoPreview: null,
-      menus: []
+      menus: [],
+      isModalOpen: false, // 모달 열림 여부
+      modalImage: null // 모달에 띄울 이미지
     };
   },
   mounted() {
@@ -126,37 +135,25 @@ export default {
 
       const auth = getAuth();
       const userId = auth.currentUser.uid;
+      const logoStorageRef = storageRef(getStorage(), `store/${userId}/logo/${this.logoFile.name}`); // 로고 저장 경로 수정
 
-      // Firebase Storage에 로고 파일을 업로드
-      const logoStorageRef = storageRef(getStorage(), `logos/${userId}/${this.selectedStoreType}`);
-      uploadBytes(logoStorageRef, this.logoFile)
-        .then(() => getDownloadURL(logoStorageRef)) // 업로드가 완료되면 다운로드 URL을 가져옴
-        .then((url) => {
-          // Firebase Realtime Database에 가게 타입과 로고 URL을 저장
-          const storeDataRef = ref(database, `users/${userId}/storeInfo`);
-
-          // 가게 타입과 로고 URL, 사용자 이름을 저장
-          set(storeDataRef, {
-            logoUrl: url,
-            storeType: this.selectedStoreType,
-            name: auth.currentUser.displayName // 자영업자의 이름을 저장
-          });
-
-          alert('가게 타입과 로고가 성공적으로 저장되었습니다.');
-        })
-        .catch((error) => {
-          console.error('로고 업로드 실패:', error);
+      uploadBytes(logoStorageRef, this.logoFile).then(() => {
+        getDownloadURL(logoStorageRef).then((url) => {
+          const logoRef = ref(database, `store/${userId}/logo`);
+          set(logoRef, url);
+          alert('로고가 성공적으로 저장되었습니다.');
         });
+      });
     },
     saveMenu() {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
         if (user && this.menuName && this.menuPrice && this.menuDescription && this.menuImage) {
-          const menuRef = ref(database, `users/${user.uid}/menus`);
+          const menuRef = ref(database, `store/${user.uid}/menu`); // 메뉴 저장 경로 수정
           const newMenuRef = push(menuRef);
 
           const storage = getStorage();
-          const imageRef = storageRef(storage, `users/${user.uid}/menus/${this.menuImage.name}`);
+          const imageRef = storageRef(storage, `store/${user.uid}/menus/${this.menuImage.name}`); // 이미지 저장 경로 수정
           uploadBytes(imageRef, this.menuImage)
             .then((snapshot) => getDownloadURL(snapshot.ref))
             .then((imageUrl) => {
@@ -187,7 +184,7 @@ export default {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          const menuRef = ref(database, `users/${user.uid}/menus`);
+          const menuRef = ref(database, `store/${user.uid}/menu`); // 경로 변경
           onValue(menuRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -204,7 +201,7 @@ export default {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          const storeTypeRef = ref(database, `users/${user.uid}/storeType`);
+          const storeTypeRef = ref(database, `store/${user.uid}/storeType`);
           onValue(storeTypeRef, (snapshot) => {
             this.selectedStoreType = snapshot.val();
           });
@@ -215,15 +212,20 @@ export default {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          const logoRef = ref(database, `users/${user.uid}/storeInfo/${this.selectedStoreType}/logoUrl`);
+          const logoRef = ref(database, `store/${user.uid}/logo`);
           onValue(logoRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-              this.storeLogoPreview = data;
-            }
+            this.storeLogoPreview = snapshot.val();
           });
         }
       });
+    },
+    openModal(imageUrl) {
+      this.modalImage = imageUrl;
+      this.isModalOpen = true;
+    },
+    closeModal() {
+      this.isModalOpen = false;
+      this.modalImage = null;
     },
     resetMenuForm() {
       this.menuName = '';
@@ -235,7 +237,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .menu-container {
@@ -329,6 +330,7 @@ export default {
   object-fit: cover;
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
 }
 
 .menu-list {
@@ -370,5 +372,32 @@ export default {
   height: 100px;
   object-fit: cover;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: 100%;
 }
 </style>

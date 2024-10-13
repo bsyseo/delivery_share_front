@@ -113,7 +113,7 @@ export default {
     saveStoreType() {
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          const typeRef = ref(database, `users/${user.uid}/storeType`);
+          const typeRef = ref(database, `store/${user.uid}/storeType`);
           set(typeRef, this.selectedStoreType)
             .then(() => {
               alert('가게 타입이 저장되었습니다.');
@@ -127,7 +127,7 @@ export default {
     loadStoreType() {
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          const typeRef = ref(database, `users/${user.uid}/storeType`);
+          const typeRef = ref(database, `store/${user.uid}/storeType`);
           get(typeRef)
             .then((snapshot) => {
               if (snapshot.exists()) {
