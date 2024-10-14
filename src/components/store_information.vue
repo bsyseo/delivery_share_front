@@ -1,194 +1,162 @@
 <template>
-    <div class="dashboard-container">
-      <div class="sidebar">
-        <ul class="no-bullets">
-          <li>상품 관리</li>
-          <li>판매 관리</li>
-          <li>정산 관리</li>
-          <li>문의 / 상담</li>
-        </ul>
+  <div class="dashboard-container">
+    <div class="sidebar">
+      <ul class="no-bullets">
+        <li>
+          <button @click="navigateTo('product_management')" class="sidebar-button">
+            상품 관리
+          </button>
+        </li>
+        <li>
+          <button @click="navigateTo('sales_management')" class="sidebar-button">
+            판매 관리
+          </button>
+        </li>
+        <li>
+          <button @click="navigateTo('settlement_management')" class="sidebar-button">
+            정산 관리
+          </button>
+        </li>
+        <li>
+          <button @click="navigateTo('inquiries')" class="sidebar-button">
+            문의 / 상담
+          </button>
+        </li>
+        <li>
+          <button @click="navigateTo('business_menu')" class="sidebar-button">
+            메뉴 수정
+          </button>
+        </li>
+      </ul>
+    </div>
+    <div class="content">
+      <div class="store-info">
+        <h2>가게 정보 관리</h2>
+        <div class="info-section">
+          <div class="info-box">
+            <label for="storeName">변경할 가게 이름</label>
+            <div class="input-with-button">
+              <input 
+                type="text" 
+                id="storeName" 
+                v-model="storeName" 
+                :disabled="storeNameRegistered && !editingStoreName" 
+                placeholder="가게 이름을 입력하세요" 
+              />
+              <div v-if="!storeNameRegistered">
+                <button @click="registerStoreName">등록</button>
+              </div>
+              <div v-else>
+                <button v-if="!editingStoreName" @click="enableStoreNameEditing">변경하기</button>
+                <button v-if="editingStoreName" @click="saveStoreName">저장</button>
+              </div>
+            </div>
+          </div>
+          <div class="info-box centered">
+            <label>영업 시간</label>
+            <div class="time-inputs centered">
+              <input type="time" v-model="openTime" placeholder="오픈 시간" />
+              <input type="time" v-model="closeTime" placeholder="마감 시간" />
+            </div>
+          </div>
+          <div class="info-box centered">
+            <label>휴무일 설정</label>
+            <div class="day-selection centered">
+              <label v-for="day in days" :key="day">
+                <input type="checkbox" v-model="holidayDays" :value="day" />
+                {{ day }}
+              </label>
+            </div>
+            <div class="calendar-selection">
+              <label>날짜 선택</label>
+              <input type="date" v-model="selectedHolidayDate" @change="addHolidayDate" />
+            </div>
+            <p class="selected-days">선택된 휴무일: {{ holidayDays.join(', ') }} / {{ selectedHolidayDates.join(', ') }}</p>
+          </div>
+        </div>
       </div>
-      <div class="content">
-        <div class="store-info">
-          <h2>가게 정보 관리</h2>
-          <div class="info-section">
-            <div class="info-box">
-              <label for="storeName">가게 이름</label>
-              <div class="input-with-button">
-                <input 
-                  type="text" 
-                  id="storeName" 
-                  v-model="storeName" 
-                  :disabled="storeNameRegistered && !editingStoreName" 
-                  placeholder="가게 이름을 입력하세요" 
-                />
-                <div v-if="!storeNameRegistered">
-                  <button @click="registerStoreName">등록</button>
-                </div>
-                <div v-else>
-                  <button v-if="!editingStoreName" @click="enableStoreNameEditing">변경하기</button>
-                  <button v-if="editingStoreName" @click="saveStoreName">저장</button>
-                </div>
-              </div>
-            </div>
-            <div class="info-box centered">
-              <label>영업 시간</label>
-              <div class="time-inputs centered">
-                <input type="time" v-model="openTime" placeholder="오픈 시간" />
-                <input type="time" v-model="closeTime" placeholder="마감 시간" />
-              </div>
-            </div>
-            <div class="info-box centered">
-              <label>휴무일 설정</label>
-              <div class="day-selection centered">
-                <label v-for="day in days" :key="day">
-                  <input type="checkbox" v-model="holidayDays" :value="day" />
-                  {{ day }}
-                </label>
-              </div>
-              <div class="calendar-selection">
-                <label>날짜 선택</label>
-                <input type="date" v-model="selectedHolidayDate" @change="addHolidayDate" />
-              </div>
-              <p class="selected-days">선택된 휴무일: {{ holidayDays.join(', ') }} / {{ selectedHolidayDates.join(', ') }}</p>
-            </div>
-          </div>
-        </div>
-  
-        <div class="order-section">
-          <h2>주문 예약 현황</h2>
-          <div v-if="orders.length" class="order-list">
-            <div v-for="order in orders" :key="order.id" class="order-item">
-              <p><strong>메뉴:</strong> {{ order.menuName }}</p>
-              <p><strong>수량:</strong> {{ order.quantity }}</p>
-              <p><strong>가격:</strong> {{ order.price }} 원</p>
-              <p><strong>주소:</strong> {{ order.address }}</p>
-            </div>
-          </div>
-          <div v-else>
-            <p>현재 예약된 주문이 없습니다.</p>
-          </div>
-        </div>
-  
-        <div class="actions">
-          <button class="action-button save-button" @click="saveStoreInfo">가게 정보 저장</button>
-          <button class="action-button edit-button" @click="navigateTo('business_menu')">메뉴 수정</button>
-        </div>
+
+      <div class="actions">
+        <button class="action-button save-button" @click="saveStoreInfo">가게 정보 저장</button>
       </div>
     </div>
-  </template>
-  
-  <script>
-  import { getAuth, onAuthStateChanged } from 'firebase/auth';
-  import { ref, set, onValue } from 'firebase/database';
-  import { database } from '@/firebase';
-  
-  export default {
-    name: 'StoreInformation',
-    data() {
-      return {
-        storeName: '',
-        storeNameRegistered: false, // 가게 이름 등록 여부
-        editingStoreName: false, // 가게 이름 수정 여부
-        openTime: '',
-        closeTime: '',
-        holidayDays: [], // 요일 체크박스용 데이터
-        selectedHolidayDates: [], // 날짜 선택 휴무일
-        selectedHolidayDate: '', // 선택된 달력 날짜
-        days: ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'],
-        orders: [],
-      };
+  </div>
+</template>
+
+<script>
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { ref, set } from 'firebase/database';
+import { database } from '@/firebase';
+
+export default {
+  name: 'StoreInformation',
+  data() {
+    return {
+      storeName: '',
+      storeNameRegistered: false, // 가게 이름 등록 여부
+      editingStoreName: false, // 가게 이름 수정 여부
+      openTime: '',
+      closeTime: '',
+      holidayDays: [], // 요일 체크박스용 데이터
+      selectedHolidayDates: [], // 날짜 선택 휴무일
+      selectedHolidayDate: '', // 선택된 달력 날짜
+      days: ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'],
+    };
+  },
+  methods: {
+    registerStoreName() {
+      if (this.storeName) {
+        this.storeNameRegistered = true;
+        alert('가게 이름이 등록되었습니다.');
+      } else {
+        alert('가게 이름을 입력하세요.');
+      }
     },
-    methods: {
-      registerStoreName() {
-        if (this.storeName) {
-          this.storeNameRegistered = true;
-          alert('가게 이름이 등록되었습니다.');
-        } else {
-          alert('가게 이름을 입력하세요.');
-        }
-      },
-      enableStoreNameEditing() {
-        this.editingStoreName = true;
-      },
-      saveStoreName() {
-        if (this.storeName) {
-          this.editingStoreName = false;
-          alert('가게 이름이 변경되었습니다.');
-        } else {
-          alert('가게 이름을 입력하세요.');
-        }
-      },
-      addHolidayDate() {
-        if (this.selectedHolidayDate && !this.selectedHolidayDates.includes(this.selectedHolidayDate)) {
-          this.selectedHolidayDates.push(this.selectedHolidayDate);
-        }
-      },
-      saveStoreInfo() {
-        const auth = getAuth();
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            const storeInfoRef = ref(database, `store/${user.uid}/info`);
-            set(storeInfoRef, {
-              name: this.storeName,
-              openTime: this.openTime,
-              closeTime: this.closeTime,
-              holidays: this.holidayDays,
-              holidayDates: this.selectedHolidayDates, // 달력에서 선택된 날짜 저장
+    enableStoreNameEditing() {
+      this.editingStoreName = true;
+    },
+    saveStoreName() {
+      if (this.storeName) {
+        this.editingStoreName = false;
+        alert('가게 이름이 변경되었습니다.');
+      } else {
+        alert('가게 이름을 입력하세요.');
+      }
+    },
+    addHolidayDate() {
+      if (this.selectedHolidayDate && !this.selectedHolidayDates.includes(this.selectedHolidayDate)) {
+        this.selectedHolidayDates.push(this.selectedHolidayDate);
+      }
+    },
+    saveStoreInfo() {
+      const auth = getAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const storeInfoRef = ref(database, `store/${user.uid}/info`);
+          set(storeInfoRef, {
+            name: this.storeName,
+            openTime: this.openTime,
+            closeTime: this.closeTime,
+            holidays: this.holidayDays,
+            holidayDates: this.selectedHolidayDates, // 달력에서 선택된 날짜 저장
+          })
+            .then(() => {
+              alert('가게 정보가 저장되었습니다.');
             })
-              .then(() => {
-                alert('가게 정보가 저장되었습니다.');
-              })
-              .catch((error) => {
-                console.error('가게 정보 저장 실패:', error);
-              });
-          }
-        });
-      },
-      fetchStoreInfo() {
-        const auth = getAuth();
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            const storeInfoRef = ref(database, `store/${user.uid}/info`);
-            onValue(storeInfoRef, (snapshot) => {
-              const data = snapshot.val();
-              if (data) {
-                this.storeName = data.name || '';
-                this.storeNameRegistered = !!data.name;
-                this.openTime = data.openTime || '';
-                this.closeTime = data.closeTime || '';
-                this.holidayDays = data.holidays || [];
-                this.selectedHolidayDates = data.holidayDates || [];
-              }
+            .catch((error) => {
+              console.error('가게 정보 저장 실패:', error);
             });
-          }
-        });
-      },
-      fetchOrders() {
-        const auth = getAuth();
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            const ordersRef = ref(database, `orders/${user.uid}`);
-            onValue(ordersRef, (snapshot) => {
-              const data = snapshot.val();
-              if (data) {
-                this.orders = Object.keys(data).map((key) => ({
-                  id: key,
-                  ...data[key],
-                }));
-              }
-            });
-          }
-        });
-      },
-      navigateTo(routeName) {
-        this.$router.push({ name: routeName });
-      },
+        }
+      });
     },
-  };
-  </script>
-  
-  <style scoped>
+    navigateTo(routeName) {
+      this.$router.push({ name: routeName });
+    },
+  },
+};
+</script>
+
+<style scoped>
 .dashboard-container {
   display: flex;
   max-width: 1200px;
@@ -202,10 +170,26 @@
 
 .sidebar {
   width: 250px;
-  background-color: #BFDC99;
+  background-color: #BFDC99; /* 기존의 초록색 유지 */
   padding: 20px;
   border-radius: 12px;
   color: black;
+}
+
+.sidebar-button {
+  background-color: #EFFAD6; /* 오른쪽 연초록색 */
+  border: none;
+  padding: 10px;
+  text-align: left;
+  font-size: 16px;
+  font-weight: bold;
+  color: #000;
+  cursor: pointer;
+  width: 100%;
+}
+
+.sidebar-button:hover {
+  background-color: #D5F2C1; /* 호버 시의 연초록색 */
 }
 
 h2 {
@@ -216,7 +200,7 @@ h2 {
   text-align: center;
 }
 
-.info-section, .order-section {
+.info-section {
   margin-bottom: 30px;
 }
 
@@ -274,26 +258,6 @@ input[type="text"]:focus, input[type="time"]:focus, input[type="date"]:focus {
   color: #555;
 }
 
-.order-section {
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.order-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.order-item {
-  padding: 10px;
-  border-radius: 8px;
-  background-color: #fafafa;
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.03);
-}
-
 .actions {
   display: flex;
   justify-content: center;
@@ -313,7 +277,7 @@ input[type="text"]:focus, input[type="time"]:focus, input[type="date"]:focus {
 }
 
 .action-button:hover {
-  background-color: #45a049;
+  background-color: #D5F2C1;
 }
 
 button {
