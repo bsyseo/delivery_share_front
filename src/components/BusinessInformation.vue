@@ -32,12 +32,6 @@
         <input type="text" id="address" v-model="address" placeholder="사업장 주소를 입력하세요" required />
       </div>
 
-      <!-- 운영 시간 -->
-      <div class="form-group">
-        <label for="operation-hours">운영 시간</label>
-        <input type="text" id="operation-hours" v-model="operationHours" placeholder="예: 오전 9시 ~ 오후 6시" required />
-      </div>
-
       <!-- 사업자등록증 -->
       <div class="form-group">
         <label for="business-license">사업자등록증 업로드</label>
@@ -86,7 +80,6 @@ export default {
       contact: '',
       registrationNumber: '',
       address: '',
-      operationHours: '', // 사용자가 직접 입력할 운영 시간 필드
       businessLicense: null,
       businessLicensePreview: null,
       businessPermit: null,
@@ -129,7 +122,6 @@ export default {
                 storeName: this.storeName,
                 ownerName: this.ownerName,
                 contact: this.contact,
-                operationHours: this.operationHours, // 사용자가 입력한 운영 시간을 저장
                 approved: 'no',  // 'no'로 초기화
                 registrant_uid: uid, // 사용자 uid 저장
                 businessLicenseUrl, // 업로드된 파일 URL 저장
