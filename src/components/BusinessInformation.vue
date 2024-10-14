@@ -7,6 +7,7 @@
         <label for="store-name">가게명</label>
         <input type="text" id="store-name" v-model="storeName" placeholder="가게명을 입력하세요" required />
       </div>
+
       <!-- 대표자명 -->
       <div class="form-group">
         <label for="owner-name">대표자명</label>
@@ -35,17 +36,6 @@
       <div class="form-group">
         <label for="operation-hours">운영 시간</label>
         <input type="text" id="operation-hours" v-model="operationHours" placeholder="예: 오전 9시 ~ 오후 6시" required />
-      </div>
-
-      <!-- 휴무일 선택 -->
-      <div class="form-group">
-        <label for="closed-days">휴무일</label>
-        <input type="date" id="closed-days" v-model="selectedClosedDay" @change="addClosedDay" placeholder="휴무일을 선택하세요" />
-        <ul>
-          <li v-for="(day, index) in closedDays" :key="index">
-            {{ day }} <button @click="removeClosedDay(index)">삭제</button>
-          </li>
-        </ul>
       </div>
 
       <!-- 사업자등록증 -->
@@ -97,8 +87,6 @@ export default {
       registrationNumber: '',
       address: '',
       operationHours: '', // 사용자가 직접 입력할 운영 시간 필드
-      selectedClosedDay: '',
-      closedDays: [],
       businessLicense: null,
       businessLicensePreview: null,
       businessPermit: null,
@@ -120,15 +108,6 @@ export default {
         };
       }
     },
-    addClosedDay() {
-      if (this.selectedClosedDay && !this.closedDays.includes(this.selectedClosedDay)) {
-        this.closedDays.push(this.selectedClosedDay);
-      }
-      this.selectedClosedDay = '';
-    },
-    removeClosedDay(index) {
-      this.closedDays.splice(index, 1);
-    },
     async submitBusinessInfo() {
       const auth = getAuth(); // Firebase Auth 객체 생성
       const storage = getStorage(); // Firebase Storage 객체 생성
@@ -147,11 +126,10 @@ export default {
               // Firebase Database에 사업자 정보 저장
               const businessInfoRef = ref(database, 'store/' + uid);
               await set(businessInfoRef, {
-                storeName : this.storeName,
+                storeName: this.storeName,
                 ownerName: this.ownerName,
                 contact: this.contact,
                 operationHours: this.operationHours, // 사용자가 입력한 운영 시간을 저장
-                closedDays: this.closedDays,
                 approved: 'no',  // 'no'로 초기화
                 registrant_uid: uid, // 사용자 uid 저장
                 businessLicenseUrl, // 업로드된 파일 URL 저장
@@ -185,7 +163,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .business-info-container {
@@ -259,15 +236,6 @@ input[type="file"] {
 
 .submit-button:hover {
   background-color: #45A049;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  margin: 5px 0;
 }
 
 * {
