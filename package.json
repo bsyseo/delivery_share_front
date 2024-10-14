@@ -12,6 +12,7 @@
     "firebase": "^10.13.2",
     "moment-timezone": "^0.5.46",
     "vue": "^3.2.13",
+    "vue-cal": "^4.10.0",
     "vue-router": "^4.0.3"
   },
   "devDependencies": {

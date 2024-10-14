@@ -107,7 +107,7 @@
     <div v-if="isPopupOpen" class="popup">
       <div class="popup-content">
         <h3>예약 정보</h3>
-        <p>메뉴 이름: {{ popupOrder.menu || selectedMenu }}</p> <!-- selectedMenu 값이 팝업에 표시됨 -->
+        <p>메뉴 이름: {{ popupOrder.menuName || selectedMenu }}</p> <!-- 예약된 메뉴 이름 표시 -->
         <p>수량: {{ popupOrder.quantity }}</p>
         <p>예약 시간: {{ formatReservationTime(popupOrder.reservationTime) }}</p>
         <button @click="closePopup">닫기</button>

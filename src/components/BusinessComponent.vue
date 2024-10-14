@@ -5,6 +5,7 @@
       <p>가게를 등록해 주세요!</p>
     </div>
 
+    <!-- 가게 타입 선택 -->
     <div class="store-type-section">
       <h3>가게 타입 선택</h3>
       <select v-model="selectedStoreType" @change="saveStoreType">
@@ -21,10 +22,12 @@
       </select>
     </div>
 
+    <!-- 지도 표시 -->
     <div class="map-wrapper">
       <div id="map"></div>
     </div>
 
+    <!-- 가게 주소 입력 -->
     <div class="address-section">
       <h3>사장님 가게 주소 입력</h3>
       <p>현재 저장된 가게 주소: <strong>{{ storeAddress ? storeAddress : '입력 필요' }}</strong></p>
@@ -35,9 +38,10 @@
       </div>
     </div>
 
+    <!-- 버튼 섹션 -->
     <div class="button-section">
       <button @click="navigateTo('business_information')">사업자 정보 등록</button>
-      <button @click="navigateTo('business_menu')">메뉴 수정</button>
+      <button @click="navigateTo('store_information')">가게 정보 입력</button>
       <button @click="navigateTo('business_advertisement')">광고 신청</button>
     </div>
   </div>

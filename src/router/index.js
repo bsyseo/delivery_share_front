@@ -20,6 +20,7 @@ import AdminStoreManagement from '@/views/AdminStoreManagement.vue';
 import AdminTemporary from '@/views/AdminTemporary.vue';
 import AdminConnectionStatistics from '@/views/AdminConnectionStatistics.vue';
 import MakingOrderView from '@/views/MakingOrder.vue';
+import StoreInformation from '@/components/store_information.vue'; // 가게 정보 입력 페이지
 
 const routes = [
   {
@@ -126,7 +127,12 @@ const routes = [
     path: '/making_order',
     name: 'MakingOrder',
     component: MakingOrderView
-  }
+  },
+  {
+    path: '/store_information',
+    name: 'store_information',
+    component: StoreInformation // 가게 정보 입력 페이지
+  }  
 ];
 
 const router = createRouter({
