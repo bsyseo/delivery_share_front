@@ -41,7 +41,7 @@
     <!-- 버튼 섹션 -->
     <div class="button-section">
       <button @click="navigateTo('business_information')">사업자 정보 등록</button>
-      <button @click="navigateTo('store_information')">가게 정보 입력</button>
+      <button @click="navigateTo('store_information')">내 페이지</button>
       <button @click="navigateTo('business_advertisement')">광고 신청</button>
     </div>
   </div>
