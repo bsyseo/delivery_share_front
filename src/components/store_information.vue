@@ -27,6 +27,12 @@
             메뉴 수정
           </button>
         </li>
+        <!-- 주문 현황 버튼 추가 -->
+        <li>
+          <button @click="navigateTo('order_status')" class="sidebar-button">
+            주문 현황
+          </button>
+        </li>
       </ul>
     </div>
     <div class="content">
