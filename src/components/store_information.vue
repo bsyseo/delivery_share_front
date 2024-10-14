@@ -4,7 +4,7 @@
         <ul class="no-bullets">
           <li>상품 관리</li>
           <li>판매 관리</li>
-          <li>청산 관리</li>
+          <li>정산 관리</li>
           <li>문의 / 상담</li>
         </ul>
       </div>
