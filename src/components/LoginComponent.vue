@@ -88,6 +88,9 @@ export default {
         this.isLoggedIn = true;
         this.role = savedRole;
         this.userName = savedUserName;
+        if (savedRole === 'admin') {
+          this.$router.push('/admin'); // Admin인 경우 바로 Admin 페이지로 이동
+        }
       }
     },
     checkUserRole(uid) {
@@ -103,7 +106,10 @@ export default {
             localStorage.setItem('role', this.role);
             localStorage.setItem('lastLoginTime', new Date().getTime());
 
-            // 사용자가 선택할 수 있도록 선택 화면을 표시함
+            // Admin 역할일 경우 바로 Admin 페이지로 이동
+            if (this.role === 'admin') {
+              this.$router.push('/admin');
+            }
           } else {
             alert('사용자의 역할 정보를 찾을 수 없습니다.');
           }
