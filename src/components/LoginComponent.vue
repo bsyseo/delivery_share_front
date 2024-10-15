@@ -24,6 +24,7 @@
       <button v-on:click="goToOrder">주문바로가기</button>
       <button v-on:click="goToMyPage">마이페이지로 가기</button>
       <button v-on:click="logout">로그아웃</button> <!-- 로그아웃 버튼 추가 -->
+      <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button> <!-- 탈퇴하기 버튼 추가 -->
     </div>
   </div>
 </template>
@@ -131,6 +132,24 @@ export default {
           console.error('로그아웃 오류:', error);
           alert('로그아웃에 실패했습니다.');
         });
+    },
+    deleteAccount() {
+      const authInstance = getAuth();
+      const user = authInstance.currentUser;
+
+      if (user) {
+        user.delete()
+          .then(() => {
+            alert('계정이 성공적으로 삭제되었습니다.');
+            this.logout(); // 로그아웃 후 리디렉션
+          })
+          .catch((error) => {
+            console.error('계정 삭제 오류:', error);
+            alert('계정 삭제에 실패했습니다. 다시 시도해주세요.');
+          });
+      } else {
+        alert('로그인된 사용자가 없습니다.');
+      }
     }
   }
 };
@@ -184,7 +203,6 @@ button {
   font-weight: bold;
   border: none;
   border-radius: 10px;
-  cursor: pointer;
 }
 
 button:hover {
@@ -202,6 +220,22 @@ button:hover {
   font-size: 14px;
   color: #444;
   text-decoration: none;
+}
+
+.delete-button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background-color: #ff4d4d; /* 탈퇴 버튼 색상 */
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+}
+
+.delete-button:hover {
+  background-color: #e60000; /* 탈퇴 버튼 호버 색상 */
 }
 
 @font-face {
