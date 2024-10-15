@@ -47,8 +47,9 @@
 </template>
 
 <script>
+/* global naver */
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getDatabase, ref, set, get } from 'firebase/database';
+import { getDatabase, ref, set, get, onValue } from 'firebase/database';
 import { auth, database } from '@/firebase';
 
 export default {
@@ -57,17 +58,15 @@ export default {
     return {
       newAddress: '', 
       selectedStoreType: '', 
+      storeAddress: null,
       map: null, 
       markers: [], 
-      storeAddress: null, 
-      deliverySpots: [ // 배달 가능한 위치들 설정
-        { lat: 35.153314, lng: 128.101379, content: '배달존 1' },
-        { lat: 35.152014, lng: 128.097579, content: '배달존 2' }
-      ]
+      deliverySpots: []
     };
   },
   mounted() {
-    if (typeof window.naver !== 'undefined') {
+    // 네이버 지도 SDK가 로드되었는지 확인하고 로드 후 initMap 실행
+    if (typeof naver !== 'undefined') {
       this.initMap();
     } else {
       const script = document.createElement('script');
@@ -75,7 +74,18 @@ export default {
       script.onload = this.initMap;
       document.head.appendChild(script);
     }
-    this.loadStoreAddress(); 
+
+    // 로그인된 사용자를 확인
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userRef = ref(database, 'users/' + user.uid + '/name');
+        onValue(userRef, (snapshot) => {
+          this.userName = snapshot.val();
+        });
+      }
+    });
+
+    this.loadStoreAddress();
     this.loadStoreType();
   },
   methods: {
@@ -149,15 +159,19 @@ export default {
       this.$router.push({ name: route });
     },
     initMap() {
+      // 네이버 지도 객체 생성
       const mapOptions = {
-        center: new window.naver.maps.LatLng(35.153114, 128.099379),
+        center: new naver.maps.LatLng(35.153114, 128.099379),
         zoom: 16
       };
-      this.map = new window.naver.maps.Map('map', mapOptions);
-      this.addMarker(35.153114, 128.099379, '가게 위치', 'red');
-      this.addDeliveryMarkers(); // 배달 가능한 위치들 마커 추가
+      this.map = new naver.maps.Map('map', mapOptions);
+
+      // 마커 추가
+      this.addMarker(35.153114, 128.099379, '경상국립대학교 가좌캠퍼스');
+      this.addMarker(35.154401, 128.092888, '항공우주산학협력관'); 
+      this.addDeliveryMarkers();
     },
-    addMarker(lat, lng, content, color = 'red') {
+    addMarker(lat, lng, content = 'Default Content', color = 'red') {
       const marker = new window.naver.maps.Marker({
         position: new window.naver.maps.LatLng(lat, lng),
         map: this.map,
@@ -181,6 +195,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .map-container {

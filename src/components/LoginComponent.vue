@@ -16,27 +16,24 @@
       <button v-on:click="login">로그인</button>
     </div>
 
-    <!-- New Div for Consumer Role -->
-    <div v-else-if="role === 'consumer'" class="login-box">
+    <!-- 선택 화면 -->
+    <div v-else class="login-box">
       <div class="header">
-        <h2>안녕하세요 {{ userName }}님</h2>
+        <h2>안녕하세요 {{ userName }}님, 무엇을 하시겠습니까?</h2>
       </div>
-      <button v-on:click="goToOrder">주문바로가기</button>
-      <button v-on:click="goToStoreInfo">마이페이지로 가기</button>
-      <button v-on:click="logout">로그아웃</button> <!-- 로그아웃 버튼 추가 -->
-      <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button> <!-- 탈퇴하기 버튼 추가 -->
-    </div>
-
-        <!-- New Div for business Role -->
-        <div v-else-if="role === 'business'" class="login-box">
-      <div class="header">
-        <h2>안녕하세요 {{ userName }}사장님</h2>
+      <!-- Consumer 선택 옵션 -->
+      <div v-if="role === 'consumer'">
+        <button v-on:click="goToOrder">주문 바로가기</button>
+        <button v-on:click="goToStoreInfo">마이페이지로 가기</button>
       </div>
-      <button v-on:click="goToMap">가게 등록</button>
-      <button v-on:click="goToStoreInfo">스토어 관리</button>
-      <button v-on:click="goToMyMenu">메뉴 관리</button>
-      <button v-on:click="logout">로그아웃</button> <!-- 로그아웃 버튼 추가 -->
-      <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button> <!-- 탈퇴하기 버튼 추가 -->
+      <!-- Business 선택 옵션 -->
+      <div v-else-if="role === 'business'">
+        <button v-on:click="goToMap">가게 등록</button>
+        <button v-on:click="goToStoreInfo">스토어 관리</button>
+        <button v-on:click="goToMyMenu">메뉴 관리</button>
+      </div>
+      <button v-on:click="logout">로그아웃</button> <!-- 로그아웃 버튼 -->
+      <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button> <!-- 탈퇴 버튼 -->
     </div>
   </div>
 </template>
@@ -54,16 +51,20 @@ export default {
       isLoggedIn: false,
       role: '',
       userName: '',
+      loginExpirationTime: 10 * 60 * 1000, // 10분 (밀리초 단위)
     };
   },
   created() {
-    // 페이지를 새로고침하거나 이동 후 돌아왔을 때 로그인 상태 확인
-    const savedRole = localStorage.getItem('role');
-    const savedUserName = localStorage.getItem('userName');
-    if (savedRole) {
-      this.isLoggedIn = true;
-      this.role = savedRole;
-      this.userName = savedUserName;
+    const lastLoginTime = localStorage.getItem('lastLoginTime');
+    const currentTime = new Date().getTime();
+    
+    if (lastLoginTime && currentTime - lastLoginTime < this.loginExpirationTime) {
+      this.autoLogin();
+    } else {
+      this.isLoggedIn = false;
+      localStorage.removeItem('lastLoginTime');
+      localStorage.removeItem('role');
+      localStorage.removeItem('userName');
     }
   },
   methods: {
@@ -72,28 +73,37 @@ export default {
       signInWithEmailAndPassword(authInstance, this.email, this.password)
         .then((userCredential) => {
           const user = userCredential.user;
-          // Firebase Realtime Database에서 해당 유저의 role을 확인
           this.checkUserRole(user.uid);
+          localStorage.setItem('lastLoginTime', new Date().getTime());
         })
         .catch((error) => {
           console.error('로그인 오류:', error);
           alert('로그인에 실패했습니다. 다시 시도해주세요.');
         });
     },
+    autoLogin() {
+      const savedRole = localStorage.getItem('role');
+      const savedUserName = localStorage.getItem('userName');
+      if (savedRole) {
+        this.isLoggedIn = true;
+        this.role = savedRole;
+        this.userName = savedUserName;
+      }
+    },
     checkUserRole(uid) {
       const db = getDatabase();
-      const userRef = ref(db, `users/${uid}/role`); // uid에 해당하는 사용자의 role을 가져옴
-      const userNameRef = ref(db, `users/${uid}/name`); // uid에 해당하는 사용자의 이름 가져옴
+      const userRef = ref(db, `users/${uid}/role`); 
+      const userNameRef = ref(db, `users/${uid}/name`); 
 
       get(userRef)
         .then((snapshot) => {
           if (snapshot.exists()) {
             this.role = snapshot.val();
-            this.isLoggedIn = true; // Set logged in state
-            localStorage.setItem('role', this.role); // localStorage에 역할 저장
-            if (this.role !== 'consumer') {
-              this.routeByRole(this.role); // If not a consumer, route immediately
-            }
+            this.isLoggedIn = true; 
+            localStorage.setItem('role', this.role);
+            localStorage.setItem('lastLoginTime', new Date().getTime());
+
+            // 사용자가 선택할 수 있도록 선택 화면을 표시함
           } else {
             alert('사용자의 역할 정보를 찾을 수 없습니다.');
           }
@@ -103,50 +113,36 @@ export default {
           alert('사용자 정보 확인 중 오류가 발생했습니다.');
         });
 
-      // 사용자 이름 저장
       get(userNameRef)
         .then((snapshot) => {
           if (snapshot.exists()) {
             this.userName = snapshot.val();
-            localStorage.setItem('userName', this.userName); // localStorage에 사용자 이름 저장
+            localStorage.setItem('userName', this.userName);
           }
         });
     },
-    routeByRole(role) {
-      // role 값에 따라 라우팅
-      if (role === 'business') {
-        this.$router.push('/business');
-      } else if (role === 'admin') {
-        this.$router.push('/admin');
-      } else {
-        alert('알 수 없는 역할입니다.');
-      }
-    },
     goToOrder() {
-      this.$router.push('/map'); // 주문바로가기
-    },
-    goToMyPage() {
-      this.$router.push('/UserMypage'); // 마이페이지로 가기
+      this.$router.push('/map'); // 주문 페이지로 이동
     },
     goToStoreInfo(){
-      this.$router.push('/store_information')
+      this.$router.push('/store_information');
     },
     goToMap(){
-      this.$router.push('/business')
+      this.$router.push('/business');
     },
     goToMyMenu(){
-      this.$router.push('/business_menu')
+      this.$router.push('/business_menu');
     },
     logout() {
       const authInstance = getAuth();
       signOut(authInstance)
         .then(() => {
-          // 로그아웃 성공 시 처리
           this.isLoggedIn = false;
           this.role = '';
           this.userName = '';
-          localStorage.removeItem('role');  // localStorage에서 역할 삭제
-          localStorage.removeItem('userName');  // localStorage에서 이름 삭제
+          localStorage.removeItem('role');  
+          localStorage.removeItem('userName');  
+          localStorage.removeItem('lastLoginTime'); 
           this.$router.push('/');  // 로그인 페이지로 이동
         })
         .catch((error) => {
@@ -177,7 +173,6 @@ export default {
 </script>
 
 <style scoped>
-/* 기존 스타일 유지 */
 .login-box {
   background-color: rgba(255, 255, 255, 0.9);
   padding: 20px;
@@ -247,7 +242,7 @@ button:hover {
   margin-top: 20px;
   width: 100%;
   padding: 12px;
-  background-color: #ff4d4d; /* 탈퇴 버튼 색상 */
+  background-color: #ff4d4d;
   color: white;
   font-size: 16px;
   font-weight: bold;
@@ -256,7 +251,7 @@ button:hover {
 }
 
 .delete-button:hover {
-  background-color: #e60000; /* 탈퇴 버튼 호버 색상 */
+  background-color: #e60000;
 }
 
 @font-face {
