@@ -21,6 +21,12 @@ import AdminTemporary from '@/views/AdminTemporary.vue';
 import AdminConnectionStatistics from '@/views/AdminConnectionStatistics.vue';
 import MakingOrderView from '@/views/MakingOrder.vue';
 import StoreInformation from '@/components/store_information.vue'; // 가게 정보 입력 페이지
+import UserMypage from '@/views/UserMypage.vue';
+import OrderHistory from '@/components/OrderHistoryComponent.vue';
+import EditUserInfo from '@/components/EditUserInfo.vue';
+import QnA_Component from '@/components/QnA_Component.vue';
+import UserReview from '@/components/review.vue';
+
 
 const routes = [
   {
@@ -132,7 +138,32 @@ const routes = [
     path: '/store_information',
     name: 'store_information',
     component: StoreInformation // 가게 정보 입력 페이지
-  }  
+  },
+  {
+    path: '/UserMypage',
+    name: 'UserMypage',
+    component: UserMypage
+  },
+  {
+    path: '/OrderHistory',
+    name: 'OrderHistory',
+    component: OrderHistory
+  },
+  {
+    path: '/EditUserInfo',
+    name: 'EditUserInfo',
+    component: EditUserInfo
+  },
+  {
+    path: '/QnA_Component',
+    name: 'QnA_Component',
+    component: QnA_Component
+  },
+  {
+    path: '/review',
+    name: 'review',
+    component: UserReview
+  }
 ];
 
 const router = createRouter({

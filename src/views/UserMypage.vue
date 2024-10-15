@@ -2,10 +2,10 @@
     <div class="mypage-container">
       <div class="sidebar">
         <ul class="no-bullets">
-          <li><router-link to="/order-history" class="sidebar-button">주문 기록</router-link></li>
-          <li><router-link to="/edit-user-info" class="sidebar-button">사용자 정보 수정</router-link></li>
-          <li><router-link to="/qna" class="sidebar-button">Q&A</router-link></li>
-          <li><router-link to="/reviews" class="sidebar-button">리뷰</router-link></li>
+          <li><router-link to="/OrderHistory" class="sidebar-button">주문 기록</router-link></li>
+          <li><router-link to="/EditUserInfo" class="sidebar-button">사용자 정보 수정</router-link></li>
+          <li><router-link to="/QnA_Component" class="sidebar-button">Q&A</router-link></li>
+          <li><router-link to="/review" class="sidebar-button">리뷰</router-link></li>
         </ul>
       </div>
       <div class="content">
@@ -30,7 +30,7 @@
   import { getDatabase, ref, get } from "firebase/database"; // Firebase import
   
   export default {
-    name: 'MyPage',
+    name: 'UserMypage',
     data() {
       return {
         userName: '', // Firebase에서 가져올 데이터

@@ -28,4 +28,3 @@ export { auth, database };
 
 // Vue 앱 생성 및 라우터 사용
 createApp(App).use(router).mount('#app')
-

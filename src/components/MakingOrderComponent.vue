@@ -135,43 +135,40 @@ export default {
       this.timeAdjustmentMessage = `${inputTime.format('HH:mm')}으로 설정되었습니다.`;
     },
     submitOrder() {
-      const auth = getAuth(); // Firebase Auth를 이용해 사용자 확인
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          // 현재 한국 시각을 반영한 시각 저장
-          const createdAt = moment().tz('Asia/Seoul').format(); // 한국 시각으로 설정된 주문 생성 시각
+  const auth = getAuth();
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      const createdAt = moment().tz('Asia/Seoul').format(); // Current time in Korea
+      const orderRef = ref(database, 'orders');
+      const newOrderRef = push(orderRef); // Create a new order ID
+      const orderId = newOrderRef.key; // Retrieve the order ID
 
-          // 임의의 주문 번호를 생성
-          const orderRef = ref(database, 'orders');
-          const newOrderRef = push(orderRef); // 임의의 주문 번호 생성
-          const orderId = newOrderRef.key; // 생성된 주문 번호 가져오기
+      const orderData = {
+        creatorUid: user.uid, 
+        createdAt: createdAt,
+        storeUid: this.selectedStore.id, 
+        storeType: this.selectedCategory,
+        status: 'pending',
+        reservationTime: this.pickupTime,
+        menuName: this.selectedMenu.name,  // Save the selected menu name
+        quantity: this.menuQuantity,       // Save the order quantity
+        participants: { [user.uid]: true } // Save the creator as the first participant
+      };
 
-          // 주문 데이터 구성
-          const orderData = {
-            creatorUid: user.uid, // 주문 생성자 UID
-            createdAt: createdAt, // 주문 생성 시각 (한국 시각)
-            storeUid: this.selectedStore.id, // 가게의 UID
-            storeType: this.selectedCategory, // 카테고리 선택에서 입력된 값을 storeType으로 저장
-            status: 'pending', // 주문 상태
-            reservationTime: this.pickupTime // 예약 시간 추가
-          };
-
-          // 주문 정보 저장
-          set(newOrderRef, orderData)
-            .then(() => {
-              console.log(`주문 정보가 저장되었습니다. 주문 번호: ${orderId}`);
-
-              // member 테이블에 데이터 저장
-              this.saveMember(user.uid, orderId, this.selectedMenu.name, this.menuQuantity);
-            })
-            .catch((error) => {
-              console.error('주문 정보를 저장하는 중 오류 발생:', error);
-            });
-        } else {
-          alert('로그인이 필요합니다.');
-        }
-      });
-    },
+      set(newOrderRef, orderData)
+        .then(() => {
+          console.log(`Order saved successfully. Order ID: ${orderId}`);
+          alert('Order created successfully.');
+          this.resetForm();
+        })
+        .catch((error) => {
+          console.error('Error saving the order:', error);
+        });
+    } else {
+      alert('You need to be logged in to make an order.');
+    }
+  });
+},
     
     // member 테이블에 데이터를 저장하는 함수
     saveMember(uid, orderId, menu, quantity) {

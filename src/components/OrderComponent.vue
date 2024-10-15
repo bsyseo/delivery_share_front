@@ -74,6 +74,7 @@
             <button class="button green">배달비 무료</button>
             <button class="button green">우리 동네 인기 가게</button>
             <button class="button green">가게 검색</button>
+            <button class="button green" @click="$router.push({ name: 'UserMypage' })">마이페이지</button>
           </div>
         </div>
       </slot>
@@ -91,25 +92,39 @@
 
         <!-- 하단 시간표 박스 -->
         <div class="time-box">
-          <p v-for="order in orderList.slice(0, 4)" :key="order.id">
+          <p v-for="order in orderList.slice(0, 4)" :key="order.id" @click="showPopup(order)">
             {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
           </p>
           <!-- 스크롤을 추가하여 4개 이상의 시간이 있을 경우 더 볼 수 있게 함 -->
           <div v-if="orderList.length > 4" class="more-orders">
-            <p v-for="order in orderList.slice(4)" :key="order.id" class="scrollable-order">
+            <p v-for="order in orderList.slice(4)" :key="order.id" class="scrollable-order" @click="showPopup(order)">
               {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
             </p>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 팝업 모달 -->
+    <div v-if="isPopupVisible" class="popup-overlay" @click="closePopup">
+      <div class="popup-content">
+        <p>예약 정보</p>
+        <p><strong>예약 시간:</strong> {{ formatReservationTime(selectedOrder.reservationTime) }}</p>
+        <p><strong>메뉴:</strong> {{ selectedOrder.menuName }}</p>
+        <p><strong>수량:</strong> {{ selectedOrder.quantity }}</p>
+        <p><strong>참여 인원:</strong> {{ selectedOrder.participantsCount }}</p>
+        <button class="button green2" @click="joinOrder">참여하기</button>
+        <button class="button green2" @click="closePopup">닫기</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, query, orderByChild, get } from 'firebase/database';
+import { ref, query, orderByChild, get, update } from 'firebase/database';
 import { database } from '@/firebase'; // Firebase 설정 파일 경로
 import moment from 'moment-timezone'; // Moment.js 사용
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 export default {
   name: 'OrderComponent',
@@ -118,13 +133,18 @@ export default {
       selectedMenu: '', // 선택된 메뉴
       logos: [], // Firebase에서 가져온 로고 URL 배열
       orders: [], // Firebase에서 가져온 주문 목록
+      isPopupVisible: false, // 팝업 표시 여부
+      selectedOrder: null, // 선택된 주문 정보
     };
   },
   methods: {
+    // 선택된 메뉴에 대한 주문 목록을 Firebase에서 가져옴
     showMenuDetails(menuType) {
       this.selectedMenu = menuType;
       this.fetchOrders(); // 메뉴 타입이 선택되면 주문 목록 가져오기
     },
+
+    // 주문 목록을 Firebase에서 가져와 그룹화함
     fetchOrders() {
       const ordersRef = query(ref(database, 'orders'), orderByChild('reservationTime'));
 
@@ -132,16 +152,11 @@ export default {
         .then((snapshot) => {
           if (snapshot.exists()) {
             const allOrders = snapshot.val();
-            const now = moment().tz('Asia/Seoul');
             const groupedOrders = {};
 
             Object.keys(allOrders).forEach((key) => {
               const order = allOrders[key];
-              if (
-                order.reservationTime &&
-                order.storeType === this.selectedMenu && // 선택된 메뉴와 storeType이 일치하는 주문만 필터링
-                order.reservationTime > now.toISOString() // 현재 시간 이후의 주문만 필터링
-              ) {
+              if (order.storeType === this.selectedMenu) {
                 const storeUid = order.storeUid;
                 if (!groupedOrders[storeUid]) {
                   groupedOrders[storeUid] = [];
@@ -153,7 +168,6 @@ export default {
               }
             });
 
-            // 각 storeUid별로 시간순 정렬 후 최대 4개의 주문만 표시
             Object.keys(groupedOrders).forEach((storeUid) => {
               groupedOrders[storeUid].sort(
                 (a, b) => new Date(a.reservationTime) - new Date(b.reservationTime)
@@ -161,7 +175,7 @@ export default {
             });
 
             this.orders = groupedOrders;
-            this.fetchLogos(); // 로고도 같이 가져옴
+            this.fetchLogos();
           } else {
             this.orders = {};
           }
@@ -170,7 +184,8 @@ export default {
           console.error('주문 정보를 가져오는 데 실패했습니다:', error);
         });
     },
-    
+
+    // 가게 로고를 Firebase에서 가져옴
     fetchLogos() {
       Object.keys(this.orders).forEach((storeUid) => {
         const logoRef = ref(database, `store/${storeUid}/logo`);
@@ -188,28 +203,86 @@ export default {
           });
       });
     },
-    
+
+    // 예약 시간 포맷
     formatReservationTime(reservationTime) {
-      const now = moment().tz('Asia/Seoul');
       const time = moment(reservationTime).tz('Asia/Seoul');
-      const dayDiff = time.diff(now, 'days');
-
       const formattedTime = time.format('HH:mm');
-      let dayIndicator = '';
-      if (dayDiff === 1) {
-        dayIndicator = ' (D+1)';
-      } else if (dayDiff === 2) {
-        dayIndicator = ' (D+2)';
-      }
+      return `${formattedTime}`;
+    },
 
-      return `${formattedTime}${dayIndicator}`;
+    // 팝업을 보여주고 주문 정보 표시
+    showPopup(order) {
+      this.selectedOrder = order;
+      this.isPopupVisible = true;
     },
-    goToMyPage() {
-      this.$router.push({ name: 'MyPage' }); // MyPage로 라우팅
+
+    // 팝업 닫기
+    closePopup() {
+      this.isPopupVisible = false;
+      this.selectedOrder = null;
     },
-  },
+
+    // 주문 참여하기
+    joinOrder() {
+      const auth = getAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const participantsCount = this.selectedOrder.participantsCount || 1; // 참여 인원 기본값 1
+          const updatedParticipantsCount = participantsCount + 1; // 참여 인원 증가
+
+          const orderRef = ref(database, `orders/${this.selectedOrder.id}`);
+          update(orderRef, { participantsCount: updatedParticipantsCount }) // 참여 인원 업데이트
+            .then(() => {
+              alert('예약에 참여하셨습니다.');
+              this.fetchOrders(); // 참여 후 주문 목록 새로고침
+            })
+            .catch((error) => {
+              console.error('예약에 참여하는 데 실패했습니다:', error);
+            });
+        } else {
+          alert('로그인이 필요합니다.');
+        }
+      });
+    }
+  }
 };
 </script>
+
+
+<style scoped>
+/* 팝업 스타일 */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.popup-content button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+</style>
 
 
 <style scoped>
@@ -316,6 +389,16 @@ export default {
     inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
 }
 
+.button.green2 {
+  background-color: #EFFAD6;
+  color: black;
+  margin: 5px;
+  box-shadow: 
+    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
+    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
+}
+
+
 .button:hover {
   transform: translateY(-2px);
   box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.15);
@@ -399,5 +482,15 @@ export default {
   max-width: 1200px; /* 큰 화면에서의 최대 너비 설정 */
   margin: 30px auto;
 }
+
+@font-face {
+  font-family: 'NanumSquareRound';
+  src: url('@/assets/font/NANUMSQUAREROUNDOTFB.OTF') format('opentype');
+}
+
+* {
+  font-family: 'NanumSquareRound', sans-serif;
+}
+
 
 </style>

@@ -245,7 +245,7 @@
   }
   
   .sidebar {
-    margin-top: 7vh;
+    margin-top: 4vh;
     width: 250px;
     background-color: #BFDC99;
     padding: 20px;

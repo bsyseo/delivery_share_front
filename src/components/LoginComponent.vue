@@ -113,7 +113,7 @@ export default {
       this.$router.push('/map'); // 주문바로가기
     },
     goToMyPage() {
-      this.$router.push('/mypage'); // 마이페이지로 가기
+      this.$router.push('/UserMypage'); // 마이페이지로 가기
     },
     logout() {
       const authInstance = getAuth();

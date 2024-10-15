@@ -2,6 +2,7 @@
   <div class="map-container">
     <!-- 헤더 부분 -->
     <div class="header">
+      <h2>{{ userName }}님 환영합니다</h2>
       <p>원하는 배달 장소를 지도에서 선택하세요!</p>
     </div>
 
@@ -85,10 +86,6 @@ export default {
       });
 
       this.markers.push(marker);
-    },
-    goToMyPage() {
-      // 내 페이지로 이동하는 함수 (라우터 설정에 따라 경로 변경)
-      this.$router.push({ name: 'my_page' });
     }
   }
 };
@@ -121,25 +118,6 @@ export default {
 .header p {
   font-size: 18px;
   color: #777;
-}
-
-.my-page-button {
-  margin-bottom: 20px;
-}
-
-.my-page-button button {
-  background-color: #EFFAD6;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.my-page-button button:hover {
-  background-color: #D5F2C1;
 }
 
 .delivery-spot {

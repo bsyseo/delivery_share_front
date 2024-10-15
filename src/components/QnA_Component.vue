@@ -40,7 +40,7 @@
   
   <script>
   export default {
-    name: 'QnA',
+    name: 'QnA_Component',
     data() {
       return {
         newQuestion: '',

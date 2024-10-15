@@ -141,9 +141,8 @@ export default {
         }
       });
     },
-    // 이 함수는 라우트로 이동할 수 있도록 합니다.
-    navigateTo(routeName) {
-      this.$router.push({ name: routeName });
+    navigateTo(route) {
+      this.$router.push({ name: route });
     },
     initMap() {
       const mapOptions = {

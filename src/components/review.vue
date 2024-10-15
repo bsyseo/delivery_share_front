@@ -21,7 +21,7 @@
   
   <script>
   export default {
-    name: 'UserReviews',
+    name: 'UserReview',
     data() {
       return {
         newReview: '',
