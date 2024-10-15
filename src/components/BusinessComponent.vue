@@ -3,6 +3,12 @@
     <div class="header">
       <h2>사장님, 환영합니다.</h2>
       <p>가게를 등록해 주세요!</p>
+      
+      <!-- 버튼 섹션 -->
+      <div class="button-section">
+        <button @click="navigateTo('business_information')">사업자 정보 등록</button>
+        <button @click="navigateTo('business_advertisement')">광고 신청</button>
+      </div>
     </div>
 
     <!-- 가게 타입 선택 -->
@@ -37,13 +43,6 @@
         <button @click="saveAddress">저장하기</button>
       </div>
     </div>
-
-    <!-- 버튼 섹션 -->
-    <div class="button-section">
-      <button @click="navigateTo('business_information')">사업자 정보 등록</button>
-      <button @click="navigateTo('store_information')">스토어 관리</button>
-      <button @click="navigateTo('business_advertisement')">광고 신청</button>
-    </div>
   </div>
 </template>
 
@@ -60,7 +59,11 @@ export default {
       selectedStoreType: '', 
       map: null, 
       markers: [], 
-      storeAddress: null 
+      storeAddress: null, 
+      deliverySpots: [ // 배달 가능한 위치들 설정
+        { lat: 35.153314, lng: 128.101379, content: '배달존 1' },
+        { lat: 35.152014, lng: 128.097579, content: '배달존 2' }
+      ]
     };
   },
   mounted() {
@@ -86,6 +89,7 @@ export default {
             .then((snapshot) => {
               if (snapshot.exists()) {
                 this.storeAddress = snapshot.val(); 
+                this.addMarker(35.153114, 128.099379, '가게 위치', 'red');
               } else {
                 this.storeAddress = null; 
               }
@@ -150,12 +154,16 @@ export default {
         zoom: 16
       };
       this.map = new window.naver.maps.Map('map', mapOptions);
-      this.addMarker(35.153114, 128.099379, '가게 위치');
+      this.addMarker(35.153114, 128.099379, '가게 위치', 'red');
+      this.addDeliveryMarkers(); // 배달 가능한 위치들 마커 추가
     },
-    addMarker(lat, lng, content) {
+    addMarker(lat, lng, content, color = 'red') {
       const marker = new window.naver.maps.Marker({
         position: new window.naver.maps.LatLng(lat, lng),
-        map: this.map
+        map: this.map,
+        icon: {
+          content: `<div style="background-color:${color}; width:15px; height:15px; border-radius:50%; border: 2px solid white;"></div>`
+        }
       });
       const infoWindow = new window.naver.maps.InfoWindow({
         content: `<div style="padding:10px;">${content}</div>`
@@ -164,6 +172,11 @@ export default {
         infoWindow.open(this.map, marker);
       });
       this.markers.push(marker);
+    },
+    addDeliveryMarkers() {
+      this.deliverySpots.forEach(spot => {
+        this.addMarker(spot.lat, spot.lng, spot.content, 'blue');
+      });
     }
   }
 };
@@ -185,6 +198,9 @@ export default {
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .header h2 {
@@ -196,6 +212,31 @@ export default {
 .header p {
   font-size: 18px;
   color: #777;
+  margin-bottom: 20px;
+}
+
+.button-section {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.button-section button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.button-section button:hover {
+  background-color: #45a049;
+  transform: translateY(-3px);
 }
 
 .store-type-section {
@@ -264,35 +305,5 @@ export default {
 .address-input button:hover {
   background-color: #45a049;
   transform: translateY(-3px);
-}
-
-.button-section {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.button-section button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.button-section button:hover {
-  background-color: #45a049;
-  transform: translateY(-3px);
-}
-
-.button-section button:focus {
-  outline: none;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
 }
 </style>

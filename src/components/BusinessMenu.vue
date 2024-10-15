@@ -4,21 +4,6 @@
 
     <!-- 가게 타입 및 로고 업로드 -->
     <form @submit.prevent="uploadLogo">
-      <div class="store-type-section">
-        <label for="storeType">가게 타입 선택</label>
-        <select v-model="selectedStoreType" class="custom-select">
-          <option disabled value="">가게 타입을 선택하세요</option>
-          <option value="한식">한식</option>
-          <option value="일식">일식</option>
-          <option value="치킨">치킨</option>
-          <option value="피자">피자</option>
-          <option value="아시안푸드">아시안푸드</option>
-          <option value="패스트푸드">패스트푸드</option>
-          <option value="양식">양식</option>
-          <option value="디저트">디저트</option>
-          <option value="건강식">건강식</option>
-        </select>
-      </div>
 
       <div class="logo-section">
         <label for="logo">로고 업로드</label>
@@ -80,7 +65,6 @@ export default {
   name: 'BusinessMenu',
   data() {
     return {
-      selectedStoreType: '',
       logoFile: null,
       menuName: '',
       menuPrice: '',
@@ -95,7 +79,6 @@ export default {
   },
   mounted() {
     this.fetchMenus();
-    this.fetchStoreType();
     this.fetchStoreLogo();
   },
   methods: {
@@ -193,17 +176,6 @@ export default {
                 ...data[key]
               }));
             }
-          });
-        }
-      });
-    },
-    fetchStoreType() {
-      const auth = getAuth();
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          const storeTypeRef = ref(database, `store/${user.uid}/storeType`);
-          onValue(storeTypeRef, (snapshot) => {
-            this.selectedStoreType = snapshot.val();
           });
         }
       });

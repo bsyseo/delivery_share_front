@@ -22,7 +22,19 @@
         <h2>안녕하세요 {{ userName }}님</h2>
       </div>
       <button v-on:click="goToOrder">주문바로가기</button>
-      <button v-on:click="goToMyPage">마이페이지로 가기</button>
+      <button v-on:click="goToStoreInfo">마이페이지로 가기</button>
+      <button v-on:click="logout">로그아웃</button> <!-- 로그아웃 버튼 추가 -->
+      <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button> <!-- 탈퇴하기 버튼 추가 -->
+    </div>
+
+        <!-- New Div for business Role -->
+        <div v-else-if="role === 'business'" class="login-box">
+      <div class="header">
+        <h2>안녕하세요 {{ userName }}사장님</h2>
+      </div>
+      <button v-on:click="goToMap">가게 등록</button>
+      <button v-on:click="goToStoreInfo">스토어 관리</button>
+      <button v-on:click="goToMyMenu">메뉴 관리</button>
       <button v-on:click="logout">로그아웃</button> <!-- 로그아웃 버튼 추가 -->
       <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button> <!-- 탈퇴하기 버튼 추가 -->
     </div>
@@ -115,6 +127,15 @@ export default {
     },
     goToMyPage() {
       this.$router.push('/UserMypage'); // 마이페이지로 가기
+    },
+    goToStoreInfo(){
+      this.$router.push('/store_information')
+    },
+    goToMap(){
+      this.$router.push('/business')
+    },
+    goToMyMenu(){
+      this.$router.push('/business_menu')
     },
     logout() {
       const authInstance = getAuth();
