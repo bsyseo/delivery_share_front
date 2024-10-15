@@ -6,6 +6,11 @@
       <p>원하는 배달 장소를 지도에서 선택하세요!</p>
     </div>
 
+        <!-- 이전으로 돌아가기 버튼 -->
+    <div class="back-button-wrapper">
+      <button class="back-button" @click="goBack">홈 화면으로 돌아가기</button>
+    </div>
+
     <!-- DELIVERY SPOT 텍스트 -->
     <div class="delivery-spot">
       <h3>DELIVERY SPOT</h3>
@@ -86,6 +91,9 @@ export default {
       });
 
       this.markers.push(marker);
+    },
+    goBack() {
+      this.$router.push('/');
     }
   }
 };
@@ -146,5 +154,32 @@ export default {
   width: 100%;
   height: 500px;
   border-radius: 15px;
+}
+
+/* 이전으로 돌아가기 버튼 스타일 */
+.back-button-wrapper {
+  margin-top: 20px;
+}
+
+.back-button {
+  background-color: #EFFAD6;
+  border: none;
+  padding: 12px 30px;
+  font-size: 16px;
+  font-weight: bold;
+  color: black;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.back-button:hover {
+  background-color: #D5F2C1;
+  transform: translateY(-3px);
+}
+
+.back-button:active {
+  transform: translateY(0);
 }
 </style>
