@@ -11,6 +11,7 @@
         <div class="order-box">
           <!-- 첫째 줄 이미지 -->
           <div class="image-grid">
+            <!-- 이미지 항목들 -->
             <div class="image-item" @click="showMenuDetails('한식')">
               <img src="@/assets/free-icon-bibimbap-2276931.png" alt="한식">
               <p>한식</p>
@@ -90,34 +91,23 @@
 
         <!-- 하단 시간표 박스 -->
         <div class="time-box">
-          <p v-for="order in orderList.slice(0, 4)" :key="order.id" @click="openPopup(order)">
+          <p v-for="order in orderList.slice(0, 4)" :key="order.id">
             {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
           </p>
           <!-- 스크롤을 추가하여 4개 이상의 시간이 있을 경우 더 볼 수 있게 함 -->
           <div v-if="orderList.length > 4" class="more-orders">
-            <p v-for="order in orderList.slice(4)" :key="order.id" class="scrollable-order" @click="openPopup(order)">
+            <p v-for="order in orderList.slice(4)" :key="order.id" class="scrollable-order">
               {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
             </p>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- 팝업 컴포넌트 -->
-    <div v-if="isPopupOpen" class="popup">
-      <div class="popup-content">
-        <h3>예약 정보</h3>
-        <p>메뉴 이름: {{ popupOrder.menuName || selectedMenu }}</p> <!-- 예약된 메뉴 이름 표시 -->
-        <p>수량: {{ popupOrder.quantity }}</p>
-        <p>예약 시간: {{ formatReservationTime(popupOrder.reservationTime) }}</p>
-        <button @click="closePopup">닫기</button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
-import { ref, query, orderByChild, get, remove } from 'firebase/database';
+import { ref, query, orderByChild, get } from 'firebase/database';
 import { database } from '@/firebase'; // Firebase 설정 파일 경로
 import moment from 'moment-timezone'; // Moment.js 사용
 
@@ -128,8 +118,6 @@ export default {
       selectedMenu: '', // 선택된 메뉴
       logos: [], // Firebase에서 가져온 로고 URL 배열
       orders: [], // Firebase에서 가져온 주문 목록
-      isPopupOpen: false, // 팝업 표시 여부
-      popupOrder: {} // 팝업에 표시할 주문 정보
     };
   },
   methods: {
@@ -149,11 +137,7 @@ export default {
 
             Object.keys(allOrders).forEach((key) => {
               const order = allOrders[key];
-              const orderTime = moment(order.reservationTime);
-              // 예약 시간이 1시간 이상 지났으면 삭제
-              if (now.diff(orderTime, 'hours') >= 1) {
-                remove(ref(database, `orders/${key}`));
-              } else if (
+              if (
                 order.reservationTime &&
                 order.storeType === this.selectedMenu && // 선택된 메뉴와 storeType이 일치하는 주문만 필터링
                 order.reservationTime > now.toISOString() // 현재 시간 이후의 주문만 필터링
@@ -206,21 +190,27 @@ export default {
     },
     
     formatReservationTime(reservationTime) {
+      const now = moment().tz('Asia/Seoul');
       const time = moment(reservationTime).tz('Asia/Seoul');
-      return time.format('HH:mm');
-    },
+      const dayDiff = time.diff(now, 'days');
 
-    openPopup(order) {
-      this.popupOrder = order; // 선택된 주문 정보 저장
-      this.isPopupOpen = true; // 팝업 열기
-    },
+      const formattedTime = time.format('HH:mm');
+      let dayIndicator = '';
+      if (dayDiff === 1) {
+        dayIndicator = ' (D+1)';
+      } else if (dayDiff === 2) {
+        dayIndicator = ' (D+2)';
+      }
 
-    closePopup() {
-      this.isPopupOpen = false; // 팝업 닫기
-    }
+      return `${formattedTime}${dayIndicator}`;
+    },
+    goToMyPage() {
+      this.$router.push({ name: 'MyPage' }); // MyPage로 라우팅
+    },
   },
 };
 </script>
+
 
 <style scoped>
 .main-container {
@@ -410,38 +400,4 @@ export default {
   margin: 30px auto;
 }
 
-/* 팝업 스타일 */
-.popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.popup-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.popup-content button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.popup-content button:hover {
-  background-color: #45a049;
-}
 </style>

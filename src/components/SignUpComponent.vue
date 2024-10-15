@@ -85,7 +85,7 @@ export default {
   padding: 20px;
   border-radius: 20px;
   width: 280px;
-  height: 60vh;
+  height: 65vh;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
   text-align: left;
 }

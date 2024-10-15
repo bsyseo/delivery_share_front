@@ -41,7 +41,7 @@
     <!-- 버튼 섹션 -->
     <div class="button-section">
       <button @click="navigateTo('business_information')">사업자 정보 등록</button>
-      <button @click="navigateTo('store_information')">내 페이지</button>
+      <button @click="navigateTo('store_information')">스토어 관리</button>
       <button @click="navigateTo('business_advertisement')">광고 신청</button>
     </div>
   </div>
@@ -141,8 +141,9 @@ export default {
         }
       });
     },
-    navigateTo(route) {
-      this.$router.push({ name: route });
+    // 이 함수는 라우트로 이동할 수 있도록 합니다.
+    navigateTo(routeName) {
+      this.$router.push({ name: routeName });
     },
     initMap() {
       const mapOptions = {

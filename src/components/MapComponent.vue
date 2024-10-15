@@ -2,13 +2,7 @@
   <div class="map-container">
     <!-- 헤더 부분 -->
     <div class="header">
-      <h2>{{ userName }}님 환영합니다</h2>
       <p>원하는 배달 장소를 지도에서 선택하세요!</p>
-    </div>
-
-    <!-- 내 페이지 바로 가기 버튼 -->
-    <div class="my-page-button">
-      <button @click="goToMyPage">내 페이지 바로 가기</button>
     </div>
 
     <!-- DELIVERY SPOT 텍스트 -->
