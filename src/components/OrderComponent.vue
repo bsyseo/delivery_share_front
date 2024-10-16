@@ -1,6 +1,11 @@
 <template>
   <div class="main-container">
-    <!-- 초록색 배경 부분 -->
+
+    <div class="navbar">
+      <button class="button green2" @click="$router.push('/')">홈으로 가기</button>
+      <button class="button green2" @click="$router.push('/UserMypage')">마이페이지</button>
+    </div>
+
     <div class="rounded-inner-drop-shadow-box">
       <!-- 헤더 부분 -->
       <div class="header">
@@ -11,25 +16,24 @@
         <div class="order-box">
           <!-- 첫째 줄 이미지 -->
           <div class="image-grid">
-            <!-- 이미지 항목들 -->
             <div class="image-item" @click="showMenuDetails('한식')">
-              <img src="@/assets/free-icon-bibimbap-2276931.png" alt="한식">
+              <img src="@/assets/free-icon-bibimbap-2276931.png" alt="한식" />
               <p>한식</p>
             </div>
             <div class="image-item" @click="showMenuDetails('중식')">
-              <img src="@/assets/free-icon-chinese-food-3449347.png" alt="중식">
+              <img src="@/assets/free-icon-chinese-food-3449347.png" alt="중식" />
               <p>중식</p>
             </div>
             <div class="image-item" @click="showMenuDetails('일식')">
-              <img src="@/assets/sushi_1f363.png" alt="일식">
+              <img src="@/assets/sushi_1f363.png" alt="일식" />
               <p>일식</p>
             </div>
             <div class="image-item" @click="showMenuDetails('치킨')">
-              <img src="@/assets/poultry-leg_1f357.png" alt="치킨">
+              <img src="@/assets/poultry-leg_1f357.png" alt="치킨" />
               <p>치킨</p>
             </div>
             <div class="image-item" @click="showMenuDetails('피자')">
-              <img src="@/assets/pizza_1f355.png" alt="피자">
+              <img src="@/assets/pizza_1f355.png" alt="피자" />
               <p>피자</p>
             </div>
           </div>
@@ -37,38 +41,30 @@
           <!-- 둘째 줄 이미지 -->
           <div class="image-grid">
             <div class="image-item" @click="showMenuDetails('아시안푸드')">
-              <img src="@/assets/cooked-rice_1f35a.png" alt="아시안푸드">
+              <img src="@/assets/cooked-rice_1f35a.png" alt="아시안푸드" />
               <p>아시안푸드</p>
             </div>
             <div class="image-item" @click="showMenuDetails('패스트푸드')">
-              <img src="@/assets/hamburger_1f354.png" alt="패스트푸드">
+              <img src="@/assets/hamburger_1f354.png" alt="패스트푸드" />
               <p>패스트푸드</p>
             </div>
             <div class="image-item" @click="showMenuDetails('양식')">
-              <img src="@/assets/spaghetti_1f35d.png" alt="양식">
+              <img src="@/assets/spaghetti_1f35d.png" alt="양식" />
               <p>양식</p>
             </div>
             <div class="image-item" @click="showMenuDetails('디저트')">
-              <img src="@/assets/shortcake_1f370.png" alt="디저트">
+              <img src="@/assets/shortcake_1f370.png" alt="디저트" />
               <p>디저트</p>
             </div>
             <div class="image-item" @click="showMenuDetails('건강식')">
-              <img src="@/assets/green-salad_1f957.png" alt="건강식">
+              <img src="@/assets/green-salad_1f957.png" alt="건강식" />
               <p>건강식</p>
             </div>
           </div>
         </div>
 
-        <!-- 초록색 박스 내부의 네모 버튼 -->
-        <div class="order-box2">
-          <div class="white-box"></div>
-          <div class="white-box"></div>
-          <div class="white-box"></div>
-        </div>
-
-        <!-- 옵션 -->
         <div class="option">
-          <div class="button-container">
+          <div class="button-option">
             <button class="button green" @click="$router.push({ name: 'MakingOrder' })">예약 만들기</button>
             <button class="button green">오늘의 이벤트</button>
             <button class="button green">배달비 무료</button>
@@ -77,83 +73,110 @@
             <button class="button green" @click="$router.push({ name: 'UserMypage' })">마이페이지</button>
           </div>
         </div>
+
+        <!-- 초록색 박스 내부의 네모 버튼 -->
+        <div class="order-box2">
+          <div class="white-box"></div>
+        </div>
+
+        <!-- 로고 박스와 타임 박스를 한 쌍으로 표시, white-box 바로 아래에 위치 -->
+        <div v-if="selectedMenu" class="logo-time-wrapper">
+          <div v-for="(orderList, storeUid) in orders" :key="storeUid" class="logo-time-pair">
+            <!-- 상단 로고 박스 -->
+            <div class="logo-box">
+              <img v-if="logos[storeUid]" :src="logos[storeUid]" alt="Store Logo" />
+              <div v-else>로고 없음</div>
+            </div>
+
+            <!-- 하단 시간표 박스 -->
+            <div class="time-box">
+              <p v-for="order in orderList.slice(0, 4)" :key="order.id" @click="showPopup(order)">
+                {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
+              </p>
+              <div v-if="orderList.length > 4" class="more-orders">
+                <p v-for="order in orderList.slice(4)" :key="order.id" class="scrollable-order" @click="showPopup(order)">
+                  {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </slot>
     </div>
 
-    <!-- 로고 박스와 타임 박스를 한 쌍으로 표시 -->
-    <div v-if="selectedMenu" class="bottom-grid">
-      <div v-for="(orderList, storeUid) in orders" :key="storeUid" class="logo-time-pair">
-        <!-- 상단 로고 박스 -->
-        <div class="logo-box">
-          <!-- 로고 이미지가 있을 경우에만 표시 -->
-          <img v-if="logos[storeUid]" :src="logos[storeUid]" alt="Store Logo" />
-          <div v-else>로고 없음</div> <!-- 로고가 없을 때 빈 박스를 표시 -->
-        </div>
-
-        <!-- 하단 시간표 박스 -->
-        <div class="time-box">
-          <p v-for="order in orderList.slice(0, 4)" :key="order.id" @click="showPopup(order)">
-            {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
-          </p>
-          <!-- 스크롤을 추가하여 4개 이상의 시간이 있을 경우 더 볼 수 있게 함 -->
-          <div v-if="orderList.length > 4" class="more-orders">
-            <p v-for="order in orderList.slice(4)" :key="order.id" class="scrollable-order" @click="showPopup(order)">
-              {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 팝업 모달 -->
+    <!-- 첫 번째 팝업 -->
     <div v-if="isPopupVisible" class="popup-overlay" @click="closePopup">
       <div class="popup-content">
         <p>예약 정보</p>
-        <p><strong>예약 시간:</strong> {{ formatReservationTime(selectedOrder.reservationTime) }}</p>
-        <p><strong>메뉴:</strong> {{ selectedOrder.menuName }}</p>
-        <p><strong>수량:</strong> {{ selectedOrder.quantity }}</p>
-        <p><strong>참여 인원:</strong> {{ selectedOrder.participantsCount }}</p>
-        <button class="button green2" @click="joinOrder">참여하기</button>
+        <p><strong>예약 시간:</strong> {{ formatReservationTime(selectedOrder?.reservationTime) }}</p>
+        <p><strong>메뉴:</strong> {{ selectedOrder?.menuName }}</p>
+        <p><strong>수량:</strong> {{ selectedOrder?.quantity }}</p>
+        <p><strong>참여 인원:</strong> {{ selectedOrder?.participantsCount }}</p>
+        <button class="button green2" @click="openMenuSelection">참여하기</button>
         <button class="button green2" @click="closePopup">닫기</button>
+      </div>
+    </div>
+
+    <!-- 두 번째 팝업 -->
+    <div v-if="isMenuPopupVisible" class="popup-overlay" @click="closeMenuPopup">
+      <div class="popup-content" @click.stop> <!-- 이벤트 전파를 차단 -->
+        <p>메뉴 선택</p>
+        <p><strong>선택된 메뉴:</strong> {{ selectedMenu.name || '선택된 메뉴 없음' }}</p>
+
+        <!-- 메뉴 선택 콤보박스 -->
+        <select v-model="selectedMenuId" @click.stop>
+          <option v-for="menu in storeMenus" :key="menu.id" :value="menu.id">
+            {{ menu.name }} - {{ menu.price }}원
+          </option>
+        </select>
+
+        <!-- 수량 입력 -->
+        <p>수량</p>
+        <input type="number" v-model="menuQuantity" min="1" @click.stop />
+
+        <!-- 참여 완료 버튼 -->
+        <button class="button green2" @click.stop="confirmMenuSelection">참여 완료</button>
+        <button class="button green2" @click.stop="closeMenuPopup">닫기</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, query, orderByChild, get, update } from 'firebase/database';
+import { ref, query, orderByChild, get, update, push, set } from 'firebase/database';
 import { database } from '@/firebase'; // Firebase 설정 파일 경로
-import moment from 'moment-timezone'; // Moment.js 사용
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 export default {
   name: 'OrderComponent',
   data() {
     return {
-      selectedMenu: '', // 선택된 메뉴
-      logos: [], // Firebase에서 가져온 로고 URL 배열
-      orders: [], // Firebase에서 가져온 주문 목록
-      isPopupVisible: false, // 팝업 표시 여부
+      selectedMenu: '',
+      logos: [],
+      orders: [],
+      isPopupVisible: false, // 첫 번째 팝업의 표시 상태
+      isMenuPopupVisible: false, // 두 번째 팝업의 표시 상태
+      storeMenus: [], // A 사용자가 선택한 가게의 메뉴 목록
       selectedOrder: null, // 선택된 주문 정보
+      selectedStoreName: '', // A가 선택한 가게 이름
+      selectedMenuId: '', // B가 선택할 메뉴 ID
+      menuQuantity: 1, // B가 선택할 수량
+      currentUserId: 'B_USER_UID', // B의 사용자 UID (실제로는 인증 정보를 사용해야 함)
     };
   },
   methods: {
-    // 선택된 메뉴에 대한 주문 목록을 Firebase에서 가져옴
+    // 카테고리에 따라 주문을 가져오는 함수
     showMenuDetails(menuType) {
       this.selectedMenu = menuType;
-      this.fetchOrders(); // 메뉴 타입이 선택되면 주문 목록 가져오기
+      this.fetchOrders();
     },
-
-    // 주문 목록을 Firebase에서 가져와 그룹화함
+    // Firebase에서 주문 정보를 가져오는 함수
     fetchOrders() {
       const ordersRef = query(ref(database, 'orders'), orderByChild('reservationTime'));
-
       get(ordersRef)
         .then((snapshot) => {
           if (snapshot.exists()) {
             const allOrders = snapshot.val();
             const groupedOrders = {};
-
             Object.keys(allOrders).forEach((key) => {
               const order = allOrders[key];
               if (order.storeType === this.selectedMenu) {
@@ -161,19 +184,12 @@ export default {
                 if (!groupedOrders[storeUid]) {
                   groupedOrders[storeUid] = [];
                 }
-                groupedOrders[storeUid].push({
-                  id: key,
-                  ...order,
-                });
+                groupedOrders[storeUid].push({ id: key, ...order });
               }
             });
-
             Object.keys(groupedOrders).forEach((storeUid) => {
-              groupedOrders[storeUid].sort(
-                (a, b) => new Date(a.reservationTime) - new Date(b.reservationTime)
-              );
+              groupedOrders[storeUid].sort((a, b) => new Date(a.reservationTime) - new Date(b.reservationTime));
             });
-
             this.orders = groupedOrders;
             this.fetchLogos();
           } else {
@@ -184,8 +200,7 @@ export default {
           console.error('주문 정보를 가져오는 데 실패했습니다:', error);
         });
     },
-
-    // 가게 로고를 Firebase에서 가져옴
+    // Firebase에서 가게 로고 정보를 가져오는 함수
     fetchLogos() {
       Object.keys(this.orders).forEach((storeUid) => {
         const logoRef = ref(database, `store/${storeUid}/logo`);
@@ -199,178 +214,178 @@ export default {
           })
           .catch((error) => {
             console.error('로고를 가져오는 데 실패했습니다:', error);
-            this.$set(this.logos, storeUid, '');
           });
       });
     },
-
-    // 예약 시간 포맷
+    // 예약 시간 형식 변환 함수
     formatReservationTime(reservationTime) {
-      const time = moment(reservationTime).tz('Asia/Seoul');
-      const formattedTime = time.format('HH:mm');
-      return `${formattedTime}`;
+      const time = new Date(reservationTime);
+      return time.getHours() + ':' + time.getMinutes();
     },
-
-    // 팝업을 보여주고 주문 정보 표시
+    // 첫 번째 팝업을 보여주고 예약 정보를 표시하는 함수
     showPopup(order) {
       this.selectedOrder = order;
-      this.isPopupVisible = true;
+      this.isPopupVisible = true; // 첫 번째 팝업 표시
     },
-
-    // 팝업 닫기
+    // 첫 번째 팝업 닫기 함수
     closePopup() {
       this.isPopupVisible = false;
       this.selectedOrder = null;
     },
+    // 첫 번째 팝업에서 "참여하기"를 누르면 두 번째 팝업을 표시
+    openMenuSelection() {
+      if (this.selectedOrder) {
+        this.isMenuPopupVisible = true;
+        this.fetchStoreMenus(this.selectedOrder.storeUid); // A가 선택한 가게의 메뉴를 가져옴
+        this.selectedStoreName = this.selectedOrder.storeName; // A가 선택한 가게 이름 저장
+      }
+    },
+    // A 사용자가 선택한 가게의 메뉴만 가져오는 함수 (storeUid 사용)
+    fetchStoreMenus(storeUid) {
+      const menusRef = ref(database, `store/${storeUid}/menu`); // menu 경로에서 가져옴
+      get(menusRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            this.storeMenus = Object.keys(snapshot.val()).map(key => ({
+              id: key,
+              ...snapshot.val()[key],
+            }));
+          } else {
+            this.storeMenus = [];
+          }
+        })
+        .catch((error) => {
+          console.error('메뉴를 가져오는 데 실패했습니다:', error);
+        });
+    },
+    // 두 번째 팝업에서 B 사용자가 선택한 메뉴와 수량을 저장하는 함수
+    confirmMenuSelection() {
+      // selectedOrder와 storeMenus가 유효한지 먼저 확인
+      if (!this.selectedOrder || !this.storeMenus.length) {
+        alert('선택된 주문이나 메뉴가 없습니다.');
+        return;
+      }
 
-    // 주문 참여하기
-    joinOrder() {
-      const auth = getAuth();
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          const participantsCount = this.selectedOrder.participantsCount || 1; // 참여 인원 기본값 1
-          const updatedParticipantsCount = participantsCount + 1; // 참여 인원 증가
+      // 선택된 메뉴 ID가 있는지 확인
+      if (!this.selectedMenuId) {
+        alert('메뉴를 선택해주세요.');
+        return;
+      }
 
-          const orderRef = ref(database, `orders/${this.selectedOrder.id}`);
-          update(orderRef, { participantsCount: updatedParticipantsCount }) // 참여 인원 업데이트
-            .then(() => {
-              alert('예약에 참여하셨습니다.');
-              this.fetchOrders(); // 참여 후 주문 목록 새로고침
-            })
-            .catch((error) => {
-              console.error('예약에 참여하는 데 실패했습니다:', error);
-            });
-        } else {
-          alert('로그인이 필요합니다.');
-        }
-      });
+      // storeMenus 배열에서 selectedMenuId에 해당하는 메뉴를 찾음
+      const selectedMenu = this.storeMenus.find(menu => menu && menu.id === this.selectedMenuId);
+
+      // selectedMenu가 null이거나 undefined일 때 예외 처리
+      if (!selectedMenu) {
+        alert('유효한 메뉴가 선택되지 않았습니다.');
+        return;
+      }
+
+      const orderDetails = {
+        menuName: selectedMenu.name,
+        price: selectedMenu.price,
+        quantity: this.menuQuantity,
+      };
+
+      // Firebase에서 A의 주문 참여자 수 업데이트
+      const orderRef = ref(database, `orders/${this.selectedOrder.id}`);
+      const updatedParticipants = (this.selectedOrder.participantsCount || 0) + 1;
+
+      update(orderRef, { participantsCount: updatedParticipants })
+        .then(() => {
+          // B의 새로운 주문을 Firebase에 추가
+          const newOrderRef = push(ref(database, 'orders'));
+          const newOrderData = {
+            creatorUid: this.currentUserId, // B의 UID
+            storeUid: this.selectedOrder.storeUid,
+            storeType: this.selectedOrder.storeType,
+            reservationTime: this.selectedOrder.reservationTime, // A의 예약 시간
+            menuName: orderDetails.menuName,
+            quantity: orderDetails.quantity,
+            participantsCount: 1, // B의 새로운 주문에서는 B만 참여자로 설정
+            createdAt: new Date().toISOString(), // 주문 생성 시간
+          };
+
+          return set(newOrderRef, newOrderData);
+        })
+        .then(() => {
+          alert(`참여 완료! 선택된 메뉴: ${orderDetails.menuName}, 수량: ${orderDetails.quantity}, 총 가격: ${orderDetails.price * orderDetails.quantity}원`);
+          this.closeMenuPopup();
+        })
+        .catch((error) => {
+          console.error('참여 처리 중 오류 발생:', error);
+          alert('참여 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
+        });
+    },
+
+    // 두 번째 팝업에서 총 가격을 계산하는 함수
+    calculateTotalPrice() {
+      const selectedMenu = this.storeMenus.find((menu) => menu.id === this.selectedMenuId);
+      if (selectedMenu) {
+        return selectedMenu.price * this.menuQuantity;
+      }
+      return 0;
+    },
+    // 두 번째 팝업 닫기 함수
+    closeMenuPopup() {
+      this.isMenuPopupVisible = false;
+      this.selectedMenuId = '';
+      this.menuQuantity = 1;
+    },
+    // 팝업의 클릭 종료 문제 해결
+    stopEventPropagation(event) {
+      event.stopPropagation(); // 이벤트 전파 중단
     }
-  }
+  },
 };
 </script>
 
 
+
 <style scoped>
-/* 팝업 스타일 */
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
+.navbar {
+  width: 40%;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.popup-content {
-  background-color: white;
+  justify-content: center; /* 오른쪽에 버튼 정렬 */
   padding: 20px;
-  border-radius: 8px;
-  text-align: center;
+  margin-bottom: 3vh;
+  background-color: #EFFAD6;
+  border-radius: 10px;
 }
 
-.popup-content button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+.navbar .button {
+  margin-left: 10px; /* 버튼 간 간격 */
 }
 
-</style>
-
-
-<style scoped>
 .main-container {
-  width: 100%;
+  background: #B2D8B6;
+  height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 20px;
 }
 
 /* 헤더 스타일 */
 .header {
   width: 100%;
-  height: 5vh;
-  padding: 5px;
+  height: 7vh;
+  padding: 10px;
   background-color: #EFFAD6;
   border-radius: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
+    0px 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0px 2px 4px rgba(255, 255, 255, 0.5);
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 20px;
 }
 
-/* 초록색 박스 내부 스타일 */
-.order-box {
-  width: 80%;
-  margin: 5px auto;
-  padding: 5px;
-  background-color: #BFDC99;
-  border-radius: 25px;
-  box-shadow: 0px 3.14px 3.14px 0px rgba(0, 0, 0, 0.25);
-}
-
-.image-grid {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 3px;
-}
-
-.image-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-}
-
-.image-item img {
-  width: 40px; 
-  height: 40px;
-  object-fit: cover;
-}
-
-.image-item p {
-  margin-top: 3px;
-  font-size: 14px;
-  text-align: center;
-}
-
-/* 초록색 박스 내부 버튼 스타일 */
-.order-box2 {
-  width: 60%;
-  margin: 2vh auto; 
-  padding: 1vh 3vw; 
-  height: 20vh; 
-  background-color: #BFDC99;
-  border-radius: 2vw;
-  box-shadow: 0px 3.14px 3.14px 0px rgba(0, 0, 0, 0.25);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* 옵션 버튼 스타일 */
-.option {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.button-container {
-  display: flex;
-  grid-gap: 10px;
-  padding: 5px;
-}
-
-.button {
+.button-option .button {
   background-color: #C8E6C9;
   color: #333;
   border: none;
@@ -380,117 +395,281 @@ export default {
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
+  margin: 3px;
 }
 
-.button.green {
+/* 옵션 버튼들의 green 클래스에 적용될 스타일 */
+.button-option .button.green {
   background-color: #EFFAD6;
   box-shadow: 
     0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
     inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
 }
 
-.button.green2 {
-  background-color: #EFFAD6;
-  color: black;
-  margin: 5px;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
+.button-option .button:hover {
+  background-color: #A5D6A7;
+  transform: translateY(-3px);
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+}
+/* 초록색 박스 내부 스타일 */
+.order-box {
+  width: 100%; 
+  padding: 20px;
+  background-color: #F3F6ED;
+  border-radius: 20px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
 }
 
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 2vh;
+}
 
-.button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.15);
+.image-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #FFFFFF;
+  border-radius: 15px;
+  padding: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.image-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.image-item img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+.image-item p {
+  font-size: 0.9rem;
+  color: #333;
 }
 
 .white-box {
-  width: 30%;
-  height: 120px;
-  background-color: white;
-  border-radius: 15px;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  height: 150px;
+  background-color: white; 
+  border-radius: 20px;
+  margin: 20px 0;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  color: #333;
 }
 
-/* 상단 박스 스타일 */
+/* 로고 박스와 타임 박스 일직선 배치 */
+.logo-time-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 20px;
+}
+
+/* 상단 로고 박스 스타일 */
 .logo-box {
-  height: 150px;
-  width: 180px;
-  background-color: white;
-  border-radius: 17px;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
+  width: 150px;
+  height: 120px;
+  background-color: #F3F6ED; 
+  border-radius: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.logo-box img {
+/* 하단 시간 박스 스타일 */
+.time-box {
+  width: 150px;
+  height: 120px;
+  background-color: #FFFDE7; /* 새로운 배경색 */
+  border-radius: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.logo-box img, .time-box p {
   width: 80%;
   height: 80%;
-  object-fit: contain; /* 이미지를 비율을 맞추면서 박스에 맞추기 */
+  object-fit: contain;
+  text-align: center;
+}
+
+/* 버튼 스타일 */
+.button {
+  background-color: #A3C09A;
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  background-color: #8FB28A;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+}
+
+.option {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  grid-gap: 10px;
+  padding: 5px;
+}
+
+/* 팝업 스타일 */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  background-color: #FFFFFF;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.popup-content button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #A3C09A;
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin: 6px;
+}
+
+.popup-content button:hover {
+  background-color: #8FB28A;
+  transform: translateY(-3px);
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* 하단 박스 스타일 */
-.time-box {
-  height: 120px;
-  width: 180px;
-  margin-top: 10px;
-  overflow-y: auto; /* 스크롤 활성화 */
-  background-color: #FAF3E0;
-  border-radius: 17px;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
+.bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-gap: 20px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 20px;
 }
 
-.more-orders {
-  max-height: 100px;
+.time-box {
+  margin-top: 10px;
+  background-color: #F9F9F9;
+  border-radius: 17px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   overflow-y: auto;
 }
 
-.scrollable-order {
+.time-box p {
+  font-size: 0.9rem;
   color: #333;
-  padding: 5px 0;
 }
 
-.rounded-inner-drop-shadow-box {
+select,
+input[type="number"] {
   width: 100%;
-  height: 60vh;
-  padding: 20px;
-  background-color: #97B762;
-  border-radius: 0 0 100px 100px;
-  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #C8E6C9;
+  border-radius: 10px;
+  background-color: #F3F6ED;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+  color: #333;
+  transition: all 0.3s ease;
+  appearance: none;
+  outline: none;
 }
 
-/* 로고와 시간표를 한 쌍으로 표시 */
-.logo-time-pair {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
+select:hover,
+input[type="number"]:hover {
+  background-color: #EFFAD6;
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.1);
 }
 
-.bottom-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr); /* 큰 화면에서는 6개의 열 */
-  grid-gap: 20px;
-  width: 90%; /* 너비를 고정값이 아닌 비율로 설정 */
-  max-width: 1200px; /* 큰 화면에서의 최대 너비 설정 */
-  margin: 30px auto;
+select:focus,
+input[type="number"]:focus {
+  border-color: #A3C09A;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-@font-face {
-  font-family: 'NanumSquareRound';
-  src: url('@/assets/font/NANUMSQUAREROUNDOTFB.OTF') format('opentype');
+select option {
+  background-color: #FFFFFF;
+  color: #333;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* select 아이콘 커스터마이즈 (콤보박스의 화살표) */
+select {
+  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23333" d="M2 0L0 2h4z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+}
+
+/* input 및 select 폼 디자인 */
+.popup-content p {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 500;
 }
 
 * {
   font-family: 'NanumSquareRound', sans-serif;
+  box-sizing: border-box;
 }
-
-
 </style>

@@ -166,7 +166,7 @@ const routes = [
     path: '/review',
     name: 'Review',
     component: UserReview
-  }
+  },
 ];
 
 const router = createRouter({

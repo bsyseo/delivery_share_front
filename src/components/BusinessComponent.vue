@@ -6,7 +6,7 @@
       
       <!-- 버튼 섹션 -->
       <div class="button-section">
-        <button @click="navigateTo('business_information')">사업자 정보 등록</button>
+        <button  @click="gobusinessinfo">사업자 정보 등록</button>
         <button @click="navigateTo('business_advertisement')">광고 신청</button>
       </div>
     </div>
@@ -191,6 +191,9 @@ export default {
       this.deliverySpots.forEach(spot => {
         this.addMarker(spot.lat, spot.lng, spot.content, 'blue');
       });
+    },
+    gobusinessinfo(){
+      this.$router.push('/business_information');
     }
   }
 };

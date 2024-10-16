@@ -6,7 +6,7 @@
       <p>원하는 배달 장소를 지도에서 선택하세요!</p>
     </div>
 
-        <!-- 이전으로 돌아가기 버튼 -->
+    <!-- 이전으로 돌아가기 버튼 -->
     <div class="back-button-wrapper">
       <button class="back-button" @click="goBack">홈 화면으로 돌아가기</button>
     </div>
@@ -70,7 +70,7 @@ export default {
 
       // 마커 추가
       this.addMarker(35.153114, 128.099379, '경상국립대학교 가좌캠퍼스');
-      this.addMarker(35.154401, 128.092888, '항공우주산학협력관'); 
+      this.addMarker(35.154401, 128.092888, '항공우주산학협력관');
     },
     addMarker(lat, lng, content) {
       const marker = new naver.maps.Marker({
@@ -85,8 +85,8 @@ export default {
 
       // 마커 클릭 이벤트
       naver.maps.Event.addListener(marker, 'click', () => {
-        // 주문 페이지로 이동하면서 마커 이름 전달
-        this.$router.push({ name: 'order', params: { markerName: content } });
+        // 주문 페이지로 이동하면서 마커 이름을 query로 전달
+        this.$router.push('/order');
         infoWindow.open(this.map, marker);
       });
 
@@ -98,7 +98,6 @@ export default {
   }
 };
 </script>
-
 <style scoped>
 .map-container {
   display: flex;

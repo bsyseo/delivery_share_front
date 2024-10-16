@@ -1,4 +1,5 @@
 <template>
+  <h2>마이페이지</h2>
   <div class="mypage-container">
     <div class="sidebar">
       <ul class="no-bullets">
@@ -9,7 +10,7 @@
       </ul>
     </div>
     <div class="content">
-      <h2>마이페이지</h2>
+      
       <div class="user-info">
         <h3>{{ userName }}님</h3>
         <p>전화번호: {{ userPhone }}</p>
@@ -205,4 +206,5 @@ h2 {
 .order-button:hover {
   background-color: #D5F2C1;
 }
+
 </style>

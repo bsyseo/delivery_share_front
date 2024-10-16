@@ -24,7 +24,7 @@
       <!-- Consumer 선택 옵션 -->
       <div v-if="role === 'consumer'">
         <button v-on:click="goToOrder">주문 바로가기</button>
-        <button v-on:click="goToStoreInfo">마이페이지로 가기</button>
+        <button v-on:click="goToMypage">마이페이지로 가기</button>
       </div>
       <!-- Business 선택 옵션 -->
       <div v-else-if="role === 'business'">
@@ -126,6 +126,9 @@ export default {
             localStorage.setItem('userName', this.userName);
           }
         });
+    },
+    goToMypage(){
+      this.$router.push('/UserMypage')
     },
     goToOrder() {
       this.$router.push('/map'); // 주문 페이지로 이동

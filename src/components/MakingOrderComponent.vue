@@ -1,6 +1,11 @@
 <template>
   <div class="wrapper">
-    <div class="making-order-form">
+    <div class="top-navigation">
+      <button class="nav-button" @click="$router.push('/')">홈 화면으로 돌아가기</button>
+      <button class="nav-button" @click="$router.push('/order')">주문 페이지로 돌아가기</button>
+    </div>
+
+    <div class="rounded-inner-drop-shadow-box making-order-form">
       <form @submit.prevent="submitOrder">
         <!-- Category selection -->
         <div class="form-group">
@@ -47,6 +52,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 // Firebase 관련 함수들 import
@@ -138,34 +144,34 @@ export default {
   const auth = getAuth();
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      const createdAt = moment().tz('Asia/Seoul').format(); // Current time in Korea
+      const createdAt = moment().tz('Asia/Seoul').format(); // 현재 시간 (한국 표준시)
       const orderRef = ref(database, 'orders');
-      const newOrderRef = push(orderRef); // Create a new order ID
-      const orderId = newOrderRef.key; // Retrieve the order ID
+      const newOrderRef = push(orderRef); // 새로운 주문 ID 생성
+      const orderId = newOrderRef.key; // 생성된 주문 ID 가져오기
 
       const orderData = {
         creatorUid: user.uid, 
         createdAt: createdAt,
-        storeUid: this.selectedStore.id, 
-        storeType: this.selectedCategory,
-        status: 'pending',
-        reservationTime: this.pickupTime,
-        menuName: this.selectedMenu.name,  // Save the selected menu name
-        quantity: this.menuQuantity,       // Save the order quantity
-        participants: { [user.uid]: true } // Save the creator as the first participant
+        storeUid: this.selectedStore.id, // 가게 UID 저장
+        storeType: this.selectedCategory, // 카테고리 저장
+        status: 'pending', // 주문 상태
+        reservationTime: this.pickupTime, // 예약 시간 저장
+        menuName: this.selectedMenu.name,  // 선택한 메뉴 이름 저장
+        quantity: this.menuQuantity,       // 주문 수량 저장
+        participants: { [user.uid]: true } // 예약 생성자를 첫 참여자로 설정
       };
 
       set(newOrderRef, orderData)
         .then(() => {
           console.log(`Order saved successfully. Order ID: ${orderId}`);
           alert('Order created successfully.');
-          this.resetForm();
+          this.resetForm(); // 폼 초기화
         })
         .catch((error) => {
           console.error('Error saving the order:', error);
         });
     } else {
-      alert('You need to be logged in to make an order.');
+      alert('로그인이 필요합니다.');
     }
   });
 },
@@ -210,88 +216,146 @@ export default {
 </script>
 
 <style scoped>
-/* 스타일 부분은 기존 코드와 동일하게 유지 */
 .wrapper {
-  display: flex;
-  justify-content: center; /* 수평 중앙 정렬 */
-  align-items: center; /* 수직 중앙 정렬 */
-  height: 100vh; /* 화면 전체 높이를 차지 */
-}
-
-.making-order-form {
+  background: #B2D8B6;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 50px;
-  background-color: #BFDC99;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.top-navigation {
+  width: 50%;
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  background-color: #EFFAD6;
   border-radius: 10px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
+  margin-bottom: 3vh;
+}
+
+.nav-button {
+  background-color: #A3C09A;
+  color: #FFF;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+  background-color: #8FB28A;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+}
+
+.making-order-form {
+  background-color: #F3F6ED;
+  border-radius: 20px;
+  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.1);
+  padding: 40px;
   width: 100%;
+  max-width: 500px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.making-order-form:hover {
+  transform: scale(1.02);
 }
 
 .form-group {
-  background-color: white; /* 각 입력 폼의 배경을 하얗게 */
-  padding: 20px;
-  text-align: center;
-  border-radius: 10px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
-  margin-bottom: 20px;
-  width: 100%;
+  margin-bottom: 24px;
+  text-align: left;
 }
 
 label {
+  display: block;
   font-size: 16px;
-  color: #333;
+  color: #555;
   margin-bottom: 10px;
-  font-weight: bold;
+  font-weight: 600;
 }
 
-input, select, textarea {
+select, input[type="number"], input[type="datetime-local"] {
   width: 100%;
   padding: 12px;
-  border: 2px solid #ccc;
-  border-radius: 10px;
   font-size: 16px;
-  transition: border-color 0.3s ease;
-  margin-top: 10px;
-  box-sizing: border-box;
-}
-
-input:focus, select:focus, textarea:focus {
-  border-color: #4CAF50; /* 초록색 포커스 테두리 */
+  border: 1px solid #C8E6C9;
+  border-radius: 10px;
+  background-color: #F3F6ED;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  color: #333;
+  transition: all 0.3s ease;
+  appearance: none;
   outline: none;
 }
 
+select:hover, input[type="number"]:hover, input[type="datetime-local"]:hover {
+  background-color: #EFFAD6;
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.1);
+}
+
+select:focus, input[type="number"]:focus, input[type="datetime-local"]:focus {
+  border-color: #A3C09A;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+select option {
+  background-color: #FFFFFF;
+  color: #333;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* select 아이콘 커스터마이즈 (콤보박스의 화살표) */
+select {
+  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23333" d="M2 0L0 2h4z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+}
+
 .submit-button {
-  padding: 12px;
-  margin-top: 15px;
-  
-  background-color: #4CAF50;
-  color: white;
+  background-color: #A3C09A;
+  color: #FFF;
   border: none;
   border-radius: 10px;
+  padding: 15px 30px;
+  font-size: 18px;
   cursor: pointer;
-  font-size: 16px;
   transition: background-color 0.3s ease, transform 0.2s ease;
-  width: 100%;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .submit-button:hover {
-  background-color: #45a049;
-  transform: translateY(-3px); /* 버튼이 살짝 떠오르는 효과 */
+  background-color: #8FB28A;
+  transform: translateY(-3px);
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .submit-button:disabled {
-  background-color: #d1d5db;
+  background-color: #A5D6A7;
   cursor: not-allowed;
 }
 
 .time-adjustment-message {
-  color: red;
   font-size: 14px;
+  color: #666;
   margin-top: 10px;
 }
+
+* {
+  font-family: 'NanumSquareRound', sans-serif;
+  box-sizing: border-box;
+}
+
 </style>
