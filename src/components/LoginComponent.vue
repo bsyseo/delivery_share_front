@@ -131,7 +131,7 @@ export default {
       this.$router.push('/map'); // 주문 페이지로 이동
     },
     goToStoreInfo(){
-      this.$router.push('/UserMypage');
+      this.$router.push('/store_information');
     },
     goToMap(){
       this.$router.push('/business');
