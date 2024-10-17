@@ -141,65 +141,63 @@ export default {
       this.timeAdjustmentMessage = `${inputTime.format('HH:mm')}으로 설정되었습니다.`;
     },
     submitOrder() {
-  const auth = getAuth();
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      const createdAt = moment().tz('Asia/Seoul').format(); // 현재 시간 (한국 표준시)
-      const orderRef = ref(database, 'orders');
-      const newOrderRef = push(orderRef); // 새로운 주문 ID 생성
-      const orderId = newOrderRef.key; // 생성된 주문 ID 가져오기
+      const auth = getAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const createdAt = moment().tz('Asia/Seoul').format();
+          const reservationTime = moment.tz(this.pickupTime, 'Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');  // 웹에서 입력한 예약 시간도 한국 시간으로 변환
+          const orderRef = ref(database, 'orders');
+          const newOrderRef = push(orderRef);
+          const orderId = newOrderRef.key;
 
-      const orderData = {
-        creatorUid: user.uid, 
-        createdAt: createdAt,
-        storeUid: this.selectedStore.id, // 가게 UID 저장
-        storeType: this.selectedCategory, // 카테고리 저장
-        status: 'pending', // 주문 상태
-        reservationTime: this.pickupTime, // 예약 시간 저장
-        menuName: this.selectedMenu.name,  // 선택한 메뉴 이름 저장
-        quantity: this.menuQuantity,       // 주문 수량 저장
-        participants: { [user.uid]: true } // 예약 생성자를 첫 참여자로 설정
-      };
+          const orderData = {
+            creatorUid: user.uid,
+            createdAt: createdAt,
+            storeUid: this.selectedStore.id,
+            storeType: this.selectedCategory,
+            status: 'pending',
+            reservationTime: reservationTime,  // 한국 시간으로 변환된 예약 시간
+            participantsCount: 1,
+          };
 
-      set(newOrderRef, orderData)
-        .then(() => {
-          console.log(`Order saved successfully. Order ID: ${orderId}`);
-          alert('Order created successfully.');
-          this.resetForm(); // 폼 초기화
-        })
-        .catch((error) => {
-          console.error('Error saving the order:', error);
-        });
-    } else {
-      alert('로그인이 필요합니다.');
-    }
-  });
-},
+          // `orders/` 경로에 저장
+          set(newOrderRef, orderData)
+            .then(() => {
+              // `member/` 경로에 참여자 정보 저장
+              this.saveMember(user.uid, orderId, this.selectedMenu.name, this.menuQuantity);
+            })
+            .catch((error) => {
+              console.error('Error saving the order:', error);
+            });
+        } else {
+          alert('로그인이 필요합니다.');
+        }
+      });
+    },
     
     // member 테이블에 데이터를 저장하는 함수
     saveMember(uid, orderId, menu, quantity) {
-      // member 테이블에 임의의 memberID를 생성하여 저장
       const memberRef = ref(database, 'member');
-      const newMemberRef = push(memberRef); // 새로운 memberID 생성
-      const memberId = newMemberRef.key; // 생성된 memberID 가져오기
-
-      // member 데이터 구성
+      const newMemberRef = push(memberRef);
+      
+      // 현재 한국 시각으로 participate_time 설정
+      const participateTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
+      
       const memberData = {
-        uid: uid, // 사용자의 uid
-        orderID: orderId, // 해당 주문의 ID
-        menu: menu, // 선택된 메뉴
-        quantity: quantity // 주문 수량
+        uid: uid,  // 사용자의 UID
+        orderID: orderId,  // 해당 주문의 ID
+        menu: menu,  // 선택된 메뉴
+        quantity: quantity,  // 주문 수량
+        participate_time: participateTime,  // 참여 시각 (한국 시각)
       };
 
-      // member 테이블에 데이터 저장
+      // `member/` 경로에 저장
       set(newMemberRef, memberData)
         .then(() => {
-          console.log(`member 데이터가 저장되었습니다. member ID: ${memberId}`);
-          alert('주문이 완료되었습니다.');
-          this.resetForm(); // 폼 초기화
+          console.log(`Member saved successfully. Member ID: ${newMemberRef.key}`);
         })
         .catch((error) => {
-          console.error('member 데이터를 저장하는 중 오류 발생:', error);
+          console.error('Error saving member data:', error);
         });
     },
 
