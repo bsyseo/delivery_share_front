@@ -10,7 +10,6 @@
 
     <!-- 가게 타입 및 로고 업로드 -->
     <form @submit.prevent="uploadLogo">
-
       <div class="logo-section">
         <label for="storeType">가게 타입 선택</label>
         <select v-model="selectedStoreType" class="custom-select" required>
@@ -133,7 +132,7 @@ export default {
         this.menuImagePreview = null;
       }
     },
-    uploadLogo() {
+    async uploadLogo() {
       if (!this.selectedStoreType || !this.logoFile) {
         alert('가게 타입과 로고를 선택해주세요.');
         return;
@@ -143,16 +142,19 @@ export default {
       const userId = auth.currentUser.uid;
       const logoStorageRef = storageRef(getStorage(), `store/${userId}/logo/${this.logoFile.name}`);
 
-      uploadBytes(logoStorageRef, this.logoFile).then(() => {
-        getDownloadURL(logoStorageRef).then((url) => {
-          const storeRef = ref(database, `store/${userId}`);
-          set(storeRef, {
-            storeType: this.selectedStoreType,
-            logo: url,
-          });
-          alert('로고와 가게 타입이 성공적으로 저장되었습니다.');
-        });
+      await uploadBytes(logoStorageRef, this.logoFile);
+      const url = await getDownloadURL(logoStorageRef);
+
+      const storeRef = ref(database, `store/${userId}`);
+      const existingDataSnapshot = await get(storeRef);
+      const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
+
+      await set(storeRef, {
+        ...existingData,
+        storeType: this.selectedStoreType,
+        logo: url,
       });
+      alert('로고와 가게 타입이 성공적으로 저장되었습니다.');
     },
     async saveMenu() {
       const auth = getAuth();
@@ -164,33 +166,28 @@ export default {
 
           const storage = getStorage();
           const imageRef = storageRef(storage, `store/${user.uid}/menus/${this.menuImage.name}`);
-          try {
-            const snapshot = await uploadBytes(imageRef, this.menuImage);
-            const imageUrl = await getDownloadURL(snapshot.ref);
+          const snapshot = await uploadBytes(imageRef, this.menuImage);
+          const imageUrl = await getDownloadURL(snapshot.ref);
 
-            // 기존 데이터를 불러오기
-            const businessInfoRef = ref(database, 'store/' + uid);
-            const existingDataSnapshot = await get(businessInfoRef);
-            const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
+          // 기존 데이터를 불러오기
+          const businessInfoRef = ref(database, 'store/' + uid);
+          const existingDataSnapshot = await get(businessInfoRef);
+          const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
 
-            // 새로운 메뉴 데이터를 추가
-            const newMenuData = {
-              name: this.menuName,
-              price: this.menuPrice,
-              description: this.menuDescription,
-              imageUrl,
-            };
+          // 새로운 메뉴 데이터를 추가
+          const newMenuData = {
+            name: this.menuName,
+            price: this.menuPrice,
+            description: this.menuDescription,
+            imageUrl,
+          };
 
-            // 기존 데이터에 새로운 메뉴를 병합하여 저장
-            await set(newMenuRef, newMenuData);
-            await set(businessInfoRef, { ...existingData, menu: { ...existingData.menu, [newMenuRef.key]: newMenuData } });
+          // 기존 데이터에 새로운 메뉴를 병합하여 저장
+          await set(newMenuRef, newMenuData);
+          await set(businessInfoRef, { ...existingData, menu: { ...existingData.menu, [newMenuRef.key]: newMenuData } });
 
-            alert('메뉴가 저장되었습니다.');
-            this.resetMenuForm();
-          } catch (error) {
-            console.error('메뉴 저장 실패:', error);
-            alert('메뉴 저장에 실패했습니다.');
-          }
+          alert('메뉴가 저장되었습니다.');
+          this.resetMenuForm();
         } else {
           alert('모든 필드를 입력하세요.');
         }
@@ -414,7 +411,6 @@ export default {
   color: #777;
 }
 
-
 .menu-list img {
   margin-top: 10px;
   border-radius: 10px;
@@ -470,5 +466,4 @@ export default {
   transform: translateY(-3px);
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
 }
-
 </style>
