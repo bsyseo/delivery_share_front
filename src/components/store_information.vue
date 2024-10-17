@@ -118,7 +118,7 @@
 
 <script>
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { ref, set, onValue } from 'firebase/database';
+import { ref, set, get, onValue } from 'firebase/database';
 import { database } from '@/firebase';
 import moment from 'moment-timezone';
 
@@ -158,6 +158,7 @@ export default {
     },
     mounted() {
         this.fetchOrders();
+        this.fetchBusinessInfo();
     },
     methods: {
         registerStoreName() {
@@ -208,12 +209,15 @@ export default {
                 this.closeDays.push(this.selectedCloseDay);
             }
         },
-        saveStoreInfo() {
+        async saveStoreInfo() {
             const auth = getAuth();
-            onAuthStateChanged(auth, (user) => {
+            onAuthStateChanged(auth, async (user) => {
                 if (user) {
-                    const storeInfoRef = ref(database, `store/${user.uid}/`);
-                    set(storeInfoRef, {
+                    const storeInfoRef = ref(database, `store/${user.uid}`);
+                    const existingDataSnapshot = await get(storeInfoRef);
+                    const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
+
+                    const newData = {
                         storeName: this.storeName,
                         operationHours: {
                             open: this.openTime,
@@ -221,13 +225,29 @@ export default {
                         },
                         dayoff: this.dayoff,
                         closeDays: this.closeDays,
-                    })
-                        .then(() => {
-                            alert('가게 정보가 저장되었습니다.');
-                        })
-                        .catch((error) => {
-                            console.error('가게 정보 저장 실패:', error);
-                        });
+                    };
+
+                    // 기존 데이터와 병합하여 저장
+                    await set(storeInfoRef, { ...existingData, ...newData });
+                    alert('가게 정보가 저장되었습니다.');
+                }
+            });
+        },
+        fetchBusinessInfo() {
+            const auth = getAuth();
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    const businessInfoRef = ref(database, `store/${user.uid}`);
+                    get(businessInfoRef).then((snapshot) => {
+                        if (snapshot.exists()) {
+                            const data = snapshot.val();
+                            this.storeName = data.storeName || '';
+                            this.openTime = data.operationHours.open || '';
+                            this.closeTime = data.operationHours.close || '';
+                            this.dayoff = data.dayoff || [];
+                            this.closeDays = data.closeDays || [];
+                        }
+                    });
                 }
             });
         },
@@ -278,6 +298,7 @@ export default {
 </script>
 
 <style scoped>
+/* 기존 스타일 유지 */
 .dashboard-container {
     display: flex;
     justify-content: center;
