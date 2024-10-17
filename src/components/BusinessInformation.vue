@@ -7,31 +7,26 @@
         <label for="store-name">가게명</label>
         <input type="text" id="store-name" v-model="storeName" placeholder="가게명을 입력하세요" required />
       </div>
-
       <!-- 대표자명 -->
       <div class="form-group">
         <label for="owner-name">대표자명</label>
         <input type="text" id="owner-name" v-model="ownerName" placeholder="대표자명을 입력하세요" required />
       </div>
-
       <!-- 연락처 -->
       <div class="form-group">
         <label for="contact">연락처</label>
         <input type="tel" id="contact" v-model="contact" placeholder="010-0000-0000" required />
       </div>
-
       <!-- 사업자 등록번호 -->
       <div class="form-group">
         <label for="registration-number">사업자 등록번호</label>
         <input type="text" id="registration-number" v-model="registrationNumber" placeholder="등록번호 10자리" required />
       </div>
-
       <!-- 사업장 주소 -->
       <div class="form-group">
         <label for="address">사업장 주소</label>
         <input type="text" id="address" v-model="address" placeholder="사업장 주소를 입력하세요" required />
       </div>
-
       <!-- 사업자등록증 -->
       <div class="form-group">
         <label for="business-license">사업자등록증 업로드</label>
@@ -40,7 +35,6 @@
           <img :src="businessLicensePreview" alt="사업자등록증 미리보기" class="preview-image" />
         </div>
       </div>
-
       <!-- 영업신고증 -->
       <div class="form-group">
         <label for="business-permit">영업신고증 업로드</label>
@@ -49,7 +43,6 @@
           <img :src="businessPermitPreview" alt="영업신고증 미리보기" class="preview-image" />
         </div>
       </div>
-
       <!-- 통장사본 -->
       <div class="form-group">
         <label for="bank-account">통장사본 업로드</label>
@@ -58,7 +51,6 @@
           <img :src="bankAccountPreview" alt="통장사본 미리보기" class="preview-image" />
         </div>
       </div>
-
       <!-- 등록 버튼 -->
       <button type="submit" class="submit-button">등록</button>
     </form>
@@ -117,7 +109,7 @@ export default {
               const bankAccountUrl = await this.uploadFileToStorage(storage, uid, 'bankAccount', this.bankAccount);
 
               // 기존 데이터를 불러오기
-              const businessInfoRef = ref(database, 'store/' + uid);
+              const businessInfoRef = ref(database, `store/${uid}`);
               const existingDataSnapshot = await get(businessInfoRef);
               const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
 
