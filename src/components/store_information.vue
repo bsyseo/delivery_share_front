@@ -3,7 +3,7 @@
       <div class="sidebar">
         <ul class="no-bullets">
           <li>
-            <button @click="navigateTo('business_menu')" class="sidebar-button">
+            <button class="sidebar-button" @click="$router.push('/business_menu')">
               가게 정보 & 메뉴
             </button>
           </li>
@@ -30,6 +30,11 @@
           <li>
             <button @click="navigateTo('order_status')" class="sidebar-button">
               주문 현황
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-button" @click="$router.push('/')">
+              Home
             </button>
           </li>
         </ul>

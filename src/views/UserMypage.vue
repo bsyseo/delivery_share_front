@@ -32,7 +32,9 @@
 </template>
 
 <script>
-import { getDatabase, ref, get } from "firebase/database";
+import { getDatabase, ref, get, query, orderByChild, equalTo } from "firebase/database";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from '@/firebase'; // Firebase 설정 파일
 
 export default {
   name: 'UserMypage',
@@ -42,41 +44,62 @@ export default {
       userPhone: '',
       recentOrders: [],
       ongoingReservations: [],
+      userUid: '', // 현재 로그인된 사용자의 UID
     };
   },
   created() {
-    this.fetchUserData();
-    this.fetchRecentOrders();
-    this.fetchOngoingReservations();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        this.fetchUserUid(user.uid); // 로그인된 사용자의 UID를 통해 userUid를 가져옵니다.
+      }
+    });
   },
   methods: {
-    fetchUserData() {
+    // 'users' 경로에서 현재 사용자의 userUid를 가져오는 함수
+    fetchUserUid(authUid) {
       const db = getDatabase();
-      const userRef = ref(db, `users/USER_ID`);
+      const userRef = ref(db, `users/${authUid}`);
       get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          this.userName = data.name;
-          this.userPhone = data.phone;
+          this.userUid = data.uid; // users 경로에 있는 UID 저장
+          this.userName = data.name; // 사용자 이름도 불러옴
+          this.userPhone = data.phone; // 사용자 전화번호도 불러옴
+          this.fetchRecentOrders(); // userUid를 가져온 후 주문 내역을 불러옵니다.
+          this.fetchOngoingReservations(); // 진행 중인 예약도 불러옵니다.
         }
+      }).catch((error) => {
+        console.error('사용자 데이터를 불러오는 중 오류 발생:', error);
       });
     },
     fetchRecentOrders() {
       const db = getDatabase();
-      const ordersRef = ref(db, `orders/USER_ID/recentOrders`);
+      const ordersRef = query(ref(db, 'orders'), orderByChild('creatorUid'), equalTo(this.userUid));
       get(ordersRef).then((snapshot) => {
         if (snapshot.exists()) {
-          this.recentOrders = snapshot.val();
+          const ordersData = snapshot.val();
+          this.recentOrders = Object.keys(ordersData).map((key) => ({
+            id: key,
+            ...ordersData[key],
+          }));
+        } else {
+          this.recentOrders = [];
         }
+      }).catch((error) => {
+        console.error('주문 내역을 불러오는 중 오류 발생:', error);
       });
     },
     fetchOngoingReservations() {
       const db = getDatabase();
-      const reservationsRef = ref(db, `reservations/USER_ID/ongoing`);
+      const reservationsRef = ref(db, `reservations/${this.userUid}/ongoing`);
       get(reservationsRef).then((snapshot) => {
         if (snapshot.exists()) {
           this.ongoingReservations = snapshot.val();
+        } else {
+          this.ongoingReservations = [];
         }
+      }).catch((error) => {
+        console.error('진행 중인 예약을 불러오는 중 오류 발생:', error);
       });
     },
     goToHome() {
@@ -88,6 +111,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 .mypage-container {

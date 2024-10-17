@@ -1,11 +1,32 @@
 <template>
   <div class="menu-container">
+    <div class="top-navigation">
+      <button class="nav-button" @click="$router.push('/')">홈 화면으로 돌아가기</button>
+      <button class="nav-button" @click="$router.push('/store_information')">스토어 관리 페이지로 돌아가기</button>
+      <button class="nav-button" @click="$router.push('/business_information')">사업자 등록 정보</button>
+    </div>
+
     <h2>메뉴 관리</h2>
 
     <!-- 가게 타입 및 로고 업로드 -->
     <form @submit.prevent="uploadLogo">
 
       <div class="logo-section">
+        <label for="storeType">가게 타입 선택</label>
+        <select v-model="selectedStoreType" class="custom-select" required>
+          <option value="">가게 타입을 선택하세요</option>
+          <option value="한식">한식</option>
+          <option value="중식">중식</option>
+          <option value="일식">일식</option>
+          <option value="치킨">치킨</option>
+          <option value="피자">피자</option>
+          <option value="아시안푸드">아시안푸드</option>
+          <option value="패스트푸드">패스트푸드</option>
+          <option value="양식">양식</option>
+          <option value="디저트">디저트</option>
+          <option value="건강식">건강식</option>
+        </select>
+
         <label for="logo">로고 업로드</label>
         <input type="file" @change="onFileChange" />
         <div v-if="storeLogoPreview" class="logo-preview">
@@ -42,6 +63,7 @@
           <strong>{{ menu.name }}</strong> - {{ menu.price }}원
           <p>{{ menu.description }}</p>
           <img v-if="menu.imageUrl" :src="menu.imageUrl" alt="메뉴 이미지" @click="openModal(menu.imageUrl)" />
+          <button @click="deleteMenu(menu.id)" class="delete-button">메뉴 삭제</button> 
         </li>
       </ul>
     </div>
@@ -57,7 +79,7 @@
 
 <script>
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { ref, set, push, onValue } from 'firebase/database';
+import { ref, set, push, onValue, remove, get } from 'firebase/database';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { database } from '@/firebase';
 
@@ -65,6 +87,7 @@ export default {
   name: 'BusinessMenu',
   data() {
     return {
+      selectedStoreType: '', 
       logoFile: null,
       menuName: '',
       menuPrice: '',
@@ -73,8 +96,8 @@ export default {
       menuImagePreview: null,
       storeLogoPreview: null,
       menus: [],
-      isModalOpen: false, // 모달 열림 여부
-      modalImage: null // 모달에 띄울 이미지
+      isModalOpen: false, 
+      modalImage: null 
     };
   },
   mounted() {
@@ -118,46 +141,56 @@ export default {
 
       const auth = getAuth();
       const userId = auth.currentUser.uid;
-      const logoStorageRef = storageRef(getStorage(), `store/${userId}/logo/${this.logoFile.name}`); // 로고 저장 경로 수정
+      const logoStorageRef = storageRef(getStorage(), `store/${userId}/logo/${this.logoFile.name}`);
 
       uploadBytes(logoStorageRef, this.logoFile).then(() => {
         getDownloadURL(logoStorageRef).then((url) => {
-          const logoRef = ref(database, `store/${userId}/logo`);
-          set(logoRef, url);
-          alert('로고가 성공적으로 저장되었습니다.');
+          const storeRef = ref(database, `store/${userId}`);
+          set(storeRef, {
+            storeType: this.selectedStoreType,
+            logo: url,
+          });
+          alert('로고와 가게 타입이 성공적으로 저장되었습니다.');
         });
       });
     },
-    saveMenu() {
+    async saveMenu() {
       const auth = getAuth();
-      onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(auth, async (user) => {
         if (user && this.menuName && this.menuPrice && this.menuDescription && this.menuImage) {
-          const menuRef = ref(database, `store/${user.uid}/menu`); // 메뉴 저장 경로 수정
+          const uid = user.uid;
+          const menuRef = ref(database, `store/${user.uid}/menu`);
           const newMenuRef = push(menuRef);
 
           const storage = getStorage();
-          const imageRef = storageRef(storage, `store/${user.uid}/menus/${this.menuImage.name}`); // 이미지 저장 경로 수정
-          uploadBytes(imageRef, this.menuImage)
-            .then((snapshot) => getDownloadURL(snapshot.ref))
-            .then((imageUrl) => {
-              set(newMenuRef, {
-                name: this.menuName,
-                price: this.menuPrice,
-                description: this.menuDescription,
-                imageUrl
-              })
-                .then(() => {
-                  alert('메뉴가 저장되었습니다.');
-                  this.fetchMenus();
-                  this.resetMenuForm();
-                })
-                .catch((error) => {
-                  console.error('메뉴 저장 실패:', error);
-                });
-            })
-            .catch((error) => {
-              console.error('이미지 업로드 실패:', error);
-            });
+          const imageRef = storageRef(storage, `store/${user.uid}/menus/${this.menuImage.name}`);
+          try {
+            const snapshot = await uploadBytes(imageRef, this.menuImage);
+            const imageUrl = await getDownloadURL(snapshot.ref);
+
+            // 기존 데이터를 불러오기
+            const businessInfoRef = ref(database, 'store/' + uid);
+            const existingDataSnapshot = await get(businessInfoRef);
+            const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
+
+            // 새로운 메뉴 데이터를 추가
+            const newMenuData = {
+              name: this.menuName,
+              price: this.menuPrice,
+              description: this.menuDescription,
+              imageUrl,
+            };
+
+            // 기존 데이터에 새로운 메뉴를 병합하여 저장
+            await set(newMenuRef, newMenuData);
+            await set(businessInfoRef, { ...existingData, menu: { ...existingData.menu, [newMenuRef.key]: newMenuData } });
+
+            alert('메뉴가 저장되었습니다.');
+            this.resetMenuForm();
+          } catch (error) {
+            console.error('메뉴 저장 실패:', error);
+            alert('메뉴 저장에 실패했습니다.');
+          }
         } else {
           alert('모든 필드를 입력하세요.');
         }
@@ -167,7 +200,7 @@ export default {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          const menuRef = ref(database, `store/${user.uid}/menu`); // 경로 변경
+          const menuRef = ref(database, `store/${user.uid}/menu`);
           onValue(menuRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -188,6 +221,22 @@ export default {
           onValue(logoRef, (snapshot) => {
             this.storeLogoPreview = snapshot.val();
           });
+        }
+      });
+    },
+    deleteMenu(menuId) {
+      const auth = getAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const menuRef = ref(database, `store/${user.uid}/menu/${menuId}`);
+          remove(menuRef)
+            .then(() => {
+              alert('메뉴가 삭제되었습니다.');
+              this.fetchMenus();
+            })
+            .catch((error) => {
+              console.error('메뉴 삭제 실패:', error);
+            });
         }
       });
     },
@@ -215,8 +264,33 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #BFDC99;
+  background-color: #F3F6ED;
   padding: 20px;
+}
+
+.top-navigation {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 20px;
+}
+
+.nav-button {
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.nav-button:hover {
+  background: linear-gradient(135deg, #45A049, #5CB85C);
+  transform: translateY(-3px);
 }
 
 .header, .logo-section, .menu-form {
@@ -227,7 +301,7 @@ export default {
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   width: 100%;
-  max-width: 400px;
+  max-width: 600px;
   margin-top: 2vh;
 }
 
@@ -244,10 +318,13 @@ export default {
   border-radius: 10px;
   font-size: 16px;
   transition: border-color 0.3s ease;
+  background-color: #F3F6ED;
+  appearance: none;
 }
 
 .custom-select:focus {
   border-color: #4CAF50;
+  box-shadow: 0px 0px 8px rgba(76, 175, 80, 0.3);
 }
 
 .logo-section input,
@@ -337,6 +414,7 @@ export default {
   color: #777;
 }
 
+
 .menu-list img {
   margin-top: 10px;
   border-radius: 10px;
@@ -372,4 +450,25 @@ export default {
   max-width: 100%;
   max-height: 100%;
 }
+
+.delete-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #ff4d4d;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.delete-button:hover {
+  background-color: #e60000;
+  transform: translateY(-3px);
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+}
+
 </style>

@@ -51,13 +51,14 @@ export default {
       isLoggedIn: false,
       role: '',
       userName: '',
-      loginExpirationTime: 10 * 60 * 1000, // 10분 (밀리초 단위)
+      loginExpirationTime: 20 * 60 * 1000, // 20분 (밀리초 단위)
     };
   },
   created() {
     const lastLoginTime = localStorage.getItem('lastLoginTime');
     const currentTime = new Date().getTime();
     
+    // lastLoginTime이 있고 현재 시간과 비교하여 20분 내이면 자동 로그인
     if (lastLoginTime && currentTime - lastLoginTime < this.loginExpirationTime) {
       this.autoLogin();
     } else {
@@ -69,12 +70,17 @@ export default {
   },
   methods: {
     login() {
+      if (!this.email || !this.password) {
+        alert('모든 필드를 입력해주세요.');
+        return;
+      }
+
       const authInstance = getAuth();
       signInWithEmailAndPassword(authInstance, this.email, this.password)
         .then((userCredential) => {
           const user = userCredential.user;
           this.checkUserRole(user.uid);
-          localStorage.setItem('lastLoginTime', new Date().getTime());
+          localStorage.setItem('lastLoginTime', new Date().getTime()); // 로그인 시각 저장
         })
         .catch((error) => {
           console.error('로그인 오류:', error);
@@ -104,7 +110,7 @@ export default {
             this.role = snapshot.val();
             this.isLoggedIn = true; 
             localStorage.setItem('role', this.role);
-            localStorage.setItem('lastLoginTime', new Date().getTime());
+            localStorage.setItem('lastLoginTime', new Date().getTime()); // 로그인 시각 업데이트
 
             // Admin 역할일 경우 바로 Admin 페이지로 이동
             if (this.role === 'admin') {

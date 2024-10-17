@@ -66,10 +66,10 @@
 </template>
 
 <script>
-import { getAuth, onAuthStateChanged } from "firebase/auth"; // Firebase Auth 가져오기
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { database } from '@/firebase.js';
-import { ref, set } from "firebase/database";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage 관련 함수 가져오기
+import { ref, set, get } from "firebase/database";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default {
   name: 'BusinessInformation',
@@ -102,35 +102,40 @@ export default {
       }
     },
     async submitBusinessInfo() {
-      const auth = getAuth(); // Firebase Auth 객체 생성
-      const storage = getStorage(); // Firebase Storage 객체 생성
+      const auth = getAuth();
+      const storage = getStorage();
 
-      onAuthStateChanged(auth, async (user) => { // 로그인한 사용자 확인
+      onAuthStateChanged(auth, async (user) => {
         if (user) {
-          const uid = user.uid; // 로그인한 사용자의 uid 가져오기
+          const uid = user.uid;
 
           if (this.businessLicense && this.businessPermit && this.bankAccount) {
             try {
-              // 파일을 Firebase Storage에 업로드
+              // 파일을 업로드하고 URL을 가져오기
               const businessLicenseUrl = await this.uploadFileToStorage(storage, uid, 'businessLicense', this.businessLicense);
               const businessPermitUrl = await this.uploadFileToStorage(storage, uid, 'businessPermit', this.businessPermit);
               const bankAccountUrl = await this.uploadFileToStorage(storage, uid, 'bankAccount', this.bankAccount);
 
-              // Firebase Database에 사업자 정보 저장
+              // 기존 데이터를 불러오기
               const businessInfoRef = ref(database, 'store/' + uid);
-              await set(businessInfoRef, {
+              const existingDataSnapshot = await get(businessInfoRef);
+              const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
+
+              // 새로운 데이터와 기존 데이터를 병합하여 저장
+              const newData = {
                 storeName: this.storeName,
                 ownerName: this.ownerName,
                 contact: this.contact,
-                approved: 'no',  // 'no'로 초기화
-                registrant_uid: uid, // 사용자 uid 저장
-                businessLicenseUrl, // 업로드된 파일 URL 저장
-                businessPermitUrl, // 업로드된 파일 URL 저장
-                bankAccountUrl // 업로드된 파일 URL 저장
-              });
+                approved: 'no',
+                registrant_uid: uid,
+                businessLicenseUrl,
+                businessPermitUrl,
+                bankAccountUrl,
+                store_address: this.address,
+              };
 
-              const storeAddressRef = ref(database, `store/${uid}/store_address`);
-              await set(storeAddressRef, this.address);
+              // 기존 데이터와 병합하여 Firebase에 저장
+              await set(businessInfoRef, { ...existingData, ...newData });
 
               alert('사업자 정보가 등록되었습니다.');
             } catch (error) {
@@ -145,11 +150,10 @@ export default {
         }
       });
     },
-    // Firebase Storage에 파일 업로드하는 메서드
     async uploadFileToStorage(storage, uid, fieldName, file) {
-      const fileRef = storageRef(storage, `businessinfo/${uid}/${fieldName}.${file.name.split('.').pop()}`); // 파일 확장자 유지
-      await uploadBytes(fileRef, file); // 파일 업로드
-      const fileUrl = await getDownloadURL(fileRef); // 업로드된 파일의 다운로드 URL 가져오기
+      const fileRef = storageRef(storage, `businessinfo/${uid}/${fieldName}.${file.name.split('.').pop()}`);
+      await uploadBytes(fileRef, file);
+      const fileUrl = await getDownloadURL(fileRef);
       return fileUrl;
     }
   }
@@ -158,20 +162,20 @@ export default {
 
 <style scoped>
 .business-info-container {
-  max-width: 600px;
+  max-width: 700px;
   margin: 50px auto;
   padding: 40px;
-  border-radius: 15px;
-  background-color: #f1f1f1;
-  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  background-color: #E7F5E7;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1), inset 0px 2px 6px rgba(255, 255, 255, 0.5);
   font-family: 'NanumSquareRound', sans-serif;
 }
 
 h1 {
   text-align: center;
-  font-size: 28px;
-  color: #4A4A4A;
-  margin-bottom: 25px;
+  font-size: 30px;
+  color: #2E7D32;
+  margin-bottom: 30px;
 }
 
 .form-group {
@@ -180,7 +184,7 @@ h1 {
 
 label {
   font-size: 16px;
-  color: #333;
+  color: #2E7D32;
   margin-bottom: 8px;
 }
 
@@ -190,15 +194,21 @@ input[type="file"],
 input[type="time"],
 input[type="date"] {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
+  padding: 12px;
+  border: 1px solid #2E7D32;
   border-radius: 10px;
   font-size: 16px;
+  background-color: #F1F8E9;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-input[type="file"] {
-  padding: 8px;
-  font-size: 14px;
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="file"]:focus,
+input[type="time"]:focus,
+input[type="date"]:focus {
+  border-color: #388E3C;
+  box-shadow: 0px 4px 8px rgba(56, 142, 60, 0.2);
 }
 
 .preview-container {
@@ -209,7 +219,7 @@ input[type="file"] {
 .preview-image {
   max-width: 100%;
   max-height: 150px;
-  border: 1px solid #ccc;
+  border: 1px solid #C8E6C9;
   border-radius: 10px;
 }
 
@@ -217,17 +227,43 @@ input[type="file"] {
   display: block;
   width: 100%;
   padding: 15px;
-  background-color: #4CAF50;
+  background-color: #388E3C;
   color: #fff;
   font-size: 18px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  box-shadow: 0px 4px 8px rgba(56, 142, 60, 0.2), inset 0px 2px 6px rgba(255, 255, 255, 0.6);
 }
 
 .submit-button:hover {
-  background-color: #45A049;
+  background-color: #2E7D32;
+  box-shadow: 0px 6px 12px rgba(46, 125, 50, 0.3), inset 0px 2px 8px rgba(255, 255, 255, 0.6);
+  transform: translateY(-3px);
+}
+
+.top-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.nav-button {
+  background-color: #66BB6A;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-button:hover {
+  background-color: #43A047;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
 }
 
 * {
