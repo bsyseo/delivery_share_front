@@ -10,17 +10,22 @@
       </ul>
     </div>
     <div class="content">
-      
       <div class="user-info">
         <h3>{{ userName }}님</h3>
         <p>전화번호: {{ userPhone }}</p>
         <h3>최근 주문 내역</h3>
         <ul class="order-list">
-          <li v-for="order in recentOrders" :key="order.id">{{ order.details }}</li>
+          <li v-for="order in recentOrders" :key="order.id" class="order-item">
+            <p>메뉴: {{ order.menuName }}</p>
+            <p>가격: {{ order.price }} 원</p>
+            <p>수량: {{ order.quantity }}</p>
+          </li>
         </ul>
         <h3>예약 진행 중인 주문</h3>
         <ul class="order-list">
-          <li v-for="reservation in ongoingReservations" :key="reservation.id">{{ reservation.details }}</li>
+          <li v-for="reservation in ongoingReservations" :key="reservation.id" class="reservation-item">
+            <p>{{ reservation.details }}</p>
+          </li>
         </ul>
       </div>
       <div class="nav-buttons">
@@ -34,7 +39,7 @@
 <script>
 import { getDatabase, ref, get, query, orderByChild, equalTo } from "firebase/database";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from '@/firebase'; // Firebase 설정 파일
+import { auth } from '@/firebase';
 
 export default {
   name: 'UserMypage',
@@ -44,29 +49,28 @@ export default {
       userPhone: '',
       recentOrders: [],
       ongoingReservations: [],
-      userUid: '', // 현재 로그인된 사용자의 UID
+      userUid: '',
     };
   },
   created() {
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        this.fetchUserUid(user.uid); // 로그인된 사용자의 UID를 통해 userUid를 가져옵니다.
+        this.fetchUserUid(user.uid);
       }
     });
   },
   methods: {
-    // 'users' 경로에서 현재 사용자의 userUid를 가져오는 함수
     fetchUserUid(authUid) {
       const db = getDatabase();
       const userRef = ref(db, `users/${authUid}`);
       get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          this.userUid = data.uid; // users 경로에 있는 UID 저장
-          this.userName = data.name; // 사용자 이름도 불러옴
-          this.userPhone = data.phone; // 사용자 전화번호도 불러옴
-          this.fetchRecentOrders(); // userUid를 가져온 후 주문 내역을 불러옵니다.
-          this.fetchOngoingReservations(); // 진행 중인 예약도 불러옵니다.
+          this.userUid = data.uid;
+          this.userName = data.name;
+          this.userPhone = data.phone;
+          this.fetchRecentOrders();
+          this.fetchOngoingReservations();
         }
       }).catch((error) => {
         console.error('사용자 데이터를 불러오는 중 오류 발생:', error);
@@ -75,6 +79,7 @@ export default {
     fetchRecentOrders() {
       const db = getDatabase();
       const ordersRef = query(ref(db, 'orders'), orderByChild('creatorUid'), equalTo(this.userUid));
+      
       get(ordersRef).then((snapshot) => {
         if (snapshot.exists()) {
           const ordersData = snapshot.val();
@@ -112,68 +117,83 @@ export default {
 };
 </script>
 
-
 <style scoped>
 .mypage-container {
   display: flex;
-  justify-content: center; 
+  justify-content: center;
   align-items: flex-start;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f9f9f9;
+  background-color: #F0F8F4;
   border-radius: 20px;
   box-shadow: 
-  0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
-  inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
+    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.1),
+    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar {
+  margin-top: 0vh;
+  width: 250px;
+  background-color: #E1F0E4;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 텍스트 중앙 정렬 */
 }
 
 .no-bullets {
   list-style-type: none;
   padding: 0;
   margin: 0;
+  width: 100%; /* 리스트가 사이드바 넓이를 차지하게 설정 */
 }
 
 .no-bullets li {
   margin: 10px 0;
-  color: #000;
-}
-
-.sidebar {
-  margin-top: 7vh;
-  width: 250px;
-  background-color: #BFDC99;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  width: 100%; /* 리스트 항목이 사이드바의 넓이를 차지하도록 설정 */
 }
 
 .sidebar-button {
-  background-color: #EFFAD6;
+  background-color: #D8F5E0;
   border: none;
-  padding: 10px;
-  text-align: left;
+  padding: 15px;
   font-size: 16px;
   font-weight: bold;
-  color: black;
+  color: #333;
   cursor: pointer;
-  width: 80%;
+  text-align: center;
+  border-radius: 10px;
+  width: 80%; /* 버튼이 사이드바 전체 넓이를 차지하도록 설정 */
   display: block;
-  margin-bottom: 10px;
-  text-decoration: none;
-  border-radius: 8px;
   transition: background-color 0.3s ease;
 }
 
 .sidebar-button:hover {
-  background-color: #D5F2C1;
+  background-color: #C4E8D1;
 }
 
-h2 {
-  font-size: 28px;
-  color: #444;
-  font-weight: bold;
-  margin-bottom: 20px;
+.content {
+  flex: 1;
+  margin-left: 20px;
+  max-width: 800px;
+  padding: 30px;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.user-info h3 {
+  color: #4A6F5B;
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.user-info p {
+  font-size: 16px;
+  color: #666;
 }
 
 .order-list {
@@ -182,53 +202,44 @@ h2 {
   margin: 0;
 }
 
-.order-list li {
-  padding: 12px 0;
-  border-bottom: 1px solid #ddd;
-  transition: background-color 0.3s ease;
-}
-
-.order-list li:hover {
-  background-color: #f9f9f9;
-}
-
-.content {
-  flex: 1;
-  margin-left: 20px;
-  max-width: 800px;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+.order-item, .reservation-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  background-color: #F5FBF8;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .nav-buttons {
   margin-top: 30px;
   display: flex;
   justify-content: space-between;
-  width: auto;
-  padding-top: 20px;
 }
 
-.home-button,
-.order-button {
-  background-color: #EFFAD6;
+.home-button, .order-button {
+  width: 48%;
+  background-color: #D8F5E0;
   border: none;
-  padding: 10px;
+  padding: 12px;
   font-size: 16px;
   font-weight: bold;
-  color: black;
-  cursor: pointer;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  width: 45%;
+  color: #333;
   text-align: center;
+  border-radius: 8px;
+  cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
-.home-button:hover,
-.order-button:hover {
-  background-color: #D5F2C1;
+.home-button:hover, .order-button:hover {
+  background-color: #C4E8D1;
 }
 
+@font-face {
+  font-family: 'NanumSquareRound';
+  src: url('@/assets/font/NANUMSQUAREROUNDOTFB.OTF') format('opentype');
+}
+
+* {
+  font-family: 'NanumSquareRound', sans-serif;
+}
 </style>
