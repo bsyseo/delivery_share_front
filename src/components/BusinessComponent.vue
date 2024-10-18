@@ -7,7 +7,7 @@
       <!-- 버튼 섹션 -->
       <div class="button-section">
         <button  @click="gobusinessinfo">사업자 정보 등록</button>
-        <button @click="navigateTo('business_advertisement')">광고 신청</button>
+        <button  @click="gotoad">광고 신청</button>
       </div>
     </div>
 
@@ -194,6 +194,9 @@ export default {
     },
     gobusinessinfo(){
       this.$router.push('/business_information');
+    },
+    gotoad(){
+      this.$router.push('/business_advertisement');
     }
   }
 };

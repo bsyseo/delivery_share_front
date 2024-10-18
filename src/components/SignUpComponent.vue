@@ -60,7 +60,6 @@ export default {
             phone: this.phone,
             email: this.email,
             role: this.role,
-            approved: 'no'  // 'no'로 초기화
           })
           .then(() => {
             alert('회원가입이 성공적으로 완료되었습니다!');
