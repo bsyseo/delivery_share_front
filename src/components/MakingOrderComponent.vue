@@ -30,8 +30,14 @@
           <label for="menu">메뉴 선택</label>
           <select id="menu" v-model="selectedMenu">
             <option value="">메뉴를 선택하세요</option>
-            <option v-for="menu in menus" :key="menu.id" :value="menu">{{ menu.name }}</option>
+            <option v-for="menu in menus" :key="menu.id" :value="menu">{{ menu.name }} - {{ menu.price }}원</option>
           </select>
+        </div>
+
+        <!-- Display the selected menu price -->
+        <div class="form-group" v-if="selectedMenu">
+          <label>선택된 메뉴 가격: </label>
+          <p>{{ selectedMenu.price }}원</p>
         </div>
 
         <!-- 주문 수량 선택 -->
@@ -53,11 +59,9 @@
   </div>
 </template>
 
-
 <script>
-// Firebase 관련 함수들 import
 import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Firebase Auth 함수
-import { ref, set, push, get } from 'firebase/database'; // Firebase Database 함수에 get 추가
+import { ref, set, push, get } from 'firebase/database'; // Firebase Database 함수
 import { database } from '@/firebase'; // Firebase 설정 파일 경로
 import moment from 'moment-timezone';
 
@@ -72,7 +76,7 @@ export default {
       selectedStore: '',    // 선택된 가게
       selectedMenu: '',     // 선택된 메뉴
       pickupTime: '',       // 예약 시간
-      menuQuantity: 1,      // 주문 수량 기본값 추가
+      menuQuantity: 1,      // 주문 수량 기본값
       timeAdjustmentMessage: '' // 예약 시간 변경 시 알림 메시지
     };
   },
@@ -113,7 +117,8 @@ export default {
         if (snapshot.exists()) {
           this.menus = Object.keys(snapshot.val()).map(key => ({
             id: key,
-            ...snapshot.val()[key]
+            ...snapshot.val()[key],
+            price: snapshot.val()[key].price  // 가격 정보도 가져옴
           }));
         } else {
           this.menus = [];
@@ -156,15 +161,19 @@ export default {
             storeUid: this.selectedStore.id,
             storeType: this.selectedCategory,
             status: 'pending',
-            reservationTime: reservationTime,  // 한국 시간으로 변환된 예약 시간
+            reservationTime: reservationTime,
             participantsCount: 1,
+            menu: this.selectedMenu.name,  // 선택한 메뉴 추가
+            price: this.selectedMenu.price,  // 선택한 메뉴 가격 추가
+            quantity: this.menuQuantity,   // 선택한 수량 추가
           };
+
 
           // `orders/` 경로에 저장
           set(newOrderRef, orderData)
             .then(() => {
               // `member/` 경로에 참여자 정보 저장
-              this.saveMember(user.uid, orderId, this.selectedMenu.name, this.menuQuantity);
+              this.saveMember(user.uid, orderId, this.selectedMenu.name, this.selectedMenu.price, this.menuQuantity);
             })
             .catch((error) => {
               console.error('Error saving the order:', error);
@@ -176,7 +185,7 @@ export default {
     },
     
     // member 테이블에 데이터를 저장하는 함수
-    saveMember(uid, orderId, menu, quantity) {
+    saveMember(uid, orderId, menu, price, quantity) {
       const memberRef = ref(database, 'member');
       const newMemberRef = push(memberRef);
       
@@ -187,6 +196,7 @@ export default {
         uid: uid,  // 사용자의 UID
         orderID: orderId,  // 해당 주문의 ID
         menu: menu,  // 선택된 메뉴
+        price: price,  // 선택된 메뉴 가격
         quantity: quantity,  // 주문 수량
         participate_time: participateTime,  // 참여 시각 (한국 시각)
       };
@@ -212,6 +222,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .wrapper {

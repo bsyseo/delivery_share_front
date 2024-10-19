@@ -114,8 +114,15 @@
 
       <!-- 주문 내역 대시보드 -->
       <h2>주문 내역</h2>
+
+      <!-- 달력 추가 -->
+      <div class="calendar-section">
+        <label for="order-date">주문 날짜 선택</label>
+        <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
+      </div>
+
       <div v-if="orders.length === 0" class="no-orders">
-        <p>들어온 주문이 없습니다.</p>
+        <p>해당 날짜에 들어온 주문이 없습니다.</p>
       </div>
       <div v-else class="order-list">
         <div v-for="order in orders" :key="order.orderID" class="order-card">
@@ -141,7 +148,7 @@
 
 <script>
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { ref, update, onValue, get } from 'firebase/database';  // update 추가
+import { ref, update, onValue, get } from 'firebase/database';
 import { database } from '@/firebase';
 import moment from 'moment-timezone';
 
@@ -160,6 +167,7 @@ export default {
       editingDayoff: false,
       selectedCloseDay: '',
       days: ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'],
+      selectedDate: moment().format('YYYY-MM-DD'), // 기본값으로 오늘 날짜 설정
       orders: [],  // 필터링된 주문 데이터를 저장할 배열
       statusDescriptions: { // 상태 설명 추가
         '승인됨': '주문이 승인되었습니다.',
@@ -170,7 +178,7 @@ export default {
     };
   },
   mounted() {
-    this.fetchOrders();
+    this.fetchOrdersByDate(); // 페이지 로드 시 오늘 날짜 주문을 불러옴
     this.fetchBusinessInfo();
   },
   methods: {
@@ -180,43 +188,37 @@ export default {
     formatTime(time) {
       return moment(time, 'HH:mm').format('HH:mm'); // 예약 시간 형식
     },
-    fetchOrders() {
+    fetchOrdersByDate() {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
         if (user) {
           const userUid = user.uid;
-
-          // orders 폴더의 모든 주문 데이터를 가져옴
+          const selectedDay = moment(this.selectedDate).format('YYYY-MM-DD');
           const ordersRef = ref(database, 'orders');
+          
           onValue(ordersRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-              const ordersList = [];
-
-              // 모든 주문 데이터를 순회하면서 storeUid를 확인
+              const filteredOrders = [];
               Object.keys(data).forEach((orderId) => {
                 const orderData = data[orderId];
-
-                // storeUid가 현재 사용자의 UID와 일치하는지 확인
-                if (orderData.storeUid === userUid) {
-                  ordersList.push({
-                    orderID: orderId,  // orderId를 주문 ID로 사용
-                    menu: orderData.menu,  // 주문한 메뉴
-                    quantity: orderData.quantity,  // 수량
-                    reservationTime: orderData.reservationTime,  // 예약 시간
-                    createdAt: orderData.createdAt,  // 주문 날짜
-                    status: orderData.status || '예약됨',  // 주문 상태
+                const orderDate = moment(orderData.createdAt).format('YYYY-MM-DD');
+                
+                if (orderData.storeUid === userUid && orderDate === selectedDay) {
+                  filteredOrders.push({
+                    orderID: orderId,
+                    menu: orderData.menu,
+                    quantity: orderData.quantity,
+                    reservationTime: orderData.reservationTime,
+                    createdAt: orderData.createdAt,
+                    status: orderData.status || '예약됨'
                   });
                 }
               });
-
-              // 필터링된 주문 리스트를 저장
-              this.orders = ordersList;
+              this.orders = filteredOrders;
             } else {
-              this.orders = [];  // 데이터가 없을 경우 빈 배열로 설정
+              this.orders = [];
             }
-          }, (error) => {
-            console.error('주문 데이터를 가져오는 중 오류가 발생했습니다:', error);
           });
         }
       });
@@ -360,8 +362,6 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
 .dashboard-container {
   display: flex;
@@ -403,6 +403,44 @@ export default {
 
 .sidebar-button:hover {
   background-color: #D5F2C1;
+}
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.order-card {
+  padding: 15px;
+  background-color: #EFFAD6;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.order-header {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.order-status {
+  color: #4CAF50;
+}
+
+.order-details {
+  font-size: 14px;
+  color: #555;
+}
+
+.order-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.approve-button {
+  background-color: #98cbae;
+  color: white;
 }
 
 h2, h3 {
@@ -514,11 +552,6 @@ input[type="text"]:focus, input[type="time"]:focus, input[type="date"]:focus {
   margin-bottom: 10px;
 }
 
-.order-actions {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 10px;
-}
 
 .accept-button {
   background-color: #4CAF50;
@@ -530,7 +563,7 @@ input[type="text"]:focus, input[type="time"]:focus, input[type="date"]:focus {
 }
 
 .reject-button {
-  background-color: #FF6347;
+  background-color: #ff6b51;
   color: white;
   border: none;
   padding: 8px;
@@ -594,6 +627,28 @@ button:active {
   list-style-type: none;
   padding: 0;
   margin: 0;
+}
+
+.calendar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.date-picker {
+  padding: 10px;
+  border: 1px solid #D5F2C1; 
+  border-radius: 12px;
+  background-color: #EFFAD6; 
+  font-size: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.date-picker:focus {
+  border-color: #4CAF50; 
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); 
 }
 
 @font-face {

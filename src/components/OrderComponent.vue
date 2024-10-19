@@ -16,6 +16,7 @@
         <div class="order-box">
           <!-- 첫째 줄 이미지 -->
           <div class="image-grid">
+            <!-- 메뉴 클릭 이벤트 -->
             <div class="image-item" @click="showMenuDetails('한식')">
               <img src="@/assets/free-icon-bibimbap-2276931.png" alt="한식" />
               <p>한식</p>
@@ -109,7 +110,8 @@
       <div class="popup-content">
         <p>예약 정보</p>
         <p><strong>예약 시간:</strong> {{ formatReservationTime(selectedOrder?.reservationTime) }}</p>
-        <p><strong>메뉴:</strong> {{ selectedOrder?.menuName }}</p>
+        <p><strong>메뉴 이름:</strong> {{ selectedOrder?.menuName || '메뉴 정보 없음' }}</p>
+        <p><strong>가격:</strong> {{ selectedOrder?.price ? selectedOrder.price + '원' : '가격 없음' }}</p>
         <p><strong>수량:</strong> {{ selectedOrder?.quantity }}</p>
         <p><strong>참여 인원:</strong> {{ selectedOrder?.participantsCount }}</p>
         <button class="button green2" @click="openMenuSelection">참여하기</button>
@@ -155,7 +157,7 @@ export default {
     return {
       selectedMenu: '',
       logos: [],
-      orders: [],
+      orders: [],  // 메뉴 이름, 수량, 예약시간 등을 포함하는 주문 데이터
       isPopupVisible: false, // 첫 번째 팝업의 표시 상태
       isMenuPopupVisible: false, // 두 번째 팝업의 표시 상태
       storeMenus: [], // A 사용자가 선택한 가게의 메뉴 목록
@@ -164,12 +166,13 @@ export default {
       selectedMenuId: '', // B가 선택할 메뉴 ID
       menuQuantity: 1, // B가 선택할 수량
       currentUserId: null,  // 현재 사용자의 UID를 저장할 변수    
-      };
+    };
   },
   created() {
     this.setCurrentUser();  // 컴포넌트가 생성될 때 로그인된 사용자의 UID를 설정
   },
   methods: {
+    // 현재 로그인된 사용자의 UID를 설정하는 함수
     setCurrentUser() {
       const auth = getAuth();  // Firebase Authentication 객체 가져오기
       const user = auth.currentUser;
@@ -181,6 +184,7 @@ export default {
         console.error('사용자가 로그인되어 있지 않습니다.');
       }
     },
+    // 메뉴 선택 시 호출되는 함수
     updateSelectedMenu() {
       const selectedMenu = this.storeMenus.find(menu => menu.id === this.selectedMenuId);
       if (selectedMenu) {
@@ -194,47 +198,69 @@ export default {
       this.selectedMenu = menuType;
       this.fetchOrders();
     },
+
     // Firebase에서 주문 정보를 가져오는 함수
     fetchOrders() {
-      const ordersRef = query(ref(database, 'orders'), orderByChild('reservationTime'));
-      get(ordersRef)
-        .then((snapshot) => {
-          if (snapshot.exists()) {
-            const allOrders = snapshot.val();
-            console.log('Fetched Orders:', allOrders);  // 주문 데이터를 그대로 로깅
-            const currentKSTTime = moment().tz('Asia/Seoul');  // 현재 한국 시간
+        const ordersRef = query(ref(database, 'orders'), orderByChild('reservationTime'));
+        get(ordersRef)
+          .then((snapshot) => {
+            if (snapshot.exists()) {
+              const allOrders = snapshot.val();
+              console.log('Fetched Orders:', allOrders);  // 주문 데이터를 그대로 로깅
+              const currentKSTTime = moment().tz('Asia/Seoul');  // 현재 한국 시간
 
-            const groupedOrders = {};
-            Object.keys(allOrders).forEach((key) => {
-              const order = allOrders[key];
-              const reservationTime = moment(order.reservationTime);  // 각 주문의 예약 시간
-              console.log('Processing Order:', order);  // 각 주문을 로깅
+              const groupedOrders = {};
+              Object.keys(allOrders).forEach((key) => {
+                const order = allOrders[key];
+                const reservationTime = moment(order.reservationTime);  // 각 주문의 예약 시간
+                console.log('Processing Order:', order);  // 각 주문을 로깅
 
-              if (order.storeType === this.selectedMenu && reservationTime.isAfter(currentKSTTime)) {
-                const storeUid = order.storeUid;
-                if (!groupedOrders[storeUid]) {
-                  groupedOrders[storeUid] = [];
+                // 각 주문의 menu, quantity, price, reservationTime을 가져옴
+                const menuName = order.menu;  // 메뉴 이름
+                const quantity = order.quantity;  // 수량
+                const price = order.price;  // 가격 정보 추가
+                const reservationTimeFormatted = reservationTime.format('YYYY-MM-DD HH:mm');  // 예약 시간 포맷
+
+                console.log('Menu Name:', menuName);
+                console.log('Quantity:', quantity);
+                console.log('Price:', price);  // 가격 출력 확인
+                console.log('Reservation Time:', reservationTimeFormatted);
+
+                if (order.storeType === this.selectedMenu && reservationTime.isAfter(currentKSTTime)) {
+                  const storeUid = order.storeUid;
+                  if (!groupedOrders[storeUid]) {
+                    groupedOrders[storeUid] = [];
+                  }
+
+                  // 메뉴 이름, 수량, 예약 시간, 가격을 포함한 데이터 추가
+                  groupedOrders[storeUid].push({
+                    id: key,
+                    menuName: menuName,  // 메뉴 이름
+                    quantity: quantity,  // 수량
+                    price: price,  // 가격 정보 추가
+                    reservationTime: reservationTimeFormatted,  // 예약 시간
+                    ...order
+                  });
                 }
-                groupedOrders[storeUid].push({ id: key, ...order });
-              }
-            });
-            Object.keys(groupedOrders).forEach((storeUid) => {
-              groupedOrders[storeUid].sort((a, b) => new Date(a.reservationTime) - new Date(b.reservationTime));
-            });
-            console.log('Filtered Orders:', groupedOrders);  // 필터링된 주문을 로깅
-            console.log('Grouped Orders:', groupedOrders);  // 필터링된 주문 데이터를 로깅
-            this.orders = groupedOrders;
-            console.log("Orders fetched: ", this.orders);  // 데이터 확인
-            this.fetchLogos();
-          } else {
-            console.log('No orders found.');
-            this.orders = {};
-          }
-        })
-        .catch((error) => {
-          console.error('주문 정보를 가져오는 데 실패했습니다:', error);
-        });
-    },
+              });
+              Object.keys(groupedOrders).forEach((storeUid) => {
+                groupedOrders[storeUid].sort((a, b) => new Date(a.reservationTime) - new Date(b.reservationTime));
+              });
+              console.log('Filtered Orders:', groupedOrders);  // 필터링된 주문을 로깅
+              this.orders = groupedOrders;
+              console.log("Orders fetched: ", this.orders);  // 데이터 확인
+              this.fetchLogos();
+            } else {
+              console.log('No orders found.');
+              this.orders = {};
+            }
+          })
+          .catch((error) => {
+            console.error('주문 정보를 가져오는 데 실패했습니다:', error);
+          });
+      },
+
+    
     // Firebase에서 가게 로고 정보를 가져오는 함수
     fetchLogos() {
       Object.keys(this.orders).forEach((storeUid) => {
@@ -252,16 +278,16 @@ export default {
           });
       });
     },
+
     // 예약 시간 형식 변환 함수
     formatReservationTime(reservationTime) {
       const time = new Date(reservationTime);
-      // 시간과 분을 두 자리로 포맷
       const hours = time.getHours().toString().padStart(2, '0');
       const minutes = time.getMinutes().toString().padStart(2, '0');
       return `${hours}:${minutes}`;
     },
+
     // 첫 번째 팝업을 보여주고 예약 정보를 표시하는 함수
-    // 시간표에서 예약 시간을 클릭하면 호출되는 함수
     showPopup(order) {
       console.log("clicked order:", order);
       this.selectedOrder = order;  // 선택한 order를 저장
@@ -275,17 +301,19 @@ export default {
       this.isPopupVisible = false;
       this.selectedOrder = null;
     },
+    
     // 첫 번째 팝업에서 "참여하기"를 누르면 두 번째 팝업을 표시
     openMenuSelection() {
-      console.log("Selected Order Before Opening Menu:", this.selectedOrder);  // 주문이 정상적으로 설정되었는지 확인
+      console.log("Selected Order Before Opening Menu:", this.selectedOrder);
       if (this.selectedOrder) {
-        this.isMenuPopupVisible = true;  // 두 번째 팝업을 열어 메뉴 선택
-        this.fetchStoreMenus(this.selectedOrder.storeUid);  // 해당 가게의 메뉴를 불러옴
+        this.isMenuPopupVisible = true;
+        this.fetchStoreMenus(this.selectedOrder.storeUid);
       }
     },
+
     // A 사용자가 선택한 가게의 메뉴만 가져오는 함수 (storeUid 사용)
     fetchStoreMenus(storeUid) {
-      const menusRef = ref(database, `store/${storeUid}/menu`); // menu 경로에서 가져옴
+      const menusRef = ref(database, `store/${storeUid}/menu`);
       get(menusRef)
         .then((snapshot) => {
           if (snapshot.exists()) {
@@ -301,6 +329,7 @@ export default {
           console.error('메뉴를 가져오는 데 실패했습니다:', error);
         });
     },
+
     // 두 번째 팝업에서 B 사용자가 선택한 메뉴와 수량을 저장하는 함수
     confirmMenuSelection() {
       console.log('selectedOrderId:', this.selectedOrderId);
@@ -320,27 +349,25 @@ export default {
         return;
       }
 
-      console.log('Final Selected Menu:', selectedMenu);  // 최종 선택된 메뉴 확인
+      console.log('Final Selected Menu:', selectedMenu);
 
-      // 한국 시간으로 현재 시간 가져오기
       const currentKSTTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
       console.log('현재 한국 시간:', currentKSTTime);
 
-      // Firebase에 member 정보 저장
       const memberRef = push(ref(database, 'member'));  // member/ 경로에 저장
       const memberData = {
-        uid: this.currentUserId,  // 현재 로그인된 사용자의 UID 저장
-        orderID: this.selectedOrderId,  // 저장한 주문의 orderID (selectedOrderId 사용)
-        menu: selectedMenu.name,  // 선택된 메뉴
-        quantity: this.menuQuantity,  // 선택된 수량
-        participate_time: currentKSTTime,  // 참여 시간
+        uid: this.currentUserId,
+        orderID: this.selectedOrderId,
+        menu: selectedMenu.name,
+        quantity: this.menuQuantity,
+        price: selectedMenu.price,  // 메뉴 가격 추가
+        participate_time: currentKSTTime,
       };
 
       set(memberRef, memberData)
         .then(() => {
-          // 주문 정보를 다시 가져와 participantsCount 값을 업데이트
           const orderRef = ref(database, `orders/${this.selectedOrderId}`);
-          return get(orderRef);  // 주문 정보 다시 가져오기
+          return get(orderRef);
         })
         .then(snapshot => {
           if (snapshot.exists()) {
@@ -360,7 +387,6 @@ export default {
         });
     },
 
-
     // 두 번째 팝업에서 총 가격을 계산하는 함수
     calculateTotalPrice() {
       const selectedMenu = this.storeMenus.find((menu) => menu.id === this.selectedMenuId);
@@ -369,12 +395,14 @@ export default {
       }
       return 0;
     },
+
     // 두 번째 팝업 닫기 함수
     closeMenuPopup() {
       this.isMenuPopupVisible = false;
       this.selectedMenuId = '';
       this.menuQuantity = 1;
     },
+
     // 팝업의 클릭 종료 문제 해결
     stopEventPropagation(event) {
       event.stopPropagation(); // 이벤트 전파 중단
@@ -382,7 +410,6 @@ export default {
   },
 };
 </script>
-
 
 
 <style scoped>

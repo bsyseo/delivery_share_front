@@ -28,6 +28,10 @@
           </li>
         </ul>
       </div>
+      
+      <!-- OrderHistoryComponent를 추가하여 하단에 보여주기 -->
+      <OrderHistoryComponent />
+
       <div class="nav-buttons">
         <button class="home-button" @click="goToHome">홈으로 가기</button>
         <button class="order-button" @click="goToOrderPage">주문 페이지로 가기</button>
@@ -41,8 +45,14 @@ import { getDatabase, ref, get, query, orderByChild, equalTo } from "firebase/da
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from '@/firebase';
 
+// OrderHistoryComponent 파일을 불러옵니다
+import OrderHistoryComponent from '@/components/OrderHistoryComponent.vue';
+
 export default {
   name: 'UserMypage',
+  components: {
+    OrderHistoryComponent, // 컴포넌트를 등록
+  },
   data() {
     return {
       userName: '',
