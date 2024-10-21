@@ -138,8 +138,14 @@ export default {
       uploadBytes(logoStorageRef, this.logoFile).then(() => {
         getDownloadURL(logoStorageRef).then((url) => {
           const storeRef = ref(database, `store/${userId}`);
-          set(storeRef, {
-            logo: url,
+          
+          // 기존 데이터를 유지하면서 로고 추가
+          get(storeRef).then((snapshot) => {
+            const existingData = snapshot.exists() ? snapshot.val() : {};
+            set(storeRef, {
+              ...existingData,
+              logo: url,
+            });
           });
           alert('로고가 성공적으로 저장되었습니다.');
         });
@@ -170,7 +176,7 @@ export default {
               imageUrl,
             };
 
-            await set(newMenuRef, newMenuData);
+            // 기존 데이터를 유지하면서 새로운 메뉴 데이터 추가
             await set(businessInfoRef, { ...existingData, menu: { ...existingData.menu, [newMenuRef.key]: newMenuData } });
 
             alert('메뉴가 저장되었습니다.');
@@ -223,10 +229,18 @@ export default {
         if (user) {
           const storeRef = ref(database, `store/${user.uid}`);
           try {
+            // 기존 데이터 가져오기
             const existingDataSnapshot = await get(storeRef);
             const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
 
-            await set(storeRef, { ...existingData, deliveryFee: this.deliveryFee });
+            // 기존 데이터를 유지하면서 배달비 추가
+            const updatedData = {
+              ...existingData,
+              deliveryFee: this.deliveryFee,
+            };
+
+            // 데이터베이스에 저장
+            await set(storeRef, updatedData);
             alert('배달비가 저장되었습니다.');
           } catch (error) {
             console.error('배달비 저장 실패:', error);
@@ -280,6 +294,7 @@ export default {
   }
 };
 </script>
+
 
 
 <style scoped>

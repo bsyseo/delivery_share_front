@@ -151,7 +151,8 @@ export default {
       });
     },
     async uploadFileToStorage(storage, uid, fieldName, file) {
-      const fileRef = storageRef(storage, `businessinfo/${uid}/${fieldName}.${file.name.split('.').pop()}`);
+      // 파일을 'store/{uid}/' 경로로 저장하도록 수정
+      const fileRef = storageRef(storage, `store/${uid}/${fieldName}.${file.name.split('.').pop()}`);
       await uploadBytes(fileRef, file);
       const fileUrl = await getDownloadURL(fileRef);
       return fileUrl;
@@ -159,6 +160,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .business-info-container {
