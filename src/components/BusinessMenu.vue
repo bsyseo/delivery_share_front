@@ -10,23 +10,7 @@
 
     <!-- 가게 타입 및 로고 업로드 -->
     <form @submit.prevent="uploadLogo">
-
       <div class="logo-section">
-        <label for="storeType">가게 타입 선택</label>
-        <select v-model="selectedStoreType" class="custom-select" required>
-          <option value="">가게 타입을 선택하세요</option>
-          <option value="한식">한식</option>
-          <option value="중식">중식</option>
-          <option value="일식">일식</option>
-          <option value="치킨">치킨</option>
-          <option value="피자">피자</option>
-          <option value="아시안푸드">아시안푸드</option>
-          <option value="패스트푸드">패스트푸드</option>
-          <option value="양식">양식</option>
-          <option value="디저트">디저트</option>
-          <option value="건강식">건강식</option>
-        </select>
-
         <label for="logo">로고 업로드</label>
         <input type="file" @change="onFileChange" />
         <div v-if="storeLogoPreview" class="logo-preview">
@@ -36,6 +20,13 @@
         <button type="submit">로고 저장</button>
       </div>
     </form>
+
+    <!-- 배달비 설정 -->
+    <div class="delivery-fee-section">
+      <h3>배달비 설정</h3>
+      <input v-model="deliveryFee" type="number" placeholder="배달비를 입력하세요" />
+      <button @click="saveDeliveryFee">배달비 저장</button>
+    </div>
 
     <!-- 메뉴 등록 -->
     <div class="header">
@@ -87,7 +78,6 @@ export default {
   name: 'BusinessMenu',
   data() {
     return {
-      selectedStoreType: '', 
       logoFile: null,
       menuName: '',
       menuPrice: '',
@@ -96,6 +86,7 @@ export default {
       menuImagePreview: null,
       storeLogoPreview: null,
       menus: [],
+      deliveryFee: '', // 배달비
       isModalOpen: false, 
       modalImage: null 
     };
@@ -103,6 +94,7 @@ export default {
   mounted() {
     this.fetchMenus();
     this.fetchStoreLogo();
+    this.fetchDeliveryFee(); // 배달비 불러오기
   },
   methods: {
     onFileChange(e) {
@@ -134,8 +126,8 @@ export default {
       }
     },
     uploadLogo() {
-      if (!this.selectedStoreType || !this.logoFile) {
-        alert('가게 타입과 로고를 선택해주세요.');
+      if (!this.logoFile) {
+        alert('로고를 선택해주세요.');
         return;
       }
 
@@ -147,10 +139,9 @@ export default {
         getDownloadURL(logoStorageRef).then((url) => {
           const storeRef = ref(database, `store/${userId}`);
           set(storeRef, {
-            storeType: this.selectedStoreType,
             logo: url,
           });
-          alert('로고와 가게 타입이 성공적으로 저장되었습니다.');
+          alert('로고가 성공적으로 저장되었습니다.');
         });
       });
     },
@@ -168,12 +159,10 @@ export default {
             const snapshot = await uploadBytes(imageRef, this.menuImage);
             const imageUrl = await getDownloadURL(snapshot.ref);
 
-            // 기존 데이터를 불러오기
             const businessInfoRef = ref(database, 'store/' + uid);
             const existingDataSnapshot = await get(businessInfoRef);
             const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
 
-            // 새로운 메뉴 데이터를 추가
             const newMenuData = {
               name: this.menuName,
               price: this.menuPrice,
@@ -181,7 +170,6 @@ export default {
               imageUrl,
             };
 
-            // 기존 데이터에 새로운 메뉴를 병합하여 저장
             await set(newMenuRef, newMenuData);
             await set(businessInfoRef, { ...existingData, menu: { ...existingData.menu, [newMenuRef.key]: newMenuData } });
 
@@ -224,6 +212,40 @@ export default {
         }
       });
     },
+    async saveDeliveryFee() {
+      if (!this.deliveryFee) {
+        alert('배달비를 입력하세요.');
+        return;
+      }
+
+      const auth = getAuth();
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          const storeRef = ref(database, `store/${user.uid}`);
+          try {
+            const existingDataSnapshot = await get(storeRef);
+            const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
+
+            await set(storeRef, { ...existingData, deliveryFee: this.deliveryFee });
+            alert('배달비가 저장되었습니다.');
+          } catch (error) {
+            console.error('배달비 저장 실패:', error);
+            alert('배달비 저장에 실패했습니다.');
+          }
+        }
+      });
+    },
+    fetchDeliveryFee() {
+      const auth = getAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const storeRef = ref(database, `store/${user.uid}/deliveryFee`);
+          onValue(storeRef, (snapshot) => {
+            this.deliveryFee = snapshot.val() || '';
+          });
+        }
+      });
+    },
     deleteMenu(menuId) {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
@@ -259,7 +281,62 @@ export default {
 };
 </script>
 
+
 <style scoped>
+/* 배달비 섹션 스타일 추가 */
+.delivery-fee-section {
+  background-color: white;
+  padding: 20px;
+  text-align: center;
+  border-radius: 10px;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  width: 300px;
+  max-width: 600px;
+  margin-top: 2vh;
+}
+
+.delivery-fee-section h3 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.delivery-fee-section input {
+  padding: 10px;
+  margin-top: 10px;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.delivery-fee-section input:focus {
+  border-color: #4CAF50;
+}
+
+.delivery-fee-section button {
+  padding: 12px;
+  margin-top: 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  width: 100%;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.delivery-fee-section button:hover {
+  background-color: #45a049;
+  transform: translateY(-3px);
+}
+
 .menu-container {
   display: flex;
   flex-direction: column;
@@ -300,7 +377,7 @@ export default {
   border-radius: 10px;
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
-  width: 100%;
+  width: 300px;
   max-width: 600px;
   margin-top: 2vh;
 }

@@ -113,6 +113,11 @@
         <p><strong>메뉴 이름:</strong> {{ selectedOrder?.menuName || '메뉴 정보 없음' }}</p>
         <p><strong>가격:</strong> {{ selectedOrder?.price ? selectedOrder.price + '원' : '가격 없음' }}</p>
         <p><strong>수량:</strong> {{ selectedOrder?.quantity }}</p>
+        <p><strong>현재 배달비:</strong> 
+          {{ selectedOrder?.deliveryFee && selectedOrder?.participantsCount 
+            ? (selectedOrder.deliveryFee / selectedOrder.participantsCount).toFixed(0) + '원' 
+            : '배달비 없음' }}
+        </p>
         <p><strong>참여 인원:</strong> {{ selectedOrder?.participantsCount }}</p>
         <button class="button green2" @click="openMenuSelection">참여하기</button>
         <button class="button green2" @click="closePopup">닫기</button>
@@ -218,6 +223,7 @@ export default {
                 // 각 주문의 menu, quantity, price, reservationTime을 가져옴
                 const menuName = order.menu;  // 메뉴 이름
                 const quantity = order.quantity;  // 수량
+                const deliveryFee = order.deliveryFee
                 const price = order.price;  // 가격 정보 추가
                 const reservationTimeFormatted = reservationTime.format('YYYY-MM-DD HH:mm');  // 예약 시간 포맷
 
@@ -225,6 +231,7 @@ export default {
                 console.log('Quantity:', quantity);
                 console.log('Price:', price);  // 가격 출력 확인
                 console.log('Reservation Time:', reservationTimeFormatted);
+                console.log('deliveryFee', deliveryFee);
 
                 if (order.storeType === this.selectedMenu && reservationTime.isAfter(currentKSTTime)) {
                   const storeUid = order.storeUid;
@@ -236,6 +243,7 @@ export default {
                   groupedOrders[storeUid].push({
                     id: key,
                     menuName: menuName,  // 메뉴 이름
+                    deliveryFee: deliveryFee,
                     quantity: quantity,  // 수량
                     price: price,  // 가격 정보 추가
                     reservationTime: reservationTimeFormatted,  // 예약 시간

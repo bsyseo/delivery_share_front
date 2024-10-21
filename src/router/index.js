@@ -3,7 +3,7 @@ import LoginView from '@/views/Login.vue';
 import SignUpView from '@/views/SignUp.vue';
 import MapView from '@/views/map.vue';
 import OrderView from '@/views/order.vue';
-import ResetPasswordView from '@/views/Reset_IDnPW.vue';
+import ResetIDnPW from '@/views/Reset_IDnPW.vue';
 import ResetPasswordComponent from '@/components/ResetPasswordComponent.vue';
 import BusinessView from '@/views/Business.vue'; // 비즈니스 사용자 페이지
 import BusinessInformation from '@/components/BusinessInformation.vue'; // 사업자 정보 페이지
@@ -59,7 +59,7 @@ const routes = [
   {
     path: '/reset-idpw',
     name: 'ResetIDnPW',
-    component: ResetPasswordView
+    component: ResetIDnPW
   },
   {
     path: '/reset-password',

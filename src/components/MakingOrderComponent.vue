@@ -19,7 +19,7 @@
         <!-- Store selection -->
         <div class="form-group" v-if="selectedCategory">
           <label for="store">가게 선택</label>
-          <select id="store" v-model="selectedStore" @change="fetchMenus">
+          <select id="store" v-model="selectedStore" @change="fetchMenusAndDeliveryFee">
             <option value="">가게를 선택하세요</option>
             <option v-for="store in stores" :key="store.id" :value="store">{{ store.name }}</option>
           </select>
@@ -38,6 +38,12 @@
         <div class="form-group" v-if="selectedMenu">
           <label>선택된 메뉴 가격: </label>
           <p>{{ selectedMenu.price }}원</p>
+        </div>
+        
+        <!-- Display the delivery fee -->
+        <div class="form-group" v-if="selectedStore">
+          <label>기본 배달비: </label>
+          <p>{{ deliveryFee }}원</p>
         </div>
 
         <!-- 주문 수량 선택 -->
@@ -75,6 +81,7 @@ export default {
       selectedCategory: '', // 선택된 카테고리
       selectedStore: '',    // 선택된 가게
       selectedMenu: '',     // 선택된 메뉴
+      deliveryFee: 0,       // 배달비
       pickupTime: '',       // 예약 시간
       menuQuantity: 1,      // 주문 수량 기본값
       timeAdjustmentMessage: '' // 예약 시간 변경 시 알림 메시지
@@ -110,7 +117,7 @@ export default {
       this.selectedStore = ''; // 기존 선택을 초기화
       this.menus = [];
     },
-    fetchMenus() {
+    fetchMenusAndDeliveryFee() {
       // Firebase에서 선택된 가게의 메뉴를 가져오는 로직
       const menuRef = ref(database, `store/${this.selectedStore.id}/menu`);
       get(menuRef).then((snapshot) => {
@@ -125,6 +132,18 @@ export default {
         }
       }).catch((error) => {
         console.error('메뉴 목록을 불러오는 데 실패했습니다:', error);
+      });
+
+      // Firebase에서 배달비를 가져오는 로직
+      const storeRef = ref(database, `store/${this.selectedStore.id}/deliveryFee`);
+      get(storeRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          this.deliveryFee = snapshot.val() || 0;
+        } else {
+          this.deliveryFee = 0;
+        }
+      }).catch((error) => {
+        console.error('배달비를 불러오는 데 실패했습니다:', error);
       });
 
       this.selectedMenu = ''; // 기존 선택을 초기화
@@ -166,8 +185,8 @@ export default {
             menu: this.selectedMenu.name,  // 선택한 메뉴 추가
             price: this.selectedMenu.price,  // 선택한 메뉴 가격 추가
             quantity: this.menuQuantity,   // 선택한 수량 추가
+            deliveryFee: this.deliveryFee  // 배달비 추가
           };
-
 
           // `orders/` 경로에 저장
           set(newOrderRef, orderData)

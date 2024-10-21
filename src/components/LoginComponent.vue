@@ -11,7 +11,7 @@
       <input type="password" v-model="password" id="password" placeholder="PW"><br />
       <div class="actions">
         <router-link to="/signup">회원가입</router-link>
-        <router-link to="/Reset_IDnPW">ID/PW 찾기</router-link>
+        <router-link to="/ResetIDnPW">ID/PW 찾기</router-link>
       </div>
       <button v-on:click="login">로그인</button>
     </div>
