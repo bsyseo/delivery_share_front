@@ -150,10 +150,13 @@ export default {
             this.orders = newOrders.filter(order => order);
             this.orders.sort((a, b) => new Date(b.participateTime) - new Date(a.participateTime));
 
-            // 2초 후 하이라이트 해제
-            setTimeout(() => {
-              this.orders.forEach(order => order.highlight = false);
-            }, 2000);
+            // 첫 번째 줄만 하이라이트 적용 후 해제
+            if (this.orders.length > 0) {
+              this.orders[0].highlight = false;
+              setTimeout(() => {
+                this.orders[0].highlight = true;
+              }, 2000);
+            }
           });
         }
       });
@@ -261,7 +264,6 @@ a {
 
 .creator-name {
   font-size: 0.9em;
-
 }
 
 .popup {
@@ -299,3 +301,4 @@ button {
   100% { background-color: transparent; }
 }
 </style>
+
