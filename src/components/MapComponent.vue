@@ -103,56 +103,60 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #BFDC99;
-  padding: 20px 0;
+  background-color: #F9FAFB;
+  padding: 32px 16px;
+  border-radius: 16px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .header {
-  background-color: white;
-  padding: 20px 40px;
+  background-color: #FFFFFF;
+  padding: 24px 48px;
   text-align: center;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  width: 100%;
+  max-width: 800px;
 }
 
 .header h2 {
-  font-size: 24px;
-  margin-bottom: 10px;
-  color: #444;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1A202C;
 }
 
 .header p {
   font-size: 18px;
-  color: #777;
+  color: #4A5568;
 }
 
 .delivery-spot {
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+  text-align: center;
 }
 
 .delivery-spot h3 {
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 10px;
-  color: #444;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1A202C;
 }
 
 .map-wrapper {
-  background-color: white;
-  border-radius: 20px;
+  background-color: #FFFFFF;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  width: 100%;
   max-width: 1200px;
-  width: 90%;
 }
 
 #map {
   width: 100%;
   height: 500px;
-  border-radius: 15px;
+  border-radius: 12px;
 }
 
 /* 이전으로 돌아가기 버튼 스타일 */
@@ -161,21 +165,21 @@ export default {
 }
 
 .back-button {
-  background-color: #EFFAD6;
+  background-color: #3182CE;
   border: none;
   padding: 12px 30px;
   font-size: 16px;
-  font-weight: bold;
-  color: black;
+  font-weight: 600;
+  color: #FFFFFF;
   cursor: pointer;
   border-radius: 8px;
   transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .back-button:hover {
-  background-color: #D5F2C1;
-  transform: translateY(-3px);
+  background-color: #2B6CB0;
+  transform: translateY(-2px);
 }
 
 .back-button:active {

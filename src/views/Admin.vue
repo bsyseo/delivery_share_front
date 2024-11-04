@@ -90,17 +90,19 @@ export default {
 
 
 <style scoped>
+/* 전체 관리자 컨테이너 */
 .admin-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: #f0f8f4;
+  font-family: 'Roboto', sans-serif;
+  background-color: #ffffff;
   color: #333;
   min-height: 100vh;
 }
 
+/* 헤더 영역 */
 .header {
   display: flex;
   justify-content: space-between;
@@ -108,66 +110,78 @@ export default {
   margin-bottom: 20px;
 }
 
+/* 버튼 스타일 - 홈으로 돌아가기 & 로그아웃 */
 .back-button,
 .logout-button {
-  background-color: #c4e8d1;
+  background-color: #e0e0e0;
   border: none;
-  padding: 12px 24px;
+  padding: 12px 20px;
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 600;
   color: #333;
   cursor: pointer;
-  border-radius: 8px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .back-button:hover,
 .logout-button:hover {
-  background-color: #a8d1b7;
-  transform: translateY(-3px);
-}
-
-.back-button:active,
-.logout-button:active {
-  transform: translateY(0);
+  background-color: #d4d4d4;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
   font-size: 32px;
-  color: #4a6f5b;
+  font-weight: 700;
+  color: #333;
   margin: 30px 0;
-  font-weight: bold;
   text-align: center;
 }
 
+/* 네비게이션 탭 스타일 */
 .nav-tabs {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
-button {
-  padding: 12px 20px;
+.nav-tabs button {
+  padding: 14px 24px;
   font-size: 16px;
-  font-weight: bold;
-  background-color: #4CAF50;
-  color: white;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #6200ea;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-button:hover {
-  background-color: #45a049;
-  transform: translateY(-3px);
+.nav-tabs button:hover {
+  background-color: #3700b3;
+  transform: translateY(-2px);
 }
 
-button:active {
+.nav-tabs button:active {
   transform: translateY(0);
+}
+
+/* 컴포넌트 내용 스타일 */
+.component-content {
+  width: 100%;
+  max-width: 90%;
+  background-color: #f9f9f9;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.component-content:hover {
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
 }
 </style>

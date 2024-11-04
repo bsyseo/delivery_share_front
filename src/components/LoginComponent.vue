@@ -1,19 +1,19 @@
 <template>
   <div>
-    <!-- Default Login Form -->
+    <!-- 로그인 폼 -->
     <div v-if="!isLoggedIn" class="login-box">
       <div class="header">
         <h2>DELIVERY SHARE</h2>
       </div>
       <label for="email">ID</label>
-      <input type="text" v-model="email" id="email" placeholder="Email"><br />
+      <input type="text" v-model="email" id="email" placeholder="Email" /><br />
       <label for="password">PW</label>
-      <input type="password" v-model="password" id="password" placeholder="PW"><br />
+      <input type="password" v-model="password" id="password" placeholder="PW" /><br />
       <div class="actions">
         <router-link to="/signup">회원가입</router-link>
         <router-link to="/ResetIDnPW">ID/PW 찾기</router-link>
       </div>
-      <button v-on:click="login">로그인</button>
+      <button v-on:click="login" class="login-button">로그인</button>
     </div>
 
     <!-- 선택 화면 -->
@@ -23,17 +23,17 @@
       </div>
       <!-- Consumer 선택 옵션 -->
       <div v-if="role === 'consumer'">
-        <button v-on:click="goToOrder">주문 바로가기</button>
-        <button v-on:click="goToMypage">마이페이지로 가기</button>
+        <button v-on:click="goToOrder" class="action-button">주문 바로가기</button>
+        <button v-on:click="goToMypage" class="action-button">마이페이지로 가기</button>
       </div>
       <!-- Business 선택 옵션 -->
       <div v-else-if="role === 'business'">
-        <button v-on:click="goToMap">가게 등록</button>
-        <button v-on:click="goToStoreInfo">스토어 관리</button>
-        <button v-on:click="goToMyMenu">메뉴 관리</button>
+        <button v-on:click="goToMap" class="action-button">가게 등록</button>
+        <button v-on:click="goToStoreInfo" class="action-button">스토어 관리</button>
+        <button v-on:click="goToMyMenu" class="action-button">메뉴 관리</button>
       </div>
-      <button v-on:click="logout">로그아웃</button> <!-- 로그아웃 버튼 -->
-      <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button> <!-- 탈퇴 버튼 -->
+      <button v-on:click="logout" class="logout-button">로그아웃</button>
+      <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button>
     </div>
   </div>
 </template>
@@ -188,93 +188,135 @@ export default {
 </script>
 
 <style scoped>
+/* 로그인 박스 스타일 */
 .login-box {
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 20px;
+  background-color: #ffffff;
+  padding: 32px;
   border-radius: 20px;
-  width: 350px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-  margin-top: 30px;
-}
-
-.header {
-  margin-bottom: 50px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'IBMPlexSansKR', sans-serif;
 }
 
 .header h2 {
   font-weight: bold;
   font-size: 24px;
-  color: #444;
+  color: #333;
   text-align: center;
+  margin-bottom: 24px;
 }
 
 label {
-  display: block;
-  margin-top: 15px;
-  font-weight: bold;
-  text-align: left;
-  margin-left: 20px;
+  width: 100%;
+  margin-top: 12px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #5f6368;
 }
 
 input {
-  margin: 10px 0;
-  width: 85%;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-}
-
-button {
-  margin-top: 20px;
+  margin-top: 8px;
   width: 100%;
   padding: 12px;
-  background-color: #c7e5a8;
+  border-radius: 12px;
+  border: 1px solid #dadce0;
+  font-size: 16px;
   color: #333;
+  background-color: #f7f7f7;
+  transition: background-color 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  background-color: #e8f0fe;
+}
+
+/* 로그인 버튼 */
+.login-button {
+  margin-top: 24px;
+  width: 100%;
+  padding: 12px;
+  background-color: #6200ea;
+  color: #ffffff;
   font-size: 16px;
   font-weight: bold;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-button:hover {
-  background-color: #b3d999;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+.login-button:hover {
+  background-color: #3700b3;
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* 액션 링크 섹션 */
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  width: 100%;
+  margin-top: 12px;
 }
 
 .actions a {
   font-size: 14px;
-  color: #444;
+  color: #6200ea;
+  font-weight: 500;
   text-decoration: none;
 }
 
-.delete-button {
-  margin-top: 20px;
+.actions a:hover {
+  text-decoration: underline;
+}
+
+/* 액션 버튼 스타일 */
+.action-button {
+  margin-top: 24px;
   width: 100%;
   padding: 12px;
-  background-color: #ff4d4d;
-  color: white;
+  background-color: #3182CE;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #2B6CB0;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 로그아웃 및 계정 삭제 버튼 */
+.logout-button,
+.delete-button {
+  margin-top: 20px;
+  width: 80%;
+  padding: 12px;
+  background-color: #6200ea;
+  color: #ffffff;
   font-size: 16px;
   font-weight: bold;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+.logout-button:hover,
 .delete-button:hover {
-  background-color: #e60000;
-}
-
-@font-face {
-  font-family: 'NanumSquareRound';
-  src: url('@/assets/font/NANUMSQUAREROUNDOTFB.OTF') format('opentype');
-}
-
-* {
-  font-family: 'NanumSquareRound', sans-serif;
+  background-color: #3700b3;
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.15);
 }
 </style>

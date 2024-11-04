@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import LoginView from '@/views/Login.vue';
-import SignUpView from '@/views/SignUp.vue';
+import Home from '@/views/Home.vue';
+
+import SignUpView from '@/components/SignUpComponent.vue';
 import MapView from '@/views/map.vue';
 import OrderView from '@/views/order.vue';
 import ResetIDnPW from '@/views/Reset_IDnPW.vue';
@@ -38,8 +39,8 @@ import Fail from '@/views/Fail.vue';
 const routes = [
   {
     path: '/',
-    name: 'Login',
-    component: LoginView
+    name: 'Home',
+    component: Home,
   },
   {
     path: '/signup',

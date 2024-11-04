@@ -424,76 +424,68 @@ export default {
 .navbar {
   width: 40%;
   display: flex;
-  justify-content: center; /* 오른쪽에 버튼 정렬 */
+  justify-content: center;
   padding: 20px;
   margin-bottom: 3vh;
-  background-color: #EFFAD6;
+  background-color: #F0F4FF;
   border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .navbar .button {
-  margin-left: 10px; /* 버튼 간 간격 */
+  margin-left: 10px;
 }
 
 .main-container {
-  background: #B2D8B6;
+  background: #FAFAFF;
   height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 /* 헤더 스타일 */
 .header {
   width: 100%;
-  height: 7vh;
-  padding: 10px;
-  background-color: #EFFAD6;
+  padding: 15px;
+  background-color: #EFF4FF;
   border-radius: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 
-    0px 2px 4px rgba(0, 0, 0, 0.1),
-    inset 0px 2px 4px rgba(255, 255, 255, 0.5);
   font-size: 1.2rem;
   color: #333;
   font-weight: 500;
   margin-bottom: 20px;
+  box-shadow: inset 0px 2px 4px rgba(255, 255, 255, 0.5);
 }
 
 .button-option .button {
-  background-color: #C8E6C9;
+  background-color: #B3C5FF;
   color: #333;
   border: none;
   border-radius: 10px;
-  padding: 7px;
+  padding: 8px 20px;
   font-size: 16px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 3px;
-}
-
-/* 옵션 버튼들의 green 클래스에 적용될 스타일 */
-.button-option .button.green {
-  background-color: #EFFAD6;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25), /* drop shadow */
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25); /* inner shadow */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  margin: 5px;
 }
 
 .button-option .button:hover {
-  background-color: #A5D6A7;
+  background-color: #8DA4FF;
   transform: translateY(-3px);
-  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
 }
-/* 초록색 박스 내부 스타일 */
+
 .order-box {
-  width: 100%; 
+  width: 100%;
   padding: 20px;
-  background-color: #F3F6ED;
+  background-color: #FFFFFF;
   border-radius: 20px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -518,7 +510,7 @@ export default {
   justify-content: center;
   background-color: #FFFFFF;
   border-radius: 15px;
-  padding: 10px;
+  padding: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -529,8 +521,8 @@ export default {
 }
 
 .image-item img {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   object-fit: cover;
   margin-bottom: 8px;
 }
@@ -543,7 +535,7 @@ export default {
 .white-box {
   width: 100%;
   height: 150px;
-  background-color: white; 
+  background-color: #FAFAFF;
   border-radius: 20px;
   margin: 20px 0;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
@@ -564,42 +556,27 @@ export default {
   gap: 20px;
 }
 
-/* 상단 로고 박스 스타일 */
-.logo-box {
+.logo-box, .time-box {
   width: 150px;
   height: 120px;
-  background-color: #F3F6ED; 
+  background-color: #F0F4FF;
   border-radius: 15px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: center;
   align-items: center;
+  text-align: center;
 }
-
-/* 하단 시간 박스 스타일 */
-.time-box {
-  width: 150px;
-  height: 120px;
-  background-color: #FFFDE7; /* 새로운 배경색 */
-  border-radius: 15px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 
 .logo-box img, .time-box p {
   width: 80%;
   height: 80%;
   object-fit: contain;
-  text-align: center;
 }
 
-/* 버튼 스타일 */
 .button {
-  background-color: #A3C09A;
-  color: #FFF;
+  background-color: #AFCBFF;
+  color: #333;
   border: none;
   border-radius: 12px;
   padding: 10px 20px;
@@ -610,7 +587,7 @@ export default {
 }
 
 .button:hover {
-  background-color: #8FB28A;
+  background-color: #8DA4FF;
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
   transform: translateY(-3px);
 }
@@ -619,11 +596,10 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  grid-gap: 10px;
+  gap: 10px;
   padding: 5px;
 }
 
-/* 팝업 스타일 */
 .popup-overlay {
   position: fixed;
   top: 0;
@@ -642,7 +618,7 @@ export default {
   padding: 30px;
   border-radius: 20px;
   text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   max-width: 400px;
   width: 100%;
 }
@@ -650,7 +626,7 @@ export default {
 .popup-content button {
   margin-top: 20px;
   padding: 12px 24px;
-  background-color: #A3C09A;
+  background-color: #8DA4FF;
   color: #FFF;
   border: none;
   border-radius: 12px;
@@ -659,24 +635,22 @@ export default {
 }
 
 .popup-content button:hover {
-  background-color: #8FB28A;
+  background-color: #6D8BFF;
   transform: translateY(-3px);
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* 하단 박스 스타일 */
 .bottom-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  grid-gap: 20px;
+  gap: 20px;
   width: 100%;
   justify-content: center;
   margin-top: 20px;
 }
 
 .time-box {
-  margin-top: 10px;
-  background-color: #F9F9F9;
+  background-color: #EFF4FF;
   border-radius: 17px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -696,9 +670,9 @@ input[type="number"] {
   width: 100%;
   padding: 10px;
   margin-top: 10px;
-  border: 1px solid #C8E6C9;
+  border: 1px solid #C3D7FF;
   border-radius: 10px;
-  background-color: #F3F6ED;
+  background-color: #F7FAFF;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   font-size: 1rem;
   color: #333;
@@ -709,13 +683,13 @@ input[type="number"] {
 
 select:hover,
 input[type="number"]:hover {
-  background-color: #EFFAD6;
+  background-color: #EBF3FF;
   box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.1);
 }
 
 select:focus,
 input[type="number"]:focus {
-  border-color: #A3C09A;
+  border-color: #8DA4FF;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -730,15 +704,6 @@ input[type="number"]::-webkit-outer-spin-button {
   margin: 0;
 }
 
-/* select 아이콘 커스터마이즈 (콤보박스의 화살표) */
-select {
-  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23333" d="M2 0L0 2h4z"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 10px;
-}
-
-/* input 및 select 폼 디자인 */
 .popup-content p {
   margin-bottom: 10px;
   font-size: 1.1rem;
@@ -746,8 +711,12 @@ select {
   font-weight: 500;
 }
 
+@font-face {
+    font-family: 'IBMPlexSansKR';
+    src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
+}
+  
 * {
-  font-family: 'NanumSquareRound', sans-serif;
-  box-sizing: border-box;
+    font-family: 'IBMPlexSansKR', sans-serif;
 }
 </style>

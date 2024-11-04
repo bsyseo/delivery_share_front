@@ -36,7 +36,7 @@
 </template>
 
 <script>
-/* global naver */  
+/* global naver */
 import { getDatabase, ref, push, remove, onValue, set } from 'firebase/database';
 
 export default {
@@ -54,12 +54,6 @@ export default {
       this.map = new naver.maps.Map('map', {
         center: new naver.maps.LatLng(35.1538, 128.0986), // 경상대 좌표
         zoom: 10
-      });
-
-      // 지도 클릭 이벤트: 클릭한 위치로 주소를 입력할 수 있도록 함
-      naver.maps.Event.addListener(this.map, 'click', (e) => {
-        const latLng = e.coord;
-        console.log('Clicked location:', latLng);
       });
 
       // DB에서 저장된 위치들을 지도에 핀으로 표시
@@ -105,12 +99,12 @@ export default {
           this.pickupZones.push({ ...zone, key });
 
           // 해당 주소로 마커 찍기 (주소 -> 좌표 변환 필요)
-          this.placeMarker(zone.address);
+          this.placePickupZoneMarker(zone.address);
         }
       });
     },
 
-    placeMarker(address) {
+    placePickupZoneMarker(address) {
       if (!naver || !naver.maps || !naver.maps.Service) {
         console.error('네이버 지도 API가 로드되지 않았습니다.');
         return;
@@ -121,8 +115,18 @@ export default {
           const latLng = new naver.maps.LatLng(response.v2.addresses[0].y, response.v2.addresses[0].x);
           const marker = new naver.maps.Marker({
             position: latLng,
-            map: this.map
+            map: this.map,
+            title: '픽업존' // 마커에 "픽업존"이라는 제목을 추가
           });
+
+          const infoWindow = new naver.maps.InfoWindow({
+            content: '<div style="padding:10px;font-size:14px;">픽업존</div>'
+          });
+
+          naver.maps.Event.addListener(marker, 'click', () => {
+            infoWindow.open(this.map, marker);
+          });
+
           this.markers.push(marker);
         } else {
           console.error('Geocode 실패:', status);
@@ -147,7 +151,7 @@ export default {
   mounted() {
     if (typeof naver === 'undefined') {
       const script = document.createElement('script');
-      script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=i3rhpr81uf`;
+      script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=YOUR_CLIENT_ID`;
       script.async = true;
       script.onload = this.initializeMap;  // 스크립트 로드가 완료된 후 지도를 초기화
       document.head.appendChild(script);
@@ -157,3 +161,101 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.pickup-zone-management {
+  padding: 24px;
+  background-color: #f5f5f5;
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1200px; /* 전체 너비를 확장하여 넓은 화면에서 시원하게 보이도록 함 */
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 28px;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 24px;
+}
+
+.map-container {
+  width: 100%;
+  height: 500px; /* 지도 영역의 높이를 키워서 더 넓게 보이도록 조정 */
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.address-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px; 
+  margin-bottom: 24px;
+}
+
+.address-form label {
+  font-size: 16px;
+  color: #555;
+  font-weight: 500;
+  margin-top: 12px;
+  width: 100%;
+  text-align: left;
+}
+
+.address-form input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #333;
+  background-color: #f7f7f7;
+}
+
+.address-form button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #6200ea;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.address-table {
+  width: 100%;
+  max-width: 1000px; /* 테이블의 최대 너비를 확장 */
+  border-collapse: collapse;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.address-table th, .address-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}
+
+.address-table button {
+  padding: 8px 16px;
+  background-color: #ff4d4d;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+</style>

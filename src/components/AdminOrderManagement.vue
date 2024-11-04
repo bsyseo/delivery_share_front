@@ -141,7 +141,7 @@ export default {
                 participantsCount,
                 menu: member.menu,
                 quantity: member.quantity,
-                highlight: true, // 새로운 정보 하이라이트 여부
+                highlight: false, // 기본 하이라이트 설정을 false로 설정
               };
             }
           });
@@ -149,14 +149,7 @@ export default {
           Promise.all(newOrdersArray).then((newOrders) => {
             this.orders = newOrders.filter(order => order);
             this.orders.sort((a, b) => new Date(b.participateTime) - new Date(a.participateTime));
-
-            // 첫 번째 줄만 하이라이트 적용 후 해제
-            if (this.orders.length > 0) {
-              this.orders[0].highlight = false;
-              setTimeout(() => {
-                this.orders[0].highlight = true;
-              }, 2000);
-            }
+            this.highlightFirstOrder();
           });
         }
       });
@@ -231,31 +224,69 @@ export default {
     closeParticipantsPopup() {
       this.showParticipantsPopup = false;
     },
+    highlightFirstOrder() {
+      if (this.orders.length > 0) {
+        this.orders[0].highlight = true;
+        setTimeout(() => {
+          this.orders[0].highlight = false;
+        }, 2000); // 2초 동안 하이라이트 표시 후 해제
+      }
+    },
   },
 };
 </script>
 
 <style scoped>
 .order-management {
-  padding: 20px;
-  background-color: #EFFAD6;
+  padding: 30px;
+  background-color: #f4f6f8;
+  font-family: 'Roboto', sans-serif;
+  border-radius: 32px;
+}
+
+h1 {
+  color: #2b2d42;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 16px;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 20px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
 }
 
 th, td {
-  padding: 10px;
-  border: 1px solid #ddd;
+  padding: 12px;
   text-align: center;
+  font-size: 14px;
+  color: #333333;
+}
+
+th {
+  background-color: #e0e7ff;
+  color: #4a4a4a;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
 }
 
 a {
-  color: #007BFF;
-  cursor: pointer;
+  color: #6200ea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 .uid-link {
@@ -264,32 +295,44 @@ a {
 
 .creator-name {
   font-size: 0.9em;
+  font-weight: 500;
 }
 
 .popup {
   position: fixed;
-  top: 20%;
+  top: 50%;
   left: 50%;
-  transform: translate(-50%, -20%);
-  background-color: white;
-  padding: 20px;
-  border: 1px solid #ddd;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translate(-50%, -50%);
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 90%;
   z-index: 1000;
 }
 
-.participants-popup {
-  z-index: 999;
+button {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background-color: #6200ea;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+button:hover {
+  background-color: #3700b3;
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
 }
 
 .highlight {
@@ -300,5 +343,17 @@ button {
   0% { background-color: #ffeb3b; }
   100% { background-color: transparent; }
 }
-</style>
 
+@font-face {
+  font-family: 'IBMPlexSansKR';
+  src: url('@/assets/font/IBMPlexSansKR-Light.ttf') format('truetype'); 
+  font-weight: 300;
+  font-style: normal;
+}
+
+/* 모든 요소에 기본 폰트 설정 */
+* {
+  font-family: 'IBMPlexSansKR', sans-serif;
+}
+
+</style>

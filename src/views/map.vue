@@ -16,13 +16,12 @@ export default {
 </script>
 
 <style scoped>
-@font-face {
-  font-family: 'NanumSquareRound';
-  src: url('@/assets/font/NANUMSQUAREROUNDOTFL.OTF') format('opentype');
-}
-
-.head {
-
-  font-family: 'NanumSquareRound', sans-serif;
-}
+  @font-face {
+    font-family: 'IBMPlexSansKR';
+    src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
+  }
+  
+  * {
+    font-family: 'IBMPlexSansKR', sans-serif;
+  }
 </style>
