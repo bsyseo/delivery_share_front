@@ -1,8 +1,9 @@
 <template>
   <div class="admin-container">
-    <!-- 홈 화면으로 돌아가기 버튼 -->
+    <!-- Header 영역 - 홈으로 돌아가기 및 로그아웃 버튼 -->
     <div class="header">
       <button class="back-button" @click="$router.push('/')">홈 화면으로 돌아가기</button>
+      <button class="logout-button" @click="logout">로그아웃</button>
     </div>
 
     <h1>관리자 대시보드</h1>
@@ -24,6 +25,8 @@
 </template>
 
 <script>
+import { getAuth, signOut } from "firebase/auth"; // Firebase 로그아웃을 위해 import
+
 import AdminOrderManagement from '@/components/AdminOrderManagement.vue';
 import AdminCouponManagement from '@/components/AdminCouponManagement.vue';
 import AdminAdvertisementManagement from '@/components/AdminAdvertisementManagement.vue';
@@ -43,25 +46,33 @@ export default {
   computed: {
     currentViewComponent() {
       switch (this.currentView) {
-        case 'orderManagement':
-          return AdminOrderManagement;
-        case 'couponManagement':
-          return AdminCouponManagement;
-        case 'advertisementManagement':
-          return AdminAdvertisementManagement;
-        case 'qnaManagement':
-          return AdminQnAManagement;
-        case 'pickUpZoneManagement':
-          return AdminPickUpZoneManagement;
-        case 'userManagement':
-          return AdminUserManagement;
-        case 'storeManagement':
-          return AdminStoreManagement;
-        case 'connectionStatistics':
-          return AdminConnectionStatistics;
-        default:
-          return AdminOrderManagement;
+        case 'orderManagement': return AdminOrderManagement;
+        case 'couponManagement': return AdminCouponManagement;
+        case 'advertisementManagement': return AdminAdvertisementManagement;
+        case 'qnaManagement': return AdminQnAManagement;
+        case 'pickUpZoneManagement': return AdminPickUpZoneManagement;
+        case 'userManagement': return AdminUserManagement;
+        case 'storeManagement': return AdminStoreManagement;
+        case 'connectionStatistics': return AdminConnectionStatistics;
+        default: return AdminOrderManagement;
       }
+    }
+  },
+  methods: {
+    logout() {
+      const authInstance = getAuth();
+      signOut(authInstance)
+        .then(() => {
+          // 로그아웃 후 localStorage 정리 및 홈 페이지로 이동
+          localStorage.removeItem('role');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('lastLoginTime');
+          this.$router.push('/'); // 홈으로 이동
+        })
+        .catch(error => {
+          console.error("로그아웃 실패:", error);
+          alert("로그아웃에 실패했습니다.");
+        });
     }
   },
   components: {
@@ -77,6 +88,7 @@ export default {
 };
 </script>
 
+
 <style scoped>
 .admin-container {
   display: flex;
@@ -89,16 +101,15 @@ export default {
   min-height: 100vh;
 }
 
-/* 상단 중앙에 버튼 위치 조정 */
 .header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   width: 100%;
   margin-bottom: 20px;
 }
 
-/* 홈으로 돌아가기 버튼 */
-.back-button {
+.back-button,
+.logout-button {
   background-color: #c4e8d1;
   border: none;
   padding: 12px 24px;
@@ -111,16 +122,17 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.back-button:hover {
+.back-button:hover,
+.logout-button:hover {
   background-color: #a8d1b7;
   transform: translateY(-3px);
 }
 
-.back-button:active {
+.back-button:active,
+.logout-button:active {
   transform: translateY(0);
 }
 
-/* Admin Dashboard 제목 스타일 */
 h1 {
   font-size: 32px;
   color: #4a6f5b;
@@ -129,7 +141,6 @@ h1 {
   text-align: center;
 }
 
-/* 네비게이션 탭 스타일 */
 .nav-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -159,11 +170,4 @@ button:hover {
 button:active {
   transform: translateY(0);
 }
-
-.component-area {
-  text-align: center;
-  margin-top: 20px;
-}
-
-
 </style>

@@ -5,30 +5,35 @@ import MapView from '@/views/map.vue';
 import OrderView from '@/views/order.vue';
 import ResetIDnPW from '@/views/Reset_IDnPW.vue';
 import ResetPasswordComponent from '@/components/ResetPasswordComponent.vue';
-import BusinessView from '@/views/Business.vue'; // 비즈니스 사용자 페이지
-import BusinessInformation from '@/components/BusinessInformation.vue'; // 사업자 정보 페이지
-import BusinessMenu from '@/components/BusinessMenu.vue'; // 메뉴 등록 페이지
-import BusinessAdvertisement from '@/components/BusinessAdvertisement.vue'; // 광고 신청 페이지
+import BusinessView from '@/views/Business.vue';
+import BusinessInformation from '@/components/BusinessInformation.vue';
+import BusinessMenu from '@/components/BusinessMenu.vue';
+import BusinessAdvertisement from '@/components/BusinessAdvertisement.vue';
 
 // 관리자 관련 컴포넌트들
-import AdminView from '@/views/Admin.vue'; // 관리자 메인 페이지
+import AdminView from '@/views/Admin.vue';
 import AdminOrderManagement from '@/components/AdminOrderManagement.vue';
 import AdminCouponManagement from '@/components/AdminCouponManagement.vue';
 import AdminAdvertisementManagement from '@/components/AdminAdvertisementManagement.vue';
-import AdminQnAManagement from '@/components/AdminQnAManagement.vue'; // Q&A 관리
-import AdminPickUpZoneManagement from '@/components/AdminPickUpZoneManagement.vue'; // PICK-UP-ZONE 관리
+import AdminQnAManagement from '@/components/AdminQnAManagement.vue';
+import AdminPickUpZoneManagement from '@/components/AdminPickUpZoneManagement.vue';
 import AdminUserManagement from '@/components/AdminUserManagement.vue';
 import AdminStoreManagement from '@/components/AdminStoreManagement.vue';
 import AdminTemporary from '@/components/AdminTemporary.vue';
 import AdminConnectionStatistics from '@/components/AdminConnectionStatistics.vue';
 
 import MakingOrderView from '@/views/MakingOrder.vue';
-import StoreInformation from '@/components/store_information.vue'; // 가게 정보 입력 페이지
+import StoreInformation from '@/components/store_information.vue';
 import UserMypage from '@/views/UserMypage.vue';
 import OrderHistory from '@/components/OrderHistoryComponent.vue';
 import EditUserInfo from '@/components/EditUserInfo.vue';
 import QnAComponent from '@/components/QnA_Component.vue';
 import UserReview from '@/components/review.vue';
+
+// 결제 결과 관련 뷰
+import Approval from '@/views/Approval.vue';
+import Cancel from '@/views/Cancel.vue';
+import Fail from '@/views/Fail.vue';
 
 const routes = [
   {
@@ -49,12 +54,12 @@ const routes = [
   {
     path: '/business',
     name: 'Business',
-    component: BusinessView // 비즈니스 사용자가 보는 페이지
+    component: BusinessView
   },
   {
     path: '/admin',
     name: 'AdminView',
-    component: AdminView // 관리자 메인 페이지로 수정
+    component: AdminView
   },
   {
     path: '/reset-idpw',
@@ -74,17 +79,17 @@ const routes = [
   {
     path: '/business_information',
     name: 'BusinessInformation',
-    component: BusinessInformation // 사업자 정보 페이지로 이동
+    component: BusinessInformation
   },
   {
     path: '/business_menu',
     name: 'BusinessMenu',
-    component: BusinessMenu // 메뉴 등록 페이지로 이동
+    component: BusinessMenu
   },
   {
     path: '/business_advertisement',
     name: 'BusinessAdvertisement',
-    component: BusinessAdvertisement // 광고 신청 페이지로 이동
+    component: BusinessAdvertisement
   },
   // 관리자 관련 라우트들
   {
@@ -140,7 +145,7 @@ const routes = [
   {
     path: '/store_information',
     name: 'StoreInformation',
-    component: StoreInformation // 가게 정보 입력 페이지
+    component: StoreInformation
   },
   {
     path: '/UserMypage',
@@ -167,6 +172,22 @@ const routes = [
     name: 'Review',
     component: UserReview
   },
+  // 결제 결과 페이지 라우트
+  {
+    path: '/approval',
+    name: 'Approval',
+    component: Approval
+  },
+  {
+    path: '/cancel',
+    name: 'Cancel',
+    component: Cancel
+  },
+  {
+    path: '/fail',
+    name: 'Fail',
+    component: Fail
+  }
 ];
 
 const router = createRouter({

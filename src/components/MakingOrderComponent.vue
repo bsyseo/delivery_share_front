@@ -99,13 +99,12 @@ export default {
       get(storesRef).then((snapshot) => {
         if (snapshot.exists()) {
           const allStores = snapshot.val();
-          // 모든 store를 탐색하면서 storeType이 선택한 카테고리와 일치하는 가게를 필터링
           this.stores = Object.keys(allStores)
             .filter(key => allStores[key].storeType === this.selectedCategory)
             .map(key => ({
               id: key,
-              name: allStores[key].storeName, // storeName 사용
-              phone: allStores[key].contact,  // 필요에 따라 추가 정보도 가져옴
+              name: allStores[key].storeName,
+              phone: allStores[key].contact,
             }));
         } else {
           this.stores = [];
@@ -114,7 +113,7 @@ export default {
         console.error('가게 목록을 불러오는 데 실패했습니다:', error);
       });
 
-      this.selectedStore = ''; // 기존 선택을 초기화
+      this.selectedStore = ''; // 기존 선택 초기화
       this.menus = [];
     },
     fetchMenusAndDeliveryFee() {
@@ -125,7 +124,7 @@ export default {
           this.menus = Object.keys(snapshot.val()).map(key => ({
             id: key,
             ...snapshot.val()[key],
-            price: snapshot.val()[key].price  // 가격 정보도 가져옴
+            price: snapshot.val()[key].price
           }));
         } else {
           this.menus = [];
@@ -146,7 +145,7 @@ export default {
         console.error('배달비를 불러오는 데 실패했습니다:', error);
       });
 
-      this.selectedMenu = ''; // 기존 선택을 초기화
+      this.selectedMenu = ''; // 기존 선택 초기화
     },
     validateTime() {
       const inputTime = moment.tz(this.pickupTime, 'Asia/Seoul');
@@ -164,12 +163,12 @@ export default {
       this.pickupTime = inputTime.format('YYYY-MM-DDTHH:mm');
       this.timeAdjustmentMessage = `${inputTime.format('HH:mm')}으로 설정되었습니다.`;
     },
-    submitOrder() {
+    async submitOrder() {
       const auth = getAuth();
-      onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(auth, async (user) => {
         if (user) {
           const createdAt = moment().tz('Asia/Seoul').format();
-          const reservationTime = moment.tz(this.pickupTime, 'Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');  // 웹에서 입력한 예약 시간도 한국 시간으로 변환
+          const reservationTime = moment.tz(this.pickupTime, 'Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
           const orderRef = ref(database, 'orders');
           const newOrderRef = push(orderRef);
           const orderId = newOrderRef.key;
@@ -182,16 +181,50 @@ export default {
             status: 'pending',
             reservationTime: reservationTime,
             participantsCount: 1,
-            menu: this.selectedMenu.name,  // 선택한 메뉴 추가
-            price: this.selectedMenu.price,  // 선택한 메뉴 가격 추가
-            quantity: this.menuQuantity,   // 선택한 수량 추가
-            deliveryFee: this.deliveryFee  // 배달비 추가
+            menu: this.selectedMenu.name,
+            price: this.selectedMenu.price,
+            quantity: this.menuQuantity,
+            deliveryFee: this.deliveryFee
           };
 
-          // `orders/` 경로에 저장
+          try {
+            // 카카오페이 결제 준비 API 호출
+            const response = await fetch('https://kapi.kakao.com/v1/payment/ready', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'KakaoAK DEV54CE7FC9A79E7B3A8EDC0BE0B10571054BF49', // 발급된 DEV Secret Key 사용
+                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+              },
+              body: new URLSearchParams({
+                cid: 'TC0ONETIME', 
+                partner_order_id: 'orderId',
+                partner_user_id: user.uid,
+                item_name: this.selectedMenu.name,
+                quantity: this.menuQuantity,
+                total_amount: (this.selectedMenu.price * this.menuQuantity + this.deliveryFee).toString(),
+                vat_amount: 0,
+                tax_free_amount: 0,
+                approval_url: 'https://delivery-sharing.site/approval',
+                cancel_url: 'https://delivery-sharing.site/cancle',
+                fail_url: 'https://delivery-sharing.site/fail'
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              // 결제 URL로 리다이렉트
+              window.location.href = data.next_redirect_pc_url;
+            } else {
+              console.error('결제 준비 실패:', await response.json());
+            }
+          } catch (error) {
+            console.error('결제 요청 중 오류 발생:', error);
+          }
+          
+          // Firebase에 주문 데이터 저장
           set(newOrderRef, orderData)
             .then(() => {
-              // `member/` 경로에 참여자 정보 저장
+              // `member` 경로에 참여자 정보 저장
               this.saveMember(user.uid, orderId, this.selectedMenu.name, this.selectedMenu.price, this.menuQuantity);
             })
             .catch((error) => {
@@ -203,24 +236,21 @@ export default {
       });
     },
     
-    // member 테이블에 데이터를 저장하는 함수
     saveMember(uid, orderId, menu, price, quantity) {
       const memberRef = ref(database, 'member');
       const newMemberRef = push(memberRef);
-      
-      // 현재 한국 시각으로 participate_time 설정
+
       const participateTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
       
       const memberData = {
-        uid: uid,  // 사용자의 UID
-        orderID: orderId,  // 해당 주문의 ID
-        menu: menu,  // 선택된 메뉴
-        price: price,  // 선택된 메뉴 가격
-        quantity: quantity,  // 주문 수량
-        participate_time: participateTime,  // 참여 시각 (한국 시각)
+        uid: uid,
+        orderID: orderId,
+        menu: menu,
+        price: price,
+        quantity: quantity,
+        participate_time: participateTime,
       };
 
-      // `member/` 경로에 저장
       set(newMemberRef, memberData)
         .then(() => {
           console.log(`Member saved successfully. Member ID: ${newMemberRef.key}`);
@@ -241,7 +271,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .wrapper {
