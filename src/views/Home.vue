@@ -32,7 +32,7 @@
         </div>
         <div class="featured-card">
           <div class="featured-content">
-            <h3>Fresh Monday !</h3>
+            <h3>Fresh Monday!</h3>
             <p>How about starting your week with a meal full of fresh vegetables? 
               Mondays are perfect for a healthy boost to set the tone for the rest of the week. 
               Imagine crisp, vibrant greens paired with your favorite flavors, 
@@ -43,7 +43,7 @@
         </div><br>
         <div class="featured-card">
           <div class="featured-content">
-            <h3>Kickstart Your Week with Fresh Energy </h3>
+            <h3>Kickstart Your Week with Fresh Energy</h3>
             <p>Begin your day with the perfect blend of coffee and fresh ingredients delivered right to your door. 
               Mondays are for setting a positive tone, and what better way than with a wholesome meal and your favorite brew? 
               Imagine the aroma of freshly brewed coffee complementing a nourishing dish made with the best ingredients – all designed to fuel your week. Let today be a fresh start, 
@@ -78,7 +78,7 @@ export default {
   min-height: 100vh;
 }
 
-.login-section{
+.login-section {
   margin-right: 50px;
 }
 
@@ -154,7 +154,7 @@ export default {
 .featured-content h3 {
   font-size: 24px;
   font-weight: bold;
-  margin-bottom: 80px;
+  margin-bottom: 20px;
   color: #333;
 }
 
@@ -171,6 +171,7 @@ export default {
   object-fit: cover;
 }
 
+/* 카드 스타일 */
 .horizontal-card {
   display: flex;
   align-items: center;
@@ -228,5 +229,50 @@ export default {
 
 * {
   font-family: 'IBMPlexSansKR', sans-serif;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+  .intro-section {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .home-content h1 {
+    font-size: 36px;
+  }
+
+  .home-content p {
+    font-size: 16px;
+  }
+
+  .login-section {
+    margin-right: 0;
+  }
+
+  .cards-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .featured-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .featured-content h3 {
+    font-size: 20px;
+  }
+
+  .featured-content p {
+    font-size: 14px;
+  }
+
+  .featured-media {
+    width: 100%;
+    height: auto;
+    max-width: 300px;
+  }
 }
 </style>
