@@ -46,20 +46,23 @@ import { getDatabase, ref, push, remove, onValue, set } from 'firebase/database'
 export default {
   data() {
     return {
-      searchAddress: '', // 검색할 주소
-      address: '', // 선택된 주소
-      specific: '', // 입력한 상세 주소
-      map: null, // 네이버 지도 객체
-      markers: [], // 지도 상의 마커
-      pickupZones: [] // DB에서 불러온 픽업존 리스트
+      searchAddress: '',
+      address: '',
+      specific: '',
+      map: null,
+      markers: [],
+      pickupZones: []
     };
   },
   methods: {
     initializeMap() {
-      this.map = new naver.maps.Map('map', {
+      const mapContainer = document.getElementById('map');
+      const mapOptions = {
         center: new naver.maps.LatLng(35.1538, 128.0986), // 경상대 좌표
         zoom: 10
-      });
+      };
+
+      this.map = new naver.maps.Map(mapContainer, mapOptions);
       this.loadLocationsFromDB();
     },
 
@@ -73,10 +76,7 @@ export default {
         if (status === naver.maps.Service.Status.OK) {
           const latLng = new naver.maps.LatLng(response.v2.addresses[0].y, response.v2.addresses[0].x);
 
-          // 지도 중심을 검색한 위치로 이동
           this.map.setCenter(latLng);
-
-          // 검색한 주소로 마커 추가 및 주소 필드 업데이트
           this.address = response.v2.addresses[0].roadAddress || response.v2.addresses[0].jibunAddress;
 
           const marker = new naver.maps.Marker({
@@ -85,7 +85,6 @@ export default {
             title: '검색된 주소'
           });
 
-          // 기존 마커 제거 후 새 마커 저장
           this.clearMarkers();
           this.markers.push(marker);
         } else {
@@ -172,9 +171,18 @@ export default {
   mounted() {
     if (typeof naver === 'undefined') {
       const script = document.createElement('script');
-      script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=YOUR_CLIENT_ID`;
+      script.src = 'https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=YOUR_CLIENT_ID';
       script.async = true;
-      script.onload = this.initializeMap;
+
+      script.onload = () => {
+        this.initializeMap();
+      };
+
+      script.onerror = () => {
+        console.error('네이버 지도 API를 로드하는 데 실패했습니다.');
+        alert('네이버 지도 API를 로드할 수 없습니다. 네트워크 상태를 확인하세요.');
+      };
+
       document.head.appendChild(script);
     } else {
       this.initializeMap();
@@ -192,7 +200,8 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 1000px;
+  width: 100%;
+  max-width: 1000px;
   margin: 0 auto;
   border-radius: 20px;
 }
@@ -205,7 +214,7 @@ h1 {
 }
 
 .map-container {
-  width: 700px;
+  width: 100%;
   height: 50vh;
   border-radius: 16px;
   overflow: hidden;
@@ -260,7 +269,7 @@ h1 {
 
 .address-table {
   width: 100%;
-  max-width: 1000px; /* 테이블의 최대 너비를 확장 */
+  max-width: 1000px;
   border-collapse: collapse;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }

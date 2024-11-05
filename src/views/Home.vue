@@ -249,6 +249,8 @@ export default {
 
   .login-section {
     margin-right: 0;
+    margin-top: 20px;
+    width: 100%;
   }
 
   .cards-row {
