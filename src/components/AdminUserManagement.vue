@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-user-management">
+  <div class="admin-container">
     <h1>관리자 사용자 관리 페이지</h1>
 
     <!-- 소비자 목록 -->
@@ -50,7 +50,6 @@
       <p v-else>자영업자 정보가 없습니다.</p>
     </div>
 
-
     <!-- 관리자 목록 -->
     <div class="user-block">
       <h2>관리자 목록</h2>
@@ -78,16 +77,16 @@
 </template>
 
 <script>
-import { ref, get, child} from 'firebase/database';
-import { database } from '@/main'; // Firebase 초기화가 되어있는지 확인
+import { ref, get, child } from 'firebase/database';
+import { database } from '@/main';
 
 export default {
   name: 'AdminUserManagement',
   data() {
     return {
-      consumers: [], // 소비자 목록
-      businesses: [], // 자영업자 목록
-      admins: [] // 관리자 목록
+      consumers: [],
+      businesses: [],
+      admins: []
     };
   },
   methods: {
@@ -102,7 +101,6 @@ export default {
           const businessList = [];
           const adminList = [];
 
-          // 사용자 분류 및 최신 가입 순 정렬
           for (let uid in users) {
             const user = users[uid];
             const userData = {
@@ -124,12 +122,10 @@ export default {
             }
           }
 
-          // 최신 가입 순으로 정렬
           consumerList.sort((a, b) => b.registeredAt - a.registeredAt);
           businessList.sort((a, b) => b.registeredAt - a.registeredAt);
           adminList.sort((a, b) => b.registeredAt - a.registeredAt);
 
-          // 데이터 업데이트
           this.consumers = consumerList;
           this.businesses = businessList;
           this.admins = adminList;
@@ -145,51 +141,75 @@ export default {
 };
 </script>
 
-
 <style scoped>
-.admin-user-management {
-  text-align: center;
+.admin-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 20px;
-  background-color: #f0f8ec;
+  font-family: 'Roboto', sans-serif;
+  background-color: #ffffff;
+  color: #333;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #6200ea;
+  margin: 30px 0;
+  text-align: center;
 }
 
 .user-block {
-  margin-bottom: 40px;
+  width: 100%;
+  max-width: 1200px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
   padding: 20px;
-  background-color: rgba(144, 238, 144, 0.3);
-  border-radius: 10px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
 .user-block h2 {
-  font-family: 'Arial', sans-serif;
-  color: #4CAF50;
+  font-size: 1.5rem;
+  color: #6200ea;
+  margin-bottom: 15px;
 }
 
 .user-table {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .user-table th, .user-table td {
-  padding: 10px;
-  border: 1px solid #4CAF50;
+  padding: 12px 15px;
   text-align: left;
 }
 
 .user-table th {
-  background-color: #4CAF50;
+  background-color: #6200ea;
   color: white;
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .user-table td {
-  background-color: #fff;
+  background-color: #f3f1f9;
   color: #333;
 }
 
+.user-table tr:nth-child(even) td {
+  background-color: #e8e5f4;
+}
+
 p {
-  font-size: 14px;
-  color: #555;
+  font-size: 0.9rem;
+  color: #333;
+  text-align: center;
+  margin-top: 10px;
 }
 </style>

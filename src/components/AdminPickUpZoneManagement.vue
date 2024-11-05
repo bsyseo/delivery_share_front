@@ -7,8 +7,12 @@
 
     <!-- 주소 입력 폼 -->
     <div class="address-form">
-      <label for="address">주소</label>
-      <input v-model="address" type="text" id="address" placeholder="주소를 입력하세요" /><br />
+      <label for="searchAddress">주소 검색</label>
+      <input v-model="searchAddress" type="text" id="searchAddress" placeholder="주소를 검색하세요" />
+      <button @click="searchAddressOnMap">검색</button><br />
+
+      <label for="address">선택된 주소</label>
+      <input v-model="address" type="text" id="address" placeholder="주소를 입력하세요" readonly /><br />
       <label for="specific">상세 주소</label>
       <input v-model="specific" type="text" id="specific" placeholder="상세 주소를 입력하세요" /><br />
       <button @click="saveLocation">저장</button>
@@ -42,7 +46,8 @@ import { getDatabase, ref, push, remove, onValue, set } from 'firebase/database'
 export default {
   data() {
     return {
-      address: '', // 입력한 주소
+      searchAddress: '', // 검색할 주소
+      address: '', // 선택된 주소
       specific: '', // 입력한 상세 주소
       map: null, // 네이버 지도 객체
       markers: [], // 지도 상의 마커
@@ -55,9 +60,39 @@ export default {
         center: new naver.maps.LatLng(35.1538, 128.0986), // 경상대 좌표
         zoom: 10
       });
-
-      // DB에서 저장된 위치들을 지도에 핀으로 표시
       this.loadLocationsFromDB();
+    },
+
+    async searchAddressOnMap() {
+      if (!this.searchAddress) {
+        alert('검색할 주소를 입력해 주세요.');
+        return;
+      }
+
+      naver.maps.Service.geocode({ query: this.searchAddress }, (status, response) => {
+        if (status === naver.maps.Service.Status.OK) {
+          const latLng = new naver.maps.LatLng(response.v2.addresses[0].y, response.v2.addresses[0].x);
+
+          // 지도 중심을 검색한 위치로 이동
+          this.map.setCenter(latLng);
+
+          // 검색한 주소로 마커 추가 및 주소 필드 업데이트
+          this.address = response.v2.addresses[0].roadAddress || response.v2.addresses[0].jibunAddress;
+
+          const marker = new naver.maps.Marker({
+            position: latLng,
+            map: this.map,
+            title: '검색된 주소'
+          });
+
+          // 기존 마커 제거 후 새 마커 저장
+          this.clearMarkers();
+          this.markers.push(marker);
+        } else {
+          alert('주소를 찾을 수 없습니다.');
+          console.error('Geocode 실패:', status);
+        }
+      });
     },
 
     async saveLocation() {
@@ -67,19 +102,16 @@ export default {
       }
 
       const db = getDatabase();
-      const pickupZoneRef = ref(db, 'pick-up-zone'); // pick-up-zone 경로 참조
-
-      const newLocationRef = push(pickupZoneRef); // 새로운 키 생성
-      await set(newLocationRef, {  // set 메서드로 데이터 저장
+      const pickupZoneRef = ref(db, 'pick-up-zone');
+      const newLocationRef = push(pickupZoneRef);
+      await set(newLocationRef, {
         address: this.address,
         specific: this.specific
       });
 
-      // 입력한 정보 초기화
       this.address = '';
       this.specific = '';
-
-      // 새로운 데이터를 지도에 반영
+      this.searchAddress = '';
       this.loadLocationsFromDB();
     },
 
@@ -90,33 +122,24 @@ export default {
       onValue(pickupZoneRef, (snapshot) => {
         const data = snapshot.val();
         this.pickupZones = [];
-
-        // 지도에 있는 기존 마커 제거
         this.clearMarkers();
 
         for (let key in data) {
           const zone = data[key];
           this.pickupZones.push({ ...zone, key });
-
-          // 해당 주소로 마커 찍기 (주소 -> 좌표 변환 필요)
           this.placePickupZoneMarker(zone.address);
         }
       });
     },
 
     placePickupZoneMarker(address) {
-      if (!naver || !naver.maps || !naver.maps.Service) {
-        console.error('네이버 지도 API가 로드되지 않았습니다.');
-        return;
-      }
-
       naver.maps.Service.geocode({ query: address }, (status, response) => {
         if (status === naver.maps.Service.Status.OK) {
           const latLng = new naver.maps.LatLng(response.v2.addresses[0].y, response.v2.addresses[0].x);
           const marker = new naver.maps.Marker({
             position: latLng,
             map: this.map,
-            title: '픽업존' // 마커에 "픽업존"이라는 제목을 추가
+            title: '픽업존'
           });
 
           const infoWindow = new naver.maps.InfoWindow({
@@ -143,8 +166,6 @@ export default {
       const db = getDatabase();
       const locationRef = ref(db, `pick-up-zone/${key}`);
       await remove(locationRef);
-
-      // 삭제 후 다시 로드
       this.loadLocationsFromDB();
     }
   },
@@ -153,7 +174,7 @@ export default {
       const script = document.createElement('script');
       script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=YOUR_CLIENT_ID`;
       script.async = true;
-      script.onload = this.initializeMap;  // 스크립트 로드가 완료된 후 지도를 초기화
+      script.onload = this.initializeMap;
       document.head.appendChild(script);
     } else {
       this.initializeMap();
@@ -161,6 +182,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .pickup-zone-management {
@@ -170,8 +192,9 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 1200px; /* 전체 너비를 확장하여 넓은 화면에서 시원하게 보이도록 함 */
+  width: 1000px;
   margin: 0 auto;
+  border-radius: 20px;
 }
 
 h1 {
@@ -182,8 +205,8 @@ h1 {
 }
 
 .map-container {
-  width: 100%;
-  height: 500px; /* 지도 영역의 높이를 키워서 더 넓게 보이도록 조정 */
+  width: 700px;
+  height: 50vh;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);

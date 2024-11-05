@@ -173,7 +173,7 @@ h1 {
 /* 컴포넌트 내용 스타일 */
 .component-content {
   width: 100%;
-  max-width: 90%;
+  max-width: 120%;
   background-color: #f9f9f9;
   padding: 32px;
   border-radius: 12px;

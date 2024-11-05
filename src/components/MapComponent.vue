@@ -68,9 +68,12 @@ export default {
       };
       this.map = new naver.maps.Map('map', mapOptions);
 
-      // 마커 추가
+      // 기본 마커 추가
       this.addMarker(35.153114, 128.099379, '경상국립대학교 가좌캠퍼스');
       this.addMarker(35.154401, 128.092888, '항공우주산학협력관');
+
+      // 저장된 픽업존 로드 및 마커 표시
+      this.loadPickupZones();
     },
     addMarker(lat, lng, content) {
       const marker = new naver.maps.Marker({
@@ -92,12 +95,50 @@ export default {
 
       this.markers.push(marker);
     },
+    loadPickupZones() {
+      // Firebase에서 픽업존 데이터 로드
+      const pickupZoneRef = ref(database, 'pick-up-zone');
+      onValue(pickupZoneRef, (snapshot) => {
+        const data = snapshot.val();
+
+        for (let key in data) {
+          const zone = data[key];
+          this.addPickupZoneMarker(zone.address, zone.specific);
+        }
+      });
+    },
+    addPickupZoneMarker(address, specific) {
+      naver.maps.Service.geocode({ query: address }, (status, response) => {
+        if (status === naver.maps.Service.Status.OK) {
+          const latLng = new naver.maps.LatLng(response.v2.addresses[0].y, response.v2.addresses[0].x);
+          const marker = new naver.maps.Marker({
+            position: latLng,
+            map: this.map,
+            title: address
+          });
+
+          const infoWindow = new naver.maps.InfoWindow({
+            content: `<div style="padding:10px;">${address} - ${specific}</div>`
+          });
+
+          naver.maps.Event.addListener(marker, 'click', () => {
+            this.$router.push('/order');
+            infoWindow.open(this.map, marker);
+          });
+
+          this.markers.push(marker);
+        } else {
+          console.error('Geocode 실패:', status);
+        }
+      });
+    },
     goBack() {
       this.$router.push('/');
     }
   }
 };
 </script>
+
 <style scoped>
 .map-container {
   display: flex;
