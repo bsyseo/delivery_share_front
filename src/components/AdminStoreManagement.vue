@@ -1,6 +1,6 @@
 <template>
   <div class="admin-store-management">
-    <h1>관리자 점포 관리 페이지</h1>
+    <h1>스토어 관리</h1>
 
     <!-- 승인 대기 중인 점포 슬라이드 -->
     <div v-if="pendingStores.length > 0">
@@ -216,18 +216,32 @@ export default {
 
 <style scoped>
 .admin-store-management {
-  padding: 20px;
-  background-color: #f9f9f9;
+  padding: 24px;
+  background-color: #f4f6f8; /* M3 기본 배경색 */
+  font-family: 'Roboto', sans-serif;
+  color: #2b2d42;
+}
+
+h1, h2 {
+  color: black; /* Material Blue */
+  font-weight: 700;
+  margin-bottom: 16px;
 }
 
 .store-block {
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  background-color: #fff;
+  border: 1px solid #E0E7FF;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   max-width: 900px;
   margin: 0 auto;
+  transition: box-shadow 0.3s ease;
+}
+
+.store-block:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .documents {
@@ -237,15 +251,20 @@ export default {
 .document-table {
   width: 100%;
   max-width: 700px;
-  margin: 0 auto;
+  margin: 3vh;
+  margin-left: 110px;
   border-collapse: collapse;
   text-align: center;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .document-table th,
 .document-table td {
-  padding: 10px;
-  border: 1px solid #ccc;
+  padding: 12px;
+  background-color: #F4F6F8;
+  border: 1px solid #E0E7FF;
+  font-weight: 500;
 }
 
 .document-image,
@@ -254,28 +273,39 @@ export default {
   max-height: 100px;
   object-fit: cover;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .document-image:hover,
 .small-document-image:hover {
   transform: scale(1.1);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
+  padding: 12px 24px;
+  background-color: #6200ea; /* Material Deep Purple */
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: #3700B3;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
-/* 모달 스타일 */
+button:active {
+  transform: translateY(0);
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -286,12 +316,14 @@ button:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 16px;
 }
 
 .modal-content {
   background-color: white;
-  padding: 20px;
-  border-radius: 10px;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   max-width: 90%;
   max-height: 90%;
 }
@@ -299,20 +331,37 @@ button:hover {
 .modal-image {
   max-width: 100%;
   max-height: 100%;
+  border-radius: 8px;
 }
 
-/* 모든 점포 목록 스타일 */
 .all-stores-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-top: 24px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .all-stores-table th,
 .all-stores-table td {
-  padding: 10px;
-  border: 1px solid #ccc;
+  padding: 12px;
+  background-color: #ffffff;
+  border: 1px solid #E0E7FF;
   text-align: center;
+  font-weight: 500;
+  color: #333333;
+}
+
+.all-stores-table th {
+  background-color: #E0E7FF;
+  color: #4a4a4a;
+  font-size: 14px;
+}
+
+.all-stores-table td {
+  font-size: 13px;
+  color: #5f6368;
 }
 
 .all-stores-table img {
@@ -320,31 +369,41 @@ button:hover {
   max-height: 50px;
   object-fit: cover;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .all-stores-table img:hover {
   transform: scale(1.1);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .navigation {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 20px;
 }
 
 .navigation button {
-  padding: 8px 16px;
-  background-color: #4CAF50;
+  padding: 10px 20px;
+  background-color: #6200ea;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .navigation button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+* {
+  font-family: 'IBMPlexSansKR', sans-serif;
 }
 </style>

@@ -1,9 +1,16 @@
 <template>
   <div class="admin-container">
-    <h1>관리자 사용자 관리 페이지</h1>
+    <h1>회원 관리</h1>
+
+    <!-- 탭 네비게이션 -->
+    <div class="tab-navigation">
+      <button @click="activeTab = 'consumers'" :class="{ active: activeTab === 'consumers' }">소비자 목록</button>
+      <button @click="activeTab = 'businesses'" :class="{ active: activeTab === 'businesses' }">자영업자 목록</button>
+      <button @click="activeTab = 'admins'" :class="{ active: activeTab === 'admins' }">관리자 목록</button>
+    </div>
 
     <!-- 소비자 목록 -->
-    <div class="user-block">
+    <div v-if="activeTab === 'consumers'" class="user-block">
       <h2>소비자 목록</h2>
       <table v-if="consumers.length > 0" class="user-table">
         <thead>
@@ -12,6 +19,7 @@
             <th>이메일</th>
             <th>전화번호</th>
             <th>주소</th>
+            <th>처리</th>
           </tr>
         </thead>
         <tbody>
@@ -20,6 +28,9 @@
             <td>{{ consumer.email }}</td>
             <td>{{ consumer.phone }}</td>
             <td>{{ consumer.address }}</td>
+            <td>
+              <button @click="deleteUser(consumer.id)">삭제</button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -27,7 +38,7 @@
     </div>
 
     <!-- 자영업자 목록 -->
-    <div class="user-block">
+    <div v-if="activeTab === 'businesses'" class="user-block">
       <h2>자영업자 목록</h2>
       <table v-if="businesses.length > 0" class="user-table">
         <thead>
@@ -36,6 +47,7 @@
             <th>이메일</th>
             <th>전화번호</th>
             <th>주소</th>
+            <th>처리</th>
           </tr>
         </thead>
         <tbody>
@@ -44,6 +56,9 @@
             <td>{{ business.email }}</td>
             <td>{{ business.phone }}</td>
             <td>{{ business.address }}</td>
+            <td>
+              <button @click="deleteUser(business.id)">삭제</button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -51,7 +66,7 @@
     </div>
 
     <!-- 관리자 목록 -->
-    <div class="user-block">
+    <div v-if="activeTab === 'admins'" class="user-block">
       <h2>관리자 목록</h2>
       <table v-if="admins.length > 0" class="user-table">
         <thead>
@@ -60,6 +75,7 @@
             <th>이메일</th>
             <th>전화번호</th>
             <th>주소</th>
+            <th>처리</th>
           </tr>
         </thead>
         <tbody>
@@ -68,6 +84,9 @@
             <td>{{ admin.email }}</td>
             <td>{{ admin.phone }}</td>
             <td>{{ admin.address }}</td>
+            <td>
+              <button @click="deleteUser(admin.id)">삭제</button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -77,13 +96,14 @@
 </template>
 
 <script>
-import { ref, get, child } from 'firebase/database';
+import { ref, get, child, remove } from 'firebase/database';
 import { database } from '@/main';
 
 export default {
   name: 'AdminUserManagement',
   data() {
     return {
+      activeTab: 'consumers', // 초기 탭을 소비자로 설정
       consumers: [],
       businesses: [],
       admins: []
@@ -133,6 +153,18 @@ export default {
       } catch (error) {
         console.error('데이터를 불러오는 중 오류 발생:', error);
       }
+    },
+    async deleteUser(userId) {
+      if (confirm('정말로 사용자를 삭제하시겠습니까?')) {
+        try {
+          const userRef = child(ref(database), `users/${userId}`);
+          await remove(userRef);
+          alert('사용자가 삭제되었습니다.');
+          this.fetchUsers(); // 목록 새로고침
+        } catch (error) {
+          console.error('사용자를 삭제하는 중 오류 발생:', error);
+        }
+      }
     }
   },
   mounted() {
@@ -141,75 +173,149 @@ export default {
 };
 </script>
 
+
 <style scoped>
 .admin-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  font-family: 'Roboto', sans-serif;
-  background-color: #ffffff;
-  color: #333;
+  padding: 30px;
+  background-color: #f4f6f8;
+  font-family: 'IBMPlexSansKR', sans-serif;
+  border-radius: 32px;
+  color: #2b2d42;
   min-height: 100vh;
 }
 
 h1 {
   font-size: 32px;
   font-weight: 700;
-  color: #6200ea;
-  margin: 30px 0;
-  text-align: center;
+  color: #2b2d42;
+  margin-bottom: 16px;
+}
+
+.tab-navigation {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.tab-navigation button {
+  padding: 12px 24px;
+  margin: 0 8px;
+  font-size: 16px;
+  color: #4a4a4a;
+  background-color: #ffffff;
+  border: 2px solid #e0e7ff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+  font-weight: 500;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tab-navigation button.active {
+  background-color: #6200ea;
+  color: white;
+  border-color: #6200ea;
+}
+
+.tab-navigation button:hover {
+  background-color: #3700b3;
+  color: white;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .user-block {
-  width: 100%;
-  max-width: 1200px;
-  background-color: #f9f9f9;
-  border-radius: 12px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  margin-bottom: 20px;
+  width: 1000px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: box-shadow 0.3s ease;
+}
+
+.user-block:hover {
+  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.15);
 }
 
 .user-block h2 {
-  font-size: 1.5rem;
-  color: #6200ea;
-  margin-bottom: 15px;
+  font-size: 24px;
+  color: #2b2d42;
+  margin-bottom: 16px;
+  font-weight: 600;
 }
 
 .user-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 8px;
+  width: 800px;
+  margin-left: 100px;
+  border-collapse: collapse;
+  border-radius: 12px;
   overflow: hidden;
+  background-color: #ffffff;
 }
 
 .user-table th, .user-table td {
-  padding: 12px 15px;
-  text-align: left;
+  padding: 14px 18px;
+  text-align: center;
+  font-size: 14px;
+  color: #333333;
 }
 
 .user-table th {
-  background-color: #6200ea;
-  color: white;
+  background-color: #e0e7ff;
+  color: #4a4a4a;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 16px;
 }
 
 .user-table td {
-  background-color: #f3f1f9;
-  color: #333;
+  background-color: #ffffff;
 }
 
 .user-table tr:nth-child(even) td {
-  background-color: #e8e5f4;
+  background-color: #f9f9f9;
 }
 
 p {
-  font-size: 0.9rem;
-  color: #333;
+  font-size: 14px;
+  color: #3C4043;
   text-align: center;
   margin-top: 10px;
+}
+
+button {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background-color: #6200ea;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background-color: #3700b3;
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.highlight {
+  animation: highlightEffect 2s ease;
+}
+
+@keyframes highlightEffect {
+  0% { background-color: #ffeb3b; }
+  100% { background-color: transparent; }
+}
+
+/* 기본 폰트 설정 */
+* {
+  font-family: 'IBMPlexSansKR', sans-serif;
 }
 </style>
