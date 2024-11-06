@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="ko">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Naver Maps API -->
+    <script src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=dt24qgnkxe"></script>
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
@@ -11,7 +13,8 @@
     <noscript>
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
+    <!-- Vue 앱이 렌더링될 DOM 요소 -->
     <div id="app"></div>
-    <!-- built files will be auto injected -->
+    <!-- 빌드 파일이 자동으로 주입됩니다 -->
   </body>
 </html>

@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 
 import SignUpView from '@/components/SignUpComponent.vue';
-import MapView from '@/views/map.vue';
 import OrderView from '@/views/order.vue';
 import ResetIDnPW from '@/views/Reset_IDnPW.vue';
 import ResetPasswordComponent from '@/components/ResetPasswordComponent.vue';
@@ -36,6 +35,9 @@ import Approval from '@/views/Approval.vue';
 import Cancel from '@/views/Cancel.vue';
 import Fail from '@/views/Fail.vue';
 
+// 새로 추가한 SpotOrderView
+import SpotOrderView from '@/views/SpotOrderView.vue';
+
 const routes = [
   {
     path: '/',
@@ -46,11 +48,6 @@ const routes = [
     path: '/signup',
     name: 'SignUp',
     component: SignUpView
-  },
-  {
-    path: '/map',
-    name: 'map',
-    component: MapView
   },
   {
     path: '/business',
@@ -188,6 +185,12 @@ const routes = [
     path: '/fail',
     name: 'Fail',
     component: Fail
+  },
+
+  {
+    path: '/spot-order',
+    name: 'SpotOrder',
+    component: SpotOrderView
   }
 ];
 

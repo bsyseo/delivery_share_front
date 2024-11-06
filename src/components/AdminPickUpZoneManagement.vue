@@ -1,293 +1,313 @@
 <template>
-  <div class="pickup-zone-management">
-    <h1>픽업존 관리</h1>
+  <div class="spot-order-dashboard">
+    <!-- 대시보드 그리드 레이아웃 -->
+    <div class="dashboard-grid">
+      <!-- 픽업존 등록 섹션 -->
+      <div class="dashboard-item input-section">
+        <h2>픽업존 등록</h2>
+        <div class="input-group">
+          <input type="number" v-model.number="latitude" placeholder="위도 입력" />
+          <input type="number" v-model.number="longitude" placeholder="경도 입력" />
+          <input type="text" v-model="placeName" placeholder="주소 이름 입력" />
+          <button @click="addPickupZone" class="register-button">등록</button>
+        </div>
+      </div>
 
-    <!-- 지도 표시 영역 -->
-    <div id="map" class="map-container"></div>
-
-    <!-- 주소 입력 폼 -->
-    <div class="address-form">
-      <label for="searchAddress">주소 검색</label>
-      <input v-model="searchAddress" type="text" id="searchAddress" placeholder="주소를 검색하세요" />
-      <button @click="searchAddressOnMap">검색</button><br />
-
-      <label for="address">선택된 주소</label>
-      <input v-model="address" type="text" id="address" placeholder="주소를 입력하세요" readonly /><br />
-      <label for="specific">상세 주소</label>
-      <input v-model="specific" type="text" id="specific" placeholder="상세 주소를 입력하세요" /><br />
-      <button @click="saveLocation">저장</button>
+      <!-- 지도 섹션 -->
+      <div class="dashboard-item map-section">
+        <div id="map" class="map"></div>
+      </div>
     </div>
-
-    <!-- 저장된 주소 목록 -->
-    <h2>저장된 픽업 존</h2>
-    <table class="address-table">
-      <thead>
-        <tr>
-          <th>주소</th>
-          <th>상세 주소</th>
-          <th>삭제</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(zone, index) in pickupZones" :key="index">
-          <td>{{ zone.address }}</td>
-          <td>{{ zone.specific }}</td>
-          <td><button @click="deleteLocation(zone.key)">삭제</button></td>
-        </tr>
-      </tbody>
-    </table>
+    
+    <h3>등록된 픽업존</h3>
+    <ul class="pickup-list">
+      <li v-for="(marker, index) in markers" :key="index">
+        {{ marker.title }}
+        <button @click="removeMarker(index, marker.id)" class="delete-button">삭제</button>
+      </li>
+    </ul>
   </div>
 </template>
 
 <script>
-/* global naver */
-import { getDatabase, ref, push, remove, onValue, set } from 'firebase/database';
+import { database, ref, push, remove, onValue } from '@/firebase';
 
+/* global naver */
 export default {
   data() {
     return {
-      searchAddress: '',
-      address: '',
-      specific: '',
+      latitude: null,
+      longitude: null,
+      placeName: '',
       map: null,
-      markers: [],
-      pickupZones: []
+      markers: []
     };
   },
   methods: {
-    initializeMap() {
-      const mapContainer = document.getElementById('map');
-      const mapOptions = {
-        center: new naver.maps.LatLng(35.1538, 128.0986), // 경상대 좌표
-        zoom: 10
-      };
-
-      this.map = new naver.maps.Map(mapContainer, mapOptions);
-      this.loadLocationsFromDB();
-    },
-
-    async searchAddressOnMap() {
-      if (!this.searchAddress) {
-        alert('검색할 주소를 입력해 주세요.');
+    async addPickupZone() {
+      if (this.latitude === null || this.longitude === null || !this.placeName) {
+        alert('위도, 경도, 그리고 주소 이름을 모두 입력해주세요.');
         return;
       }
 
-      naver.maps.Service.geocode({ query: this.searchAddress }, (status, response) => {
-        if (status === naver.maps.Service.Status.OK) {
-          const latLng = new naver.maps.LatLng(response.v2.addresses[0].y, response.v2.addresses[0].x);
+      const position = new naver.maps.LatLng(this.latitude, this.longitude);
 
-          this.map.setCenter(latLng);
-          this.address = response.v2.addresses[0].roadAddress || response.v2.addresses[0].jibunAddress;
+      try {
+        // Firebase에 새로운 픽업존 등록
+        const newMarkerRef = await push(ref(database, 'pickupZones'), {
+          latitude: this.latitude,
+          longitude: this.longitude,
+          title: this.placeName
+        });
 
-          const marker = new naver.maps.Marker({
-            position: latLng,
-            map: this.map,
-            title: '검색된 주소'
-          });
+        // 지도에 마커 추가
+        const marker = new naver.maps.Marker({
+          position,
+          map: this.map,
+          title: this.placeName
+        });
 
-          this.clearMarkers();
-          this.markers.push(marker);
-        } else {
-          alert('주소를 찾을 수 없습니다.');
-          console.error('Geocode 실패:', status);
-        }
-      });
-    },
+        const infoWindow = new naver.maps.InfoWindow({
+          content: `<div style="padding:5px;">${this.placeName}</div>`
+        });
+        infoWindow.open(this.map, marker);
 
-    async saveLocation() {
-      if (!this.address || !this.specific) {
-        alert('주소와 상세 주소를 입력해 주세요.');
-        return;
+        // 마커 목록에 추가
+        this.markers.push({
+          marker,
+          position,
+          title: this.placeName,
+          id: newMarkerRef.key
+        });
+        
+        // 입력 필드 초기화
+        this.latitude = null;
+        this.longitude = null;
+        this.placeName = '';
+      } catch (error) {
+        console.error("Firebase에 데이터를 저장하는 중 오류 발생:", error);
+        alert("픽업존을 등록하는 중 오류가 발생했습니다.");
       }
-
-      const db = getDatabase();
-      const pickupZoneRef = ref(db, 'pick-up-zone');
-      const newLocationRef = push(pickupZoneRef);
-      await set(newLocationRef, {
-        address: this.address,
-        specific: this.specific
-      });
-
-      this.address = '';
-      this.specific = '';
-      this.searchAddress = '';
-      this.loadLocationsFromDB();
     },
+    async removeMarker(index, markerId) {
+      try {
+        // Firebase에서 마커 삭제
+        await remove(ref(database, `pickupZones/${markerId}`));
 
-    loadLocationsFromDB() {
-      const db = getDatabase();
-      const pickupZoneRef = ref(db, 'pick-up-zone');
-
-      onValue(pickupZoneRef, (snapshot) => {
-        const data = snapshot.val();
-        this.pickupZones = [];
-        this.clearMarkers();
-
-        for (let key in data) {
-          const zone = data[key];
-          this.pickupZones.push({ ...zone, key });
-          this.placePickupZoneMarker(zone.address);
-        }
-      });
+        // 지도에서 마커 제거
+        this.markers[index].marker.setMap(null);
+        this.markers.splice(index, 1);
+      } catch (error) {
+        console.error("Firebase에서 데이터를 삭제하는 중 오류 발생:", error);
+        alert("픽업존을 삭제하는 중 오류가 발생했습니다.");
+      }
     },
+    loadMarkersFromFirebase() {
+      const pickupZonesRef = ref(database, 'pickupZones');
+      onValue(pickupZonesRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          this.clearMarkers(); // 기존 마커 초기화
 
-    placePickupZoneMarker(address) {
-      naver.maps.Service.geocode({ query: address }, (status, response) => {
-        if (status === naver.maps.Service.Status.OK) {
-          const latLng = new naver.maps.LatLng(response.v2.addresses[0].y, response.v2.addresses[0].x);
-          const marker = new naver.maps.Marker({
-            position: latLng,
-            map: this.map,
-            title: '픽업존'
-          });
+          Object.keys(data).forEach((key) => {
+            const pickupZone = data[key];
+            const position = new naver.maps.LatLng(pickupZone.latitude, pickupZone.longitude);
 
-          const infoWindow = new naver.maps.InfoWindow({
-            content: '<div style="padding:10px;font-size:14px;">픽업존</div>'
-          });
+            const marker = new naver.maps.Marker({
+              position,
+              map: this.map,
+              title: pickupZone.title
+            });
 
-          naver.maps.Event.addListener(marker, 'click', () => {
+            const infoWindow = new naver.maps.InfoWindow({
+              content: `<div style="padding:5px;">${pickupZone.title}</div>`
+            });
             infoWindow.open(this.map, marker);
-          });
 
-          this.markers.push(marker);
-        } else {
-          console.error('Geocode 실패:', status);
+            // 마커 목록에 추가
+            this.markers.push({
+              marker,
+              position,
+              title: pickupZone.title,
+              id: key
+            });
+          });
         }
       });
     },
-
     clearMarkers() {
-      this.markers.forEach((marker) => marker.setMap(null));
+      // 모든 마커 제거
+      this.markers.forEach(markerObj => markerObj.marker.setMap(null));
       this.markers = [];
-    },
-
-    async deleteLocation(key) {
-      const db = getDatabase();
-      const locationRef = ref(db, `pick-up-zone/${key}`);
-      await remove(locationRef);
-      this.loadLocationsFromDB();
     }
   },
   mounted() {
-    if (typeof naver === 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=YOUR_CLIENT_ID';
-      script.async = true;
-
-      script.onload = () => {
-        this.initializeMap();
-      };
-
-      script.onerror = () => {
-        console.error('네이버 지도 API를 로드하는 데 실패했습니다.');
-        alert('네이버 지도 API를 로드할 수 없습니다. 네트워크 상태를 확인하세요.');
-      };
-
-      document.head.appendChild(script);
-    } else {
-      this.initializeMap();
+    if (typeof naver === 'undefined' || typeof naver.maps === 'undefined') {
+      console.error("Naver Maps API가 로드되지 않았습니다.");
+      return;
     }
+
+    this.map = new naver.maps.Map('map', {
+      center: new naver.maps.LatLng(35.153485, 128.101100),
+      zoom: 10,
+    });
+
+    this.loadMarkersFromFirebase(); // 페이지 로드시 모든 픽업존 로드
   }
 };
 </script>
 
 
 <style scoped>
-.pickup-zone-management {
+@font-face {
+  font-family: 'IBMPlexSansKR';
+  src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
+}
+
+* {
+  font-family: 'IBMPlexSansKR', sans-serif;
+  box-sizing: border-box;
+}
+
+.spot-order-dashboard {
   padding: 24px;
-  background-color: #f5f5f5;
-  font-family: 'Roboto', sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background-color: #fafafa;
+  min-height: 80vh;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
-  border-radius: 20px;
 }
 
-h1 {
-  font-size: 28px;
-  color: #333;
-  font-weight: bold;
-  margin-bottom: 24px;
-}
-
-.map-container {
-  width: 100%;
-  height: 50vh;
+.dashboard-item {
+  background-color: #FFFFFF;
   border-radius: 16px;
-  overflow: hidden;
+  padding: 24px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.address-form {
+.dashboard-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.input-section h2 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.input-group {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background-color: #ffffff;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 600px; 
-  margin-bottom: 24px;
+  gap: 12px;
 }
 
-.address-form label {
-  font-size: 16px;
-  color: #555;
-  font-weight: 500;
-  margin-top: 12px;
-  width: 100%;
-  text-align: left;
-}
-
-.address-form input {
-  width: 100%;
+input[type="number"], input[type="text"] {
   padding: 12px;
-  margin-top: 8px;
-  border: 1px solid #ddd;
+  font-size: 1rem;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  font-size: 16px;
-  color: #333;
-  background-color: #f7f7f7;
+  outline: none;
 }
 
-.address-form button {
-  margin-top: 20px;
-  padding: 12px 24px;
+input[type="number"]:focus, input[type="text"]:focus {
+  border-color: #6200ea;
+}
+
+.register-button {
+  padding: 12px;
+  font-size: 1rem;
   background-color: #6200ea;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: bold;
+  color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+  align-self: center; /* 버튼을 가운데로 정렬 */
 }
 
-.address-table {
+.register-button:hover {
+  background-color: #3700b3;
+}
+
+.map-section {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.map {
   width: 100%;
-  max-width: 1000px;
-  border-collapse: collapse;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  height: 60vh;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.address-table th, .address-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #ddd;
+h3 {
+  font-size: 1.4rem;
+  color: #333;
+  margin-top: 20px;
   text-align: center;
 }
 
-.address-table button {
-  padding: 8px 16px;
-  background-color: #ff4d4d;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: bold;
+.pickup-list {
+  list-style: none;
+  padding: 0;
+}
+
+.pickup-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-top: 6px; /* margin-top 줄임 */
+  transition: transform 0.2s ease;
+}
+
+.pickup-list li:hover {
+  transform: translateY(-2px);
+  background-color: #f9f9f9;
+}
+
+.delete-button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  background-color: #e74c3c;
+  color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-button:hover {
+  background-color: #c0392b;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .input-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .map {
+    height: 50vh;
+  }
 }
 </style>

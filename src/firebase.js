@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
+import { getDatabase, ref, push, remove, onValue } from "firebase/database";
 import { getStorage } from "firebase/storage"; // Firebase Storage 추가
 
 // Your web app's Firebase configuration
@@ -21,4 +21,5 @@ const auth = getAuth(app);
 const database = getDatabase(app);
 const storage = getStorage(app); // Firebase Storage 초기화
 
-export { auth, database, storage };
+// 내보내기
+export { auth, database, storage, ref, push, remove, onValue };
