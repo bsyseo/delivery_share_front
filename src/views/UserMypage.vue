@@ -29,7 +29,6 @@
         </ul>
       </div>
       
-      <!-- OrderHistoryComponent를 추가하여 하단에 보여주기 -->
       <OrderHistoryComponent />
 
       <div class="nav-buttons">
@@ -44,14 +43,12 @@
 import { getDatabase, ref, get, query, orderByChild, equalTo } from "firebase/database";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from '@/firebase';
-
-// OrderHistoryComponent 파일을 불러옵니다
 import OrderHistoryComponent from '@/components/OrderHistoryComponent.vue';
 
 export default {
   name: 'UserMypage',
   components: {
-    OrderHistoryComponent, // 컴포넌트를 등록
+    OrderHistoryComponent,
   },
   data() {
     return {
@@ -128,61 +125,66 @@ export default {
 </script>
 
 <style scoped>
+@font-face {
+  font-family: 'IBMPlexSansKR';
+  src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
+}
+
+* {
+  font-family: 'IBMPlexSansKR', sans-serif;
+}
+
 .mypage-container {
   display: flex;
   justify-content: center;
   align-items: flex-start;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  background-color: #F0F8F4;
-  border-radius: 20px;
-  box-shadow: 
-    0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.1),
-    inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.05);
+  padding: 30px;
+  background-color: #f7f3ff;
+  border-radius: 16px;
+  box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar {
-  margin-top: 0vh;
   width: 250px;
-  background-color: #E1F0E4;
+  background-color: #FFFFFF;
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  align-items: center; /* 텍스트 중앙 정렬 */
+  align-items: center;
 }
 
 .no-bullets {
   list-style-type: none;
   padding: 0;
   margin: 0;
-  width: 100%; /* 리스트가 사이드바 넓이를 차지하게 설정 */
+  width: 100%;
 }
 
 .no-bullets li {
   margin: 10px 0;
-  width: 100%; /* 리스트 항목이 사이드바의 넓이를 차지하도록 설정 */
+  width: 100%;
 }
 
 .sidebar-button {
-  background-color: #D8F5E0;
+  background-color: #6750A4;
   border: none;
-  padding: 15px;
+  padding: 12px;
   font-size: 16px;
   font-weight: bold;
-  color: #333;
-  cursor: pointer;
+  color: #FFFFFF;
   text-align: center;
-  border-radius: 10px;
-  width: 80%; /* 버튼이 사이드바 전체 넓이를 차지하도록 설정 */
+  border-radius: 8px;
+  width: 100%;
   display: block;
   transition: background-color 0.3s ease;
 }
 
 .sidebar-button:hover {
-  background-color: #C4E8D1;
+  background-color: #7f67be;
 }
 
 .content {
@@ -191,13 +193,14 @@ export default {
   max-width: 800px;
   padding: 30px;
   background-color: #FFFFFF;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .user-info h3 {
   color: #4A6F5B;
-  font-size: 22px;
+  font-size: 24px;
+  font-weight: bold;
   margin-bottom: 10px;
 }
 
@@ -213,9 +216,9 @@ export default {
 }
 
 .order-item, .reservation-item {
-  padding: 12px;
+  padding: 16px;
   margin-bottom: 10px;
-  background-color: #F5FBF8;
+  background-color: #f3e8ff;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
@@ -223,17 +226,18 @@ export default {
 .nav-buttons {
   margin-top: 30px;
   display: flex;
-  justify-content: space-between;
+  gap: 16px;
+  justify-content: center;
 }
 
 .home-button, .order-button {
-  width: 48%;
-  background-color: #D8F5E0;
+  width: 150px;
+  background-color: #6750A4;
   border: none;
   padding: 12px;
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: #FFFFFF;
   text-align: center;
   border-radius: 8px;
   cursor: pointer;
@@ -241,15 +245,6 @@ export default {
 }
 
 .home-button:hover, .order-button:hover {
-  background-color: #C4E8D1;
-}
-
-@font-face {
-  font-family: 'NanumSquareRound';
-  src: url('@/assets/font/NANUMSQUAREROUNDOTFB.OTF') format('opentype');
-}
-
-* {
-  font-family: 'NanumSquareRound', sans-serif;
+  background-color: #7f67be;
 }
 </style>

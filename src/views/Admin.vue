@@ -152,8 +152,8 @@ h1 {
   padding: 14px 24px;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
-  background-color: #6200ea;
+  color: black;
+  background-color: #F7F3FF;
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -162,7 +162,7 @@ h1 {
 }
 
 .nav-tabs button:hover {
-  background-color: #3700b3;
+  background-color: rgb(193, 172, 243);
   transform: translateY(-2px);
 }
 

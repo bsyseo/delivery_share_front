@@ -137,7 +137,7 @@ export default {
       this.$router.push('/UserMypage')
     },
     goToOrder() {
-      this.$router.push('/spot-order'); // 주문 페이지로 이동
+      this.$router.push('/order'); // 주문 페이지로 이동
     },
     goToStoreInfo(){
       this.$router.push('/store_information');
@@ -281,7 +281,7 @@ input:focus {
   margin-top: 24px;
   width: 100%;
   padding: 12px;
-  background-color: #3182CE;
+  background-color: #6eabe4;
   color: #ffffff;
   font-size: 16px;
   font-weight: 600;
@@ -303,7 +303,7 @@ input:focus {
   margin-top: 20px;
   width: 80%;
   padding: 12px;
-  background-color: #6200ea;
+  background-color: #ac85de;
   color: #ffffff;
   font-size: 16px;
   font-weight: bold;
@@ -316,7 +316,7 @@ input:focus {
 
 .logout-button:hover,
 .delete-button:hover {
-  background-color: #3700b3;
+  background-color: #8a65bb;
   box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.15);
 }
 </style>

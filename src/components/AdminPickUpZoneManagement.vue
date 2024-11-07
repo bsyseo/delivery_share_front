@@ -9,6 +9,7 @@
           <input type="number" v-model.number="latitude" placeholder="위도 입력" />
           <input type="number" v-model.number="longitude" placeholder="경도 입력" />
           <input type="text" v-model="placeName" placeholder="주소 이름 입력" />
+          <input type="text" v-model="placeDetail" placeholder="상세 주소 입력" />
           <button @click="addPickupZone" class="register-button">등록</button>
         </div>
       </div>
@@ -21,8 +22,8 @@
     
     <h3>등록된 픽업존</h3>
     <ul class="pickup-list">
-      <li v-for="(marker, index) in markers" :key="index">
-        {{ marker.title }}
+      <li v-for="(marker, index) in uniqueMarkers" :key="index">
+        {{ marker.title }} - {{ marker.detail }}
         <button @click="removeMarker(index, marker.id)" class="delete-button">삭제</button>
       </li>
     </ul>
@@ -30,7 +31,7 @@
 </template>
 
 <script>
-import { database, ref, push, remove, onValue } from '@/firebase';
+import { database, ref, push, remove, onValue, set } from '@/firebase';
 
 /* global naver */
 export default {
@@ -39,25 +40,44 @@ export default {
       latitude: null,
       longitude: null,
       placeName: '',
+      placeDetail: '', // 상세 주소 입력 필드
       map: null,
-      markers: []
+      markers: [] // 모든 마커 정보를 저장
     };
+  },
+  computed: {
+    // 중복되지 않은 마커 리스트 생성
+    uniqueMarkers() {
+      const unique = [];
+      const seen = new Set();
+      
+      this.markers.forEach((marker) => {
+        const key = `${marker.title}-${marker.detail}`;
+        if (!seen.has(key)) {
+          unique.push(marker);
+          seen.add(key);
+        }
+      });
+
+      return unique;
+    }
   },
   methods: {
     async addPickupZone() {
-      if (this.latitude === null || this.longitude === null || !this.placeName) {
-        alert('위도, 경도, 그리고 주소 이름을 모두 입력해주세요.');
+      if (this.latitude === null || this.longitude === null || !this.placeName || !this.placeDetail) {
+        alert('위도, 경도, 주소 이름, 그리고 상세 주소를 모두 입력해주세요.');
         return;
       }
 
       const position = new naver.maps.LatLng(this.latitude, this.longitude);
 
       try {
-        // Firebase에 새로운 픽업존 등록
+        // Firebase에 새로운 픽업존 등록 (상세 주소 포함)
         const newMarkerRef = await push(ref(database, 'pickupZones'), {
           latitude: this.latitude,
           longitude: this.longitude,
-          title: this.placeName
+          title: this.placeName,
+          detail: this.placeDetail // 상세 주소 저장
         });
 
         // 지도에 마커 추가
@@ -67,16 +87,27 @@ export default {
           title: this.placeName
         });
 
+        // 클릭 시 정보창을 토글할 수 있는 InfoWindow 설정
         const infoWindow = new naver.maps.InfoWindow({
-          content: `<div style="padding:5px;">${this.placeName}</div>`
+          content: `<div style="padding:5px;">${this.placeName}</div>`,
+          disableAutoPan: true // 클릭할 때마다 이동하지 않도록 설정
         });
-        infoWindow.open(this.map, marker);
 
-        // 마커 목록에 추가
+        // 마커 클릭 이벤트 리스너
+        naver.maps.Event.addListener(marker, 'click', () => {
+          if (infoWindow.getMap()) {
+            infoWindow.close(); // 이미 열려 있으면 닫기
+          } else {
+            infoWindow.open(this.map, marker); // 닫혀 있으면 열기
+          }
+        });
+
+        // 마커 목록에 추가 (중복 허용)
         this.markers.push({
           marker,
           position,
           title: this.placeName,
+          detail: this.placeDetail, // 상세 주소 추가
           id: newMarkerRef.key
         });
         
@@ -84,6 +115,7 @@ export default {
         this.latitude = null;
         this.longitude = null;
         this.placeName = '';
+        this.placeDetail = ''; // 상세 주소 필드 초기화
       } catch (error) {
         console.error("Firebase에 데이터를 저장하는 중 오류 발생:", error);
         alert("픽업존을 등록하는 중 오류가 발생했습니다.");
@@ -119,16 +151,27 @@ export default {
               title: pickupZone.title
             });
 
+            // 클릭 시 정보창을 토글할 수 있는 InfoWindow 설정
             const infoWindow = new naver.maps.InfoWindow({
-              content: `<div style="padding:5px;">${pickupZone.title}</div>`
+              content: `<div style="padding:5px;">${pickupZone.title}</div>`,
+              disableAutoPan: true // 클릭할 때마다 이동하지 않도록 설정
             });
-            infoWindow.open(this.map, marker);
 
-            // 마커 목록에 추가
+            // 마커 클릭 이벤트 리스너
+            naver.maps.Event.addListener(marker, 'click', () => {
+              if (infoWindow.getMap()) {
+                infoWindow.close(); // 이미 열려 있으면 닫기
+              } else {
+                infoWindow.open(this.map, marker); // 닫혀 있으면 열기
+              }
+            });
+
+            // 마커 목록에 추가 (중복 허용)
             this.markers.push({
               marker,
               position,
               title: pickupZone.title,
+              detail: pickupZone.detail, // 상세 주소 추가
               id: key
             });
           });
@@ -139,6 +182,18 @@ export default {
       // 모든 마커 제거
       this.markers.forEach(markerObj => markerObj.marker.setMap(null));
       this.markers = [];
+    },
+    savePickupZone() {
+      // Firebase에 `placeDetail`을 저장
+      set(ref(database, 'pickupZone/selectedDetail'), {
+        placeDetail: this.placeDetail,
+      })
+      .then(() => {
+        console.log("상세 주소가 Firebase에 저장되었습니다.");
+      })
+      .catch(error => {
+        console.error("Firebase 저장 오류:", error);
+      });
     }
   },
   mounted() {
@@ -149,14 +204,13 @@ export default {
 
     this.map = new naver.maps.Map('map', {
       center: new naver.maps.LatLng(35.153485, 128.101100),
-      zoom: 10,
+      zoom: 15,
     });
 
     this.loadMarkersFromFirebase(); // 페이지 로드시 모든 픽업존 로드
   }
 };
 </script>
-
 
 <style scoped>
 @font-face {

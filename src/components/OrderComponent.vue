@@ -1,17 +1,7 @@
 <template>
   <div class="main-container">
 
-    <div class="navbar">
-      <button class="button green2" @click="$router.push('/')">홈으로 가기</button>
-      <button class="button green2" @click="$router.push('/UserMypage')">마이페이지</button>
-    </div>
-
     <div class="rounded-inner-drop-shadow-box">
-      <!-- 헤더 부분 -->
-      <div class="header">
-        <label for="address">주소: 경상남도 진주시 진주대로 501 경상국립대학교 항공우주산학협력관</label>
-      </div>
-
       <slot>
         <div class="order-box">
           <!-- 첫째 줄 이미지 -->
@@ -421,21 +411,6 @@ export default {
 
 
 <style scoped>
-.navbar {
-  width: 40%;
-  display: flex;
-  justify-content: center;
-  padding: 20px;
-  margin-bottom: 3vh;
-  background-color: #F0F4FF;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.navbar .button {
-  margin-left: 10px;
-}
-
 .main-container {
   background: #FAFAFF;
   height: auto;

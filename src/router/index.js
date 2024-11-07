@@ -35,8 +35,6 @@ import Approval from '@/views/Approval.vue';
 import Cancel from '@/views/Cancel.vue';
 import Fail from '@/views/Fail.vue';
 
-// 새로 추가한 SpotOrderView
-import SpotOrderView from '@/views/SpotOrderView.vue';
 
 const routes = [
   {
@@ -187,11 +185,6 @@ const routes = [
     component: Fail
   },
 
-  {
-    path: '/spot-order',
-    name: 'SpotOrder',
-    component: SpotOrderView
-  }
 ];
 
 const router = createRouter({
