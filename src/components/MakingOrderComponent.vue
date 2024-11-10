@@ -162,7 +162,7 @@ export default {
         pg: 'html5_inicis',
         pay_method: 'card',
         merchant_uid: `order_${new Date().getTime()}`, // 주문 고유 ID
-        amount: this.selectedMenu.price * this.menuQuantity + this.deliveryFee, // 결제 금액
+        amount: this.selectedMenu.price * this.menuQuantity // 결제 금액
         name: this.selectedMenu.name, // 상품 이름
         buyer_name: '테스트 사용자', // 구매자 이름
         buyer_tel: '010-1234-5678', // 구매자 전화번호
