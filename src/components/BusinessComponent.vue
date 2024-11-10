@@ -1,20 +1,29 @@
 <template>
-  <div class="map-container">
-    <div class="header">
-      <h2>사장님, 환영합니다.</h2>
-      <p>가게를 등록해 주세요!</p>
-      
-      <!-- 버튼 섹션 -->
-      <div class="button-section">
-        <button  @click="gobusinessinfo">사업자 정보 등록</button>
-        <button  @click="gotoad">광고 신청</button>
+  <div class="business-container">
+    <!-- 대시보드 그리드 레이아웃 -->
+    <div class="dashboard-grid">
+      <!-- Map Introduction Section -->
+      <div class="intro-section">
+        <h2>Delivery Spot Map</h2>
+        <p>Is there a delivery spot nearby?<br>
+          Check it out!</p>
+        <div class="button-group">
+          <router-link to="/" class="custom-button">Home</router-link>
+          <router-link to="/store_information" class="custom-button">Store Info</router-link>
+          <router-link to="/Order" class="custom-button">Order</router-link>
+        </div>
+      </div>
+
+      <!-- Map Section -->
+      <div class="map-section">
+        <MapComponent @select-address="updateSelectedAddress" />
       </div>
     </div>
 
     <!-- 가게 타입 선택 -->
-    <div class="store-type-section">
-      <h3>가게 타입 선택</h3>
-      <select v-model="selectedStoreType" @change="saveStoreType">
+    <div class="form-section">
+      <label for="store-type">가게 타입 선택</label>
+      <select id="store-type" v-model="selectedStoreType" @change="saveStoreType" class="material-dropdown">
         <option disabled value="">가게 타입을 선택하세요</option>
         <option value="한식">한식</option>
         <option value="일식">일식</option>
@@ -28,54 +37,37 @@
       </select>
     </div>
 
-    <!-- 지도 표시 -->
-    <div class="map-wrapper">
-      <div id="map"></div>
-    </div>
-
     <!-- 가게 주소 입력 -->
-    <div class="address-section">
-      <h3>사장님 가게 주소 입력</h3>
+    <div class="form-section">
+      <label for="address">사장님 가게 주소 입력</label>
       <p>현재 저장된 가게 주소: <strong>{{ storeAddress ? storeAddress : '입력 필요' }}</strong></p>
-
       <div class="address-input">
-        <input v-model="newAddress" placeholder="새로운 가게 주소를 입력하세요" />
-        <button @click="saveAddress">저장하기</button>
+        <input id="address" v-model="newAddress" placeholder="새로운 가게 주소를 입력하세요" />
+        <button @click="saveAddress" class="save-button">저장하기</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-/* global naver */
+import MapComponent from '@/components/MapComponent.vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getDatabase, ref, set, get, onValue } from 'firebase/database';
 import { auth, database } from '@/firebase';
 
 export default {
   name: 'BusinessComponent',
+  components: {
+    MapComponent
+  },
   data() {
     return {
       newAddress: '', 
       selectedStoreType: '', 
-      storeAddress: null,
-      map: null, 
-      markers: [], 
-      deliverySpots: []
+      storeAddress: null
     };
   },
   mounted() {
-    // 네이버 지도 SDK가 로드되었는지 확인하고 로드 후 initMap 실행
-    if (typeof naver !== 'undefined') {
-      this.initMap();
-    } else {
-      const script = document.createElement('script');
-      script.src = 'https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=i3rhpr81uf';
-      script.onload = this.initMap;
-      document.head.appendChild(script);
-    }
-
-    // 로그인된 사용자를 확인
     onAuthStateChanged(auth, (user) => {
       if (user) {
         const userRef = ref(database, 'users/' + user.uid + '/name');
@@ -99,7 +91,6 @@ export default {
             .then((snapshot) => {
               if (snapshot.exists()) {
                 this.storeAddress = snapshot.val(); 
-                this.addMarker(35.153114, 128.099379, '가게 위치', 'red');
               } else {
                 this.storeAddress = null; 
               }
@@ -155,176 +146,154 @@ export default {
         }
       });
     },
-    navigateTo(route) {
-      this.$router.push({ name: route });
-    },
-    initMap() {
-      // 네이버 지도 객체 생성
-      const mapOptions = {
-        center: new naver.maps.LatLng(35.153114, 128.099379),
-        zoom: 16
-      };
-      this.map = new naver.maps.Map('map', mapOptions);
-
-      // 마커 추가
-      this.addMarker(35.153114, 128.099379, '경상국립대학교 가좌캠퍼스');
-      this.addMarker(35.154401, 128.092888, '항공우주산학협력관'); 
-      this.addDeliveryMarkers();
-    },
-    addMarker(lat, lng, content = 'Default Content', color = 'red') {
-      const marker = new window.naver.maps.Marker({
-        position: new window.naver.maps.LatLng(lat, lng),
-        map: this.map,
-        icon: {
-          content: `<div style="background-color:${color}; width:15px; height:15px; border-radius:50%; border: 2px solid white;"></div>`
-        }
-      });
-      const infoWindow = new window.naver.maps.InfoWindow({
-        content: `<div style="padding:10px;">${content}</div>`
-      });
-      window.naver.maps.Event.addListener(marker, 'click', () => {
-        infoWindow.open(this.map, marker);
-      });
-      this.markers.push(marker);
-    },
-    addDeliveryMarkers() {
-      this.deliverySpots.forEach(spot => {
-        this.addMarker(spot.lat, spot.lng, spot.content, 'blue');
-      });
-    },
-    gobusinessinfo(){
-      this.$router.push('/business_information');
-    },
-    gotoad(){
-      this.$router.push('/business_advertisement');
+    updateSelectedAddress(address) {
+      this.newAddress = address;
     }
   }
 };
 </script>
 
-
 <style scoped>
-.map-container {
+@font-face {
+  font-family: 'IBMPlexSansKR';
+  src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
+}
+
+* {
+  font-family: 'IBMPlexSansKR', sans-serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.business-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.intro-section {
+  padding: 40px;
+  background-color: #f4f3fd;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #BFDC99;
-  padding: 20px 0;
-}
-
-.header {
-  background-color: white;
-  padding: 20px 40px;
+  justify-content: center; /* 텍스트 중앙 정렬 */
   text-align: center;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.intro-section h2 {
+  font-size: 28px;
+  color: #4a4a68;
+  font-weight: bold;
+}
+
+.intro-section p {
+  font-size: 16px;
+  color: #6c6c8c;
+  margin-top: 8px;
+}
+
+.button-group {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
 }
 
-.header h2 {
-  font-size: 24px;
-  margin-bottom: 10px;
-  color: #444;
-}
-
-.header p {
-  font-size: 18px;
-  color: #777;
-  margin-bottom: 20px;
-}
-
-.button-section {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.button-section button {
-  background-color: #4CAF50;
+.custom-button {
+  background-color: #5b34b1;
   color: white;
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
+  text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease;
 }
 
-.button-section button:hover {
-  background-color: #45a049;
-  transform: translateY(-3px);
+.custom-button:hover {
+  background-color: #3e2196;
 }
 
-.store-type-section {
-  margin-bottom: 20px;
-  text-align: center;
+.map-section {
+  padding: 20px;
+  border-radius: 16px;
 }
 
-.store-type-section select {
-  padding: 10px;
-  border: 2px solid #ccc;
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-section label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #4a4a68;
+}
+
+.material-dropdown {
+  padding: 12px;
+  border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 16px;
-  width: 300px;
-  margin-top: 10px;
+  appearance: none;
+  background-color: #f9f9f9;
+  background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236c6c8c"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  transition: border-color 0.3s ease;
 }
 
-.map-wrapper {
-  background-color: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  max-width: 1200px;
-  width: 90%;
-}
-
-#map {
-  width: 100%;
-  height: 500px;
-  border-radius: 15px;
+.material-dropdown:focus {
+  border-color: #5b34b1;
 }
 
 .address-input {
   display: flex;
   gap: 10px;
-  justify-content: center;
-  margin-top: 15px;
+  align-items: center;
 }
 
 .address-input input {
-  padding: 10px;
-  width: 300px;
-  border: 2px solid #ccc;
+  padding: 12px;
+  border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 16px;
-  outline: none;
+  flex: 1;
   transition: border-color 0.3s ease;
 }
 
 .address-input input:focus {
-  border-color: #4CAF50;
+  border-color: #5b34b1;
 }
 
-.address-input button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
+.save-button {
+  padding: 10px 16px;
+  background-color: #5b34b1;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
 }
 
-.address-input button:hover {
-  background-color: #45a049;
-  transform: translateY(-3px);
+.save-button:hover {
+  background-color: #3e2196;
 }
 </style>

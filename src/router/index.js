@@ -30,10 +30,6 @@ import EditUserInfo from '@/components/EditUserInfo.vue';
 import QnAComponent from '@/components/QnA_Component.vue';
 import UserReview from '@/components/review.vue';
 
-// 결제 결과 관련 뷰
-import Approval from '@/views/Approval.vue';
-import Cancel from '@/views/Cancel.vue';
-import Fail from '@/views/Fail.vue';
 
 
 const routes = [
@@ -167,22 +163,6 @@ const routes = [
     path: '/review',
     name: 'Review',
     component: UserReview
-  },
-  // 결제 결과 페이지 라우트
-  {
-    path: '/approval',
-    name: 'Approval',
-    component: Approval
-  },
-  {
-    path: '/cancel',
-    name: 'Cancel',
-    component: Cancel
-  },
-  {
-    path: '/fail',
-    name: 'Fail',
-    component: Fail
   },
 
 ];
