@@ -1,5 +1,6 @@
 <template>
   <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
     <div class="sidebar">
       <ul class="no-bullets">
         <li>
@@ -40,10 +41,13 @@
       </ul>
     </div>
 
+    <!-- Main Content Area -->
     <div class="content">
-      <!-- 가게 정보 관리 -->
+      <!-- Store Information Management -->
       <div class="store-info">
         <h2>가게 정보 관리</h2>
+        
+        <!-- Store Name Registration -->
         <div class="info-section">
           <div class="info-box">
             <label for="storeName">스토어 이름 등록 / 변경</label>
@@ -54,16 +58,17 @@
                 v-model="storeName"
                 :disabled="storeNameRegistered && !editingStoreName"
                 placeholder="가게 이름을 입력하세요"
+                class="input-box"
               />
               <div>
-                <button v-if="!storeNameRegistered" @click="registerStoreName">등록</button>
-                <button v-if="storeNameRegistered && !editingStoreName" @click="enableStoreNameEditing">변경하기</button>
-                <button v-if="editingStoreName" @click="saveStoreName">저장</button>
+                <button v-if="!storeNameRegistered" @click="registerStoreName" class="action-button">등록</button>
+                <button v-if="storeNameRegistered && !editingStoreName" @click="enableStoreNameEditing" class="action-button">변경하기</button>
+                <button v-if="editingStoreName" @click="saveStoreName" class="action-button">저장</button>
               </div>
             </div>
           </div>
 
-          <!-- 영업시간 설정 -->
+          <!-- Business Hours Setting -->
           <div class="info-box">
             <label>영업 시간</label>
             <div class="time-inputs-with-button">
@@ -73,6 +78,7 @@
                 id="openTime"
                 v-model="openTime" 
                 :disabled="!editingOperationHours"
+                class="time-input"
               />
               <label for="closeTime">마감 시간</label>
               <input 
@@ -80,17 +86,16 @@
                 id="closeTime"
                 v-model="closeTime" 
                 :disabled="!editingOperationHours"
+                class="time-input"
               />
-              <button v-if="!editingOperationHours" @click="enableOperationHoursEditing" class="edit-button">
-                변경하기
-              </button>
-              <button v-else @click="saveStoreInfo" class="edit-button">
-                저장
+              <button v-if="!openTime || !closeTime" @click="setOperationHours" class="edit-button">설정하기</button>
+              <button v-else @click="enableOperationHoursEditing" class="edit-button">
+                {{ editingOperationHours ? '저장' : '변경하기' }}
               </button>
             </div>
           </div>
 
-          <!-- 휴무일 설정 -->
+          <!-- Day Off Setting -->
           <div class="info-box">
             <label>휴무일 설정</label>
             <div class="day-selection">
@@ -101,7 +106,7 @@
             </div>
             <div class="calendar-selection">
               <label>날짜 선택</label>
-              <input type="date" v-model="selectedCloseDay" @change="addCloseDay" :disabled="!editingDayoff" />
+              <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
             </div>
             <div class="selected-days-with-button">
               <p class="selected-days">선택된 휴무일: {{ dayoff.join(', ') }} / {{ closeDays.join(', ') }}</p>
@@ -112,10 +117,10 @@
         </div>
       </div>
 
-      <!-- 주문 내역 대시보드 -->
+      <!-- Order History Dashboard -->
       <h2>주문 내역</h2>
 
-      <!-- 달력 추가 -->
+      <!-- Date Picker for Orders -->
       <div class="calendar-section">
         <label for="order-date">주문 날짜 선택</label>
         <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
@@ -129,15 +134,15 @@
           <div class="order-header">
             <p class="order-date">{{ formatDate(order.createdAt) }} 주문</p>
           </div>
-          <p class="order-status">{{ order.status || '예약됨' }} ({{ statusDescriptions[order.status] || '주문 전송 상태' }})</p> <!-- 상태 설명 추가 -->
+          <p class="order-status">{{ order.status || '예약됨' }} ({{ statusDescriptions[order.status] || '주문 전송 상태' }})</p>
           <div class="order-details">
             <p>메뉴: {{ order.menu }}</p>
             <p>수량: {{ order.quantity }}</p>
-            <p>예약 시간: {{ formatTime(order.reservationTime) }}</p> <!-- 예약 시간 추가 -->
+            <p>예약 시간: {{ formatTime(order.reservationTime) }}</p>
           </div>
           <div class="order-actions">
-            <button class="approve-button" @click="approveOrder(order.orderID)">승인</button> <!-- 승인 버튼 추가 -->
-            <button class="reject-button" @click="rejectOrder(order.orderID)">거절</button> <!-- 거절 버튼 추가 -->
+            <button class="approve-button" @click="approveOrder(order.orderID)">승인</button>
+            <button class="reject-button" @click="rejectOrder(order.orderID)">거절</button>
             <button v-if="order.status !== '주문처리완료'" class="reject-button" @click="cancelOrder(order.orderID)">취소</button>
           </div>
         </div>
@@ -145,6 +150,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -296,6 +302,13 @@ export default {
         alert('가게 이름을 입력하세요.');
       }
     },
+    setOrChangeTime() {
+      if (this.openTime && this.closeTime) {
+        alert('영업 시간이 변경되었습니다.');
+      } else {
+        alert('영업 시간이 설정되었습니다.');
+      }
+    },
     enableOperationHoursEditing() {
       this.editingOperationHours = true;
     },
@@ -363,300 +376,265 @@ export default {
 </script>
 
 <style scoped>
+/* Pane Layout 전체 레이아웃 */
 .dashboard-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 20px;
-  box-shadow: 
-      0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
-      inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fafafa;
+    border-radius: 20px;
+    box-shadow: 
+        0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25),
+        inset 0px 3.53px 3.53px 0px rgba(0, 0, 0, 0.25);
 }
 
+/* Sidebar styling */
 .sidebar {
-  margin-top: 4vh;
-  width: 250px;
-  background-color: #BFDC99;
-  padding: 20px;
-  border-radius: 12px;
-  color: black;
-  margin-right: 100px;
-  margin-left: -150px;
+    margin-top: 4vh;
+    width: 250px;
+    background-color: #f7f3ff;
+    padding: 24px;
+    border-radius: 12px;
+    color: black;
+    margin-right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transition: all 0.3s ease;
 }
 
+.sidebar ul {
+    list-style-type: none; /* 점 모양 제거 */
+    padding: 0;
+    margin: 0;
+}
+
+/* Sidebar button styling */
 .sidebar-button {
-  background-color: #EFFAD6;
-  border: none;
-  padding: 10px;
-  text-align: left;
-  font-size: 16px;
-  font-weight: bold;
-  color: #000;
-  cursor: pointer;
-  width: 80%;
-  margin-top: 2vh;
+    background-color: #ffffff;
+    border: none;
+    padding: 12px 0;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    width: 100%;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    border-radius: 8px;
 }
 
 .sidebar-button:hover {
-  background-color: #D5F2C1;
-}
-.order-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+    background-color: #ece7ff;
+    transform: translateY(-3px);
+    box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.15);
 }
 
+/* Main content area styling */
+.main-content {
+    flex: 1;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Typography */
+h1, h2, h3 {
+    color: #333;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+p {
+    font-size: 16px;
+    color: #666;
+}
+
+/* Order card styling */
 .order-card {
-  padding: 15px;
-  background-color: #EFFAD6;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 16px;
 }
 
-.order-header {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-}
-
-.order-status {
-  color: #4CAF50;
-}
-
-.order-details {
-  font-size: 14px;
-  color: #555;
-}
-
-.order-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.approve-button {
-  background-color: #98cbae;
-  color: white;
-}
-
-h2, h3 {
-  font-size: 24px;
-  color: #333;
-  font-weight: bold;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.info-section {
-  margin-bottom: 30px;
-}
-
-.info-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-}
-
-.input-with-button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-input[type="text"], input[type="time"], input[type="date"] {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.3s;
-}
-
-input[type="text"]:focus, input[type="time"]:focus, input[type="date"]:focus {
-  border-color: #4CAF50;
-}
-
-.time-inputs {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-.time-inputs-with-button {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.day-selection {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-}
-
-.calendar-selection label {
-  margin-right: 10px;
-}
-
-.calendar-selection {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 15px;
-}
-
-.selected-days-with-button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.selected-days {
-  font-size: 14px;
-  color: #555;
-  margin-right: 10px;
-}
-
-.edit-button {
-  padding: 10px 18px;
-  background-color: #EFFAD6;
-  color: gray;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.3s, box-shadow 0.3s;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.edit-button:hover {
-  background-color: #3D9970;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.edit-button:active {
-  background-color: #2E7D58;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.order-box {
-  border: 1px solid #ddd;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-
-.accept-button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.reject-button {
-  background-color: #ff6b51;
-  color: white;
-  border: none;
-  padding: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-left: 10px;
-}
-
-.no-orders {
-  text-align: center;
-  color: gray;
-  font-size: 16px;
-}
-
-.actions {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.action-button {
-  padding: 10px 18px;
-  background-color: #EFFAD6;
-  color: gray;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.action-button:hover {
-  background-color: #D5F2C1;
-}
-
-button {
-  padding: 12px 24px;
-  background-color: #EFFAD6;
-  color: gray;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s, box-shadow 0.3s;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-button:hover {
-  background-color: #3D9970;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-button:active {
-  background-color: #2E7D58;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.no-bullets {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-.calendar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
+/* Date picker styling (주문 날짜 선택 박스) */
 .date-picker {
-  padding: 10px;
-  border: 1px solid #D5F2C1; 
-  border-radius: 12px;
-  background-color: #EFFAD6; 
-  font-size: 16px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
-  transition: border-color 0.3s, box-shadow 0.3s;
+    padding: 12px 16px;
+    font-size: 16px;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    width: 100%;
+    max-width: 320px;
+    margin-top: 8px; /* 위아래 여백 추가 */
+}
+
+.date-picker:hover {
+    border-color: #1a73e8;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .date-picker:focus {
-  border-color: #4CAF50; 
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); 
+    border-color: #1a73e8;
+    outline: none;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* 휴무일 설정 영역 스타일 */
+.day-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px; /* 항목 간 간격 조정 */
+    padding: 12px;
+    background-color: #f8f8ff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    margin-top: 10px; /* 위아래 여백 추가 */
+}
+
+/* Combo box styling */
+select {
+    padding: 10px;
+    font-size: 16px;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    appearance: none;
+}
+
+select:hover, select:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* General button styling */
+button {
+    padding: 14px 28px;
+    background-color: #ffffff;
+    color: #333;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 16px;
+    margin-right: 8px; /* 버튼과 텍스트 간 여백 추가 */
+}
+
+button:hover {
+    background-color: #ece7ff;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:active {
+    background-color: #e0dafc;
+}
+
+/* Action button styling */
+.action-button {
+    margin: 3px;
+    padding: 10px 20px;
+    margin-top: 2vh;
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:hover {
+    background-color: #166bb5;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Specific button styling */
+.approve-button {
+    background-color: #1a73e8;
+    color: white;
+    margin-right: 10px;
+}
+
+.reject-button {
+    background-color: #ff6b51;
+    color: white;
+    margin-left: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        margin-bottom: 20px;
+        flex-direction: row;
+        order: 1;
+        gap: 10px;
+    }
+    
+    .sidebar-button {
+        flex: 1;
+        font-size: 14px;
+    }
+}
+
+/* Input fields styling */
+.store-name-section, .business-hours {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-box, .time-input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 200px;
+}
+
+/* Font family */
 @font-face {
-  font-family: 'NanumSquareRound';
-  src: url('@/assets/font/NANUMSQUAREROUNDOTFB.OTF') format('opentype');
+    font-family: 'IBMPlexSansKR';
+    src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
 }
 
 * {
-  font-family: 'NanumSquareRound', sans-serif;
+    font-family: 'IBMPlexSansKR', sans-serif;
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="qna-container">
     <h2>Q&A</h2>
 
-    <!-- FAQ 섹션 -->
+    <!-- FAQ Section -->
     <div class="faq-section">
       <h3>자주 묻는 질문</h3>
       <ul>
@@ -21,94 +21,247 @@
       </ul>
     </div>
 
-    <!-- 질문 작성 섹션 -->
+    <!-- Question Submission Section -->
     <div class="ask-question">
       <h3>질문하기</h3>
       <div class="input-container">
+        <input type="text" v-model="newTitle" placeholder="제목을 입력하세요" />
         <input type="text" v-model="newQuestion" placeholder="질문을 입력하세요" />
         <button @click="submitQuestion">질문 제출</button>
       </div>
     </div>
 
-    <!-- 제출된 질문 표시 -->
-    <div class="submitted-questions" v-if="questions.length">
+    <!-- Submitted Questions Display -->
+    <div class="submitted-questions">
       <h3>제출된 질문</h3>
-      <ul>
-        <li v-for="(question, index) in questions" :key="index">{{ question }}</li>
+      <ul v-if="questions.length">
+        <li v-for="(question, index) in questions" :key="index">
+          <strong>{{ question.title }}:</strong> {{ question.content }}
+          <div v-if="question.answered">
+            <p>답변 완료</p>
+            <p><strong>답변:</strong> {{ question.answer }}</p>
+          </div>
+          <div v-else>
+            <p>답변 대기 중</p>
+          </div>
+        </li>
       </ul>
+      <p v-else>질문이 없습니다.</p>
     </div>
   </div>
 </template>
 
 <script>
+import { database } from '@/firebase';
+import { getAuth } from 'firebase/auth';
+import { ref, set, push, onValue, query, orderByChild, equalTo } from "firebase/database";
+
 export default {
   name: 'QnAComponent',
   data() {
     return {
-      newQuestion: '',
-      questions: [], // 질문 목록
+      newTitle: '', // 새로 입력할 질문 제목
+      newQuestion: '', // 새로 입력할 질문 내용
+      questions: [], // 사용자의 질문 목록
     };
   },
+  mounted() {
+    this.fetchUserQuestions();
+  },
   methods: {
-    submitQuestion() {
-      if (this.newQuestion.trim()) {
-        this.questions.push(this.newQuestion);
-        this.newQuestion = '';
+    async submitQuestion() {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (user && this.newTitle.trim() && this.newQuestion.trim()) {
+        const questionData = {
+          title: this.newTitle,                     // 작성자가 입력한 제목
+          content: this.newQuestion,                // 작성자가 입력한 질문 내용
+          createdAt: new Date().toISOString(),      // 작성 시간
+          writer: user.uid                          // 작성자 UID
+        };
+
+        try {
+          const questionsRef = ref(database, "questions");
+          const newQuestionRef = push(questionsRef);   // 새로운 키 생성
+          await set(newQuestionRef, questionData);     // 데이터를 지정된 구조로 저장
+
+          this.newTitle = '';
+          this.newQuestion = '';
+          this.fetchUserQuestions(); // 질문 제출 후 사용자 질문을 새로고침
+        } catch (error) {
+          console.error("질문을 제출하는 도중 오류가 발생했습니다: ", error);
+          alert("질문을 제출하는 도중 오류가 발생했습니다.");
+        }
       } else {
-        alert('질문을 입력해 주세요.');
+        alert('제목과 질문을 모두 입력해 주세요.');
       }
     },
+    fetchUserQuestions() {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (user) {
+        const questionsRef = ref(database, "questions");
+
+        onValue(questionsRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            this.questions = []; // 기존 질문 초기화
+
+            // 각 질문에 대해 답변을 가져오도록 처리
+            Object.keys(data).forEach((key) => {
+              const question = data[key];
+              if (question.writer === user.uid) {
+                const questionWithAnswer = { 
+                  id: key,
+                  title: question.title,
+                  content: question.content,
+                  createdAt: question.createdAt,
+                  answered: false,
+                  answer: ''
+                };
+
+                // 해당 질문에 대한 답변을 가져오기
+                const answersRef = ref(database, `questions_answer`);
+                const answersQuery = query(answersRef, orderByChild('questionId'), equalTo(key)); // questionId로 필터링
+                onValue(answersQuery, (answerSnapshot) => {
+                  const answers = answerSnapshot.val();
+                  if (answers) {
+                    Object.keys(answers).forEach((answerKey) => {
+                      const answer = answers[answerKey];
+                      if (answer.questionId === key && answer.questionWriter === user.uid) {
+                        questionWithAnswer.answered = true;
+                        questionWithAnswer.answer = answer.answer;
+                      }
+                    });
+                  }
+
+                  this.questions.push(questionWithAnswer);
+                });
+              }
+            });
+          } else {
+            this.questions = [];
+          }
+        }, (error) => {
+          console.error("데이터를 가져오는 도중 오류가 발생했습니다: ", error);
+          alert("데이터를 가져오는 도중 오류가 발생했습니다.");
+        });
+      } else {
+        alert('로그인이 필요합니다.');
+      }
+    }
   },
 };
 </script>
 
+
 <style scoped>
 .qna-container {
   padding: 20px;
-  background-color: #f4f9e9; /* 배경색 */
-  border-radius: 15px; /* 테두리 둥글게 */
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
-  max-width: 600px; /* 최대 너비 설정 */
-  margin: auto; /* 가운데 정렬 */
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  max-width: 700px;
+  margin: 30px auto;
+  font-family: Arial, sans-serif;
+  color: #333;
 }
 
-.faq-section {
-  margin-bottom: 20px;
+h2 {
+  font-size: 1.8em;
+  margin-bottom: 0.5em;
+  text-align: center;
+  color: #1a73e8;
 }
 
-ul {
+h3 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  color: #333;
+  font-weight: bold;
+}
+
+.faq-section ul {
   list-style-type: none;
   padding: 0;
 }
 
-li {
-  margin-bottom: 15px;
+.faq-section li {
+  border-bottom: 1px solid #eee;
+  padding: 15px 0;
+  font-size: 0.95em;
+}
+
+.faq-section strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #1a73e8;
+}
+
+.ask-question {
+  margin-top: 30px;
+  text-align: center;
 }
 
 .input-container {
   display: flex;
-  align-items: center; /* 수직 정렬 */
-  justify-content: center; /* 수평 중앙 정렬 */
+  justify-content: center;
+  gap: 10px;
 }
 
 input {
   padding: 10px;
-  margin-right: 10px;
-  border-radius: 5px;
+  border-radius: 8px;
   border: 1px solid #ddd;
-  width: 70%; /* 너비 조정 */
+  flex: 1;
+  max-width: 400px;
+  font-size: 0.95em;
 }
 
 button {
-  padding: 10px 15px;
-  background-color: #4CAF50;
+  padding: 10px 20px;
+  background-color: #1a73e8;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 0.95em;
+  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #45A049; /* 버튼 호버 색상 */
+  background-color: #155ab4;
+}
+
+.submitted-questions {
+  margin-top: 40px;
+}
+
+.submitted-questions ul {
+  list-style: none;
+  padding: 0;
+}
+
+.submitted-questions li {
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: #f7f9fc;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+}
+
+.submitted-questions li strong {
+  font-size: 1em;
+  color: #1a73e8;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.submitted-questions p {
+  text-align: center;
+  color: #888;
+  font-size: 1em;
 }
 </style>
