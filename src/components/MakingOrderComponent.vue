@@ -36,6 +36,12 @@
           </select>
         </div>
 
+        <!-- 주문 수량 선택 -->
+        <div class="form-group">
+          <label for="people" class="input-label">희망 모집 인원</label>
+          <input type="number" id="people" v-model="people" min="1" required class="input-field" />
+        </div>
+
         <!-- Display the selected menu price -->
         <div class="price-display">
           <p>선택 메뉴 가격: {{ selectedMenu.price }}원</p>
@@ -57,6 +63,12 @@
           <label for="pickup-time" class="input-label">예약 시간</label>
           <input type="datetime-local" id="pickup-time" v-model="pickupTime" @input="validateTime" required class="input-field" />
           <p v-if="timeAdjustmentMessage" class="time-message">{{ timeAdjustmentMessage }}</p>
+        </div>
+
+        <!-- Close time -->
+        <div class="form-group">
+          <label for="close-time" class="input-label">예약 마감 시간</label>
+          <input type="datetime-local" id="close-time" v-model="closetime" required class="input-field" />
         </div>
 
         <button type="submit" class="submit-button" :disabled="!isFormValid">결제 및 예약하기</button>
@@ -83,13 +95,15 @@ export default {
       selectedMenu: '',
       deliveryFee: 0,
       pickupTime: '',
+      closetime: '',
+      people: '1',
       menuQuantity: 1,
       timeAdjustmentMessage: ''
     };
   },
   computed: {
     isFormValid() {
-      return this.selectedCategory && this.selectedStore && this.selectedMenu && this.pickupTime;
+      return this.selectedCategory && this.selectedStore && this.selectedMenu && this.pickupTime && this.people && this.closetime;
     }
   },
   mounted() {
@@ -183,6 +197,7 @@ export default {
         if (user) {
           const createdAt = moment().tz('Asia/Seoul').format();
           const reservationTime = moment.tz(this.pickupTime, 'Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
+          const closeTime = moment.tz(this.closetime, 'Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
           const orderRef = ref(database, 'orders');
           const newOrderRef = push(orderRef);
 
@@ -193,11 +208,13 @@ export default {
             storeType: this.selectedCategory,
             status: 'reserved',
             reservationTime: reservationTime,
+            closeTime: closeTime,
             participantsCount: 1,
             menu: this.selectedMenu.name,
             price: this.selectedMenu.price,
             quantity: this.menuQuantity,
-            deliveryFee: this.deliveryFee
+            deliveryFee: this.deliveryFee,
+            people: this.people
           };
 
           await set(newOrderRef, orderData);

@@ -103,7 +103,7 @@
             : '배달비 없음' }}
         </p>
         <p><strong>참여 인원:</strong> {{ selectedOrder?.participantsCount }}</p>
-        <button class="button green2" @click="openMenuSelection">참여하기</button>
+        <button class="button green2" @click="openMenuSelection" :disabled="isOrderClosed(selectedOrder)">참여하기</button>
         <button class="button green2" @click="closePopup">닫기</button>
       </div>
     </div>
@@ -154,6 +154,7 @@ export default {
       selectedMenuId: '',
       menuQuantity: 1,
       currentUserId: null,
+      selectedOrder: null,
     };
   },
   created() {
@@ -208,6 +209,10 @@ export default {
                   quantity: order.quantity,
                   price: order.price,
                   reservationTime: reservationTime.format('YYYY-MM-DD HH:mm'),
+                  closeTime: order.closeTime, // closeTime 추가
+                  participantsCount: order.participantsCount,
+                  people: order.people, // 희망 참여 인원
+
                   ...order
                 });
               }
@@ -289,6 +294,12 @@ export default {
         return;
       }
 
+      // 마감 조건 확인
+      if (this.isOrderClosed(this.selectedOrder)) {
+        alert('주문이 마감되었습니다.');
+        return;
+      }
+
       const totalAmount = selectedMenu.price * this.menuQuantity;
       
       var IMP = window.IMP;
@@ -338,7 +349,13 @@ export default {
           if (snapshot.exists()) {
             const orderData = snapshot.val();
             const updatedParticipants = (orderData.participantsCount || 0) + 1;
-            return update(ref(database, `orders/${this.selectedOrderId}`), { participantsCount: updatedParticipants });
+            const isClosed = this.isOrderClosed(orderData);
+
+            // 주문 상태 업데이트
+            return update(ref(database, `orders/${this.selectedOrderId}`), { 
+              participantsCount: updatedParticipants, 
+              status: isClosed ? 'closed' : 'open' 
+            });
           } else {
             throw new Error('해당 주문을 찾을 수 없습니다.');
           }
@@ -351,14 +368,22 @@ export default {
           console.error('참여 처리 중 오류 발생:', error);
         });
     },
-    closeMenuPopup() {
-      this.isMenuPopupVisible = false;
-      this.selectedMenuId = '';
-      this.menuQuantity = 1;
-    },
+    isOrderClosed(order) {
+      if (!order || !order.closeTime) {
+      return false; // 주문 또는 closeTime이 없으면 주문 마감 아님
+    }
+
+    const currentKSTTime = moment().tz('Asia/Seoul');
+    const closeTime = moment(order.closeTime);
+    const participantsReached = order.participantsCount >= order.people;
+
+    // 마감 시간이 지났거나 참여 인원이 충족되면 주문 마감
+    return currentKSTTime.isAfter(closeTime) || participantsReached;
+  }
   },
 };
 </script>
+
 
 <style scoped>
 .main-container {

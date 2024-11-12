@@ -20,6 +20,7 @@
         <div class="calendar-section">
           <label for="order-date">주문 날짜 선택</label><br>
           <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
+          <button @click="fetchAllOrders">모든 주문 보기</button>
         </div>
         
         <div v-if="orders.length === 0" class="no-orders">
@@ -52,7 +53,6 @@ import { getDatabase, ref, get, query, orderByChild, equalTo } from "firebase/da
 import { onAuthStateChanged } from "firebase/auth";
 import moment from 'moment';
 import { auth } from '@/firebase';
-
 
 export default {
   name: 'UserMypage',
@@ -98,16 +98,13 @@ export default {
       });
     },
     fetchOrdersByDate() {
-      // userUid가 정의되어 있는지 확인 후 쿼리 실행
       if (!this.userUid) {
         console.warn('userUid가 정의되지 않았습니다.');
         return;
       }
-      
+
       const db = getDatabase();
       const selectedDay = moment(this.selectedDate).format('YYYY-MM-DD');
-      
-      // 현재 사용자의 UID와 선택된 날짜에 맞는 주문을 필터링
       const ordersRef = query(ref(db, 'orders'), orderByChild('creatorUid'), equalTo(this.userUid));
 
       get(ordersRef).then((snapshot) => {
@@ -116,7 +113,6 @@ export default {
           const filteredOrders = Object.keys(data).map((orderId) => {
             const orderData = data[orderId];
             const orderDate = moment(orderData.createdAt).format('YYYY-MM-DD');
-            // 선택한 날짜와 일치하는 주문만 반환
             if (orderDate === selectedDay) {
               return {
                 orderID: orderId,
@@ -132,6 +128,31 @@ export default {
         }
       }).catch((error) => {
         console.error('선택된 날짜의 주문 내역을 불러오는 중 오류 발생:', error);
+      });
+    },
+    fetchAllOrders() {
+      if (!this.userUid) {
+        console.warn('userUid가 정의되지 않았습니다.');
+        return;
+      }
+
+      const db = getDatabase();
+      const ordersRef = query(ref(db, 'orders'), orderByChild('creatorUid'), equalTo(this.userUid));
+
+      get(ordersRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          this.orders = Object.keys(data).map((orderId) => {
+            return {
+              orderID: orderId,
+              ...data[orderId]
+            };
+          });
+        } else {
+          this.orders = [];
+        }
+      }).catch((error) => {
+        console.error('모든 주문을 불러오는 중 오류 발생:', error);
       });
     },
     goToHome() {
