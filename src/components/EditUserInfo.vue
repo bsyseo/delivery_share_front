@@ -87,74 +87,85 @@ export default {
 
 <style scoped>
 .edit-user-info {
-  padding: 15px; /* 패딩을 줄여 크기 조정 */
-  background-color: #f4f9e9; /* 전체 배경색 */
-  border-radius: 15px; /* 테두리 둥글게 */
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* 내용 가운데 정렬 */
-  width: 90%; /* 너비 조정 */
-  max-width: 400px; /* 최대 너비 조정 */
-  margin: auto; /* 가운데 정렬을 위한 마진 */
+  padding: 20px;
+  background-color: #ffffff; /* 배경색 흰색 */
+  border-radius: 15px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  max-width: 700px;
+  margin: auto;
+  font-family: Arial, sans-serif;
+}
+
+h2 {
+  font-size: 1.8em;
+  margin-bottom: 1em;
+  text-align: center;
+  color: #6c4fbd; /* 보라색 */
+}
+
+h3 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  color: #6c4fbd; /* 보라색 */
+  font-weight: bold;
 }
 
 .form-group {
-  margin-bottom: 10px; /* 간격 조정 */
-  width: 100%; /* 입력 필드 너비 100% */
+  margin-bottom: 20px;
+  width: 100%;
 }
 
 label {
-  font-size: 14px; /* 폰트 크기 조정 */
+  font-size: 14px;
   margin-bottom: 5px;
   display: block;
 }
 
 .input-container {
   display: flex;
-  align-items: center; /* 버튼과 입력 필드 수직 정렬 */
-  justify-content: center; /* 수평 중앙 정렬 */
+  align-items: center;
+  justify-content: center;
 }
 
 input[type="text"],
 input[type="email"],
 input[type="password"] {
-  width: 70%; /* 입력 필드 너비 조정 */
-  padding: 8px; /* 패딩 줄이기 */
+  width: 70%;
+  padding: 8px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 14px; /* 폰트 크기 조정 */
+  font-size: 14px;
 }
 
 .update-button {
-  margin-left: 10px; /* 버튼과 입력 필드 사이 여백 */
-  background-color: #4CAF50; /* 버튼 배경색 */
+  margin-left: 10px;
+  background-color: #6c4fbd; /* 보라색 */
   color: white;
-  padding: 8px 15px; /* 패딩 줄이기 */
+  padding: 8px 15px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 14px; /* 폰트 크기 조정 */
+  font-size: 14px;
   transition: background-color 0.3s;
 }
 
 .update-button:hover {
-  background-color: #45A049; /* 버튼 호버 색상 */
+  background-color: #5a3c9a; /* 다크 보라색 */
 }
 
 .submit-button {
-  margin-top: 15px; /* 상단 여백 추가 */
-  background-color: #4CAF50; /* 버튼 배경색 */
+  margin-top: 20px;
+  background-color: #6c4fbd;
   color: white;
-  padding: 10px 20px; /* 패딩 추가 */
+  padding: 12px 25px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
   transition: background-color 0.3s;
 }
 
 .submit-button:hover {
-  background-color: #45A049; /* 버튼 호버 색상 */
+  background-color: #5a3c9a; /* 다크 보라색 */
 }
 </style>
