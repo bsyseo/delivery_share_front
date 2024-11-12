@@ -107,7 +107,8 @@ export default {
         onValue(questionsRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
-            this.questions = []; // 기존 질문 초기화
+            // 기존 질문 초기화
+            let updatedQuestions = [];
 
             // 각 질문에 대해 답변을 가져오도록 처리
             Object.keys(data).forEach((key) => {
@@ -136,8 +137,8 @@ export default {
                       }
                     });
                   }
-
-                  this.questions.push(questionWithAnswer);
+                  updatedQuestions.push(questionWithAnswer); // 질문에 대한 답변 처리 후 추가
+                  this.questions = updatedQuestions; // 새로 업데이트된 질문 목록을 반영
                 });
               }
             });
