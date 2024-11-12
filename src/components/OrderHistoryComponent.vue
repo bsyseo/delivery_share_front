@@ -8,7 +8,7 @@
           <strong>주문 {{ index + 1 }}</strong> <!-- 순서 표시 -->
         </div>
         <strong>주문 번호:</strong>
-        <a href="#" @click.prevent="openOrderPopup(order.orderID)">{{ order.orderID }}</a> <!-- 주문 번호 클릭 -->
+        <a href="#" @click.prevent="openOrderPopup(order.orderID)" class="order-link">{{ order.orderID }}</a> <!-- 주문 번호 클릭 -->
         <br />
         <strong>메뉴 이름:</strong> {{ order.menu || '정보 없음' }}<br />
         <strong>수량:</strong> {{ order.quantity || '정보 없음' }}<br />
@@ -25,7 +25,7 @@
         <p><strong>가게 이름:</strong> {{ storeDetails.storeName }}</p>
         <p><strong>가게 주소:</strong> {{ storeDetails.store_address }}</p>
         <p><strong>가게 연락처:</strong> {{ storeDetails.contact }}</p>
-        <button @click="closeOrderPopup">닫기</button>
+        <button @click="closeOrderPopup" class="close-popup-btn">닫기</button>
       </div>
     </div>
   </div>
@@ -123,30 +123,45 @@ export default {
 <style scoped>
 .order-history {
   padding: 20px;
-  background-color: #F3F6ED; /* 배경색 추가 */
-  border-radius: 10px; /* 테두리 둥글게 */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 그림자 효과 추가 */
+  background-color: #ffffff; /* 배경색 흰색 */
+  border-radius: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 700px;
+  margin: auto;
 }
+
 ul {
   list-style-type: none;
   padding: 0;
 }
+
 .order-item {
-  margin: 15px 0; /* 항목 간 간격 */
-  border: 1px solid #ccc; /* 테두리 */
-  padding: 15px; /* 여백 */
-  border-radius: 8px; /* 테두리 둥글게 */
-  background-color: #fff; /* 항목 배경색 */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+  margin: 15px 0;
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 .order-header {
-  font-size: 1.2rem; /* 주문 번호 글씨 크기 */
-  font-weight: bold; /* 글씨 두껍게 */
-  margin-bottom: 10px; /* 아래 여백 */
-  color: #4CAF50; /* 주문 번호 색상 */
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #6c4fbd; /* 보라색 */
 }
+
 strong {
-  color: #333; /* 강조 글씨 색상 */
+  color: #333;
+}
+
+.order-link {
+  color: #6c4fbd;
+  text-decoration: none;
+}
+
+.order-link:hover {
+  text-decoration: underline;
 }
 
 /* 팝업 스타일 */
@@ -168,5 +183,19 @@ strong {
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.close-popup-btn {
+  margin-top: 15px;
+  background-color: #6c4fbd;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.close-popup-btn:hover {
+  background-color: #5a3c9a; /* 다크 보라색 */
 }
 </style>
