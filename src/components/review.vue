@@ -7,90 +7,153 @@
       <h3>리뷰 작성</h3>
       <textarea v-model="newReview" placeholder="리뷰를 작성하세요"></textarea>
       <button @click="submitReview">리뷰 제출</button>
-      <button @click="viewReviews" class="view-reviews-button">리뷰 기록 보기</button>
     </div>
 
     <!-- 제출된 리뷰 표시 -->
     <div class="review-list" v-if="reviews.length">
       <h3>제출된 리뷰</h3>
       <ul>
-        <li v-for="(review, index) in reviews" :key="index">{{ review }}</li>
+        <li v-for="review in reviews" :key="review.id">
+          <strong>{{ review.content }}</strong>
+        </li>
       </ul>
     </div>
   </div>
 </template>
 
 <script>
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { ref, push, onValue } from "firebase/database";
+import { database } from "@/firebase";
+
 export default {
   name: 'UserReview',
   data() {
     return {
-      newReview: '',
+      newReview: '',  // 새 리뷰
       reviews: [], // 리뷰 목록
+      userUid: '', // 로그인된 사용자 UID
     };
   },
   methods: {
     submitReview() {
       if (this.newReview.trim()) {
-        this.reviews.push(this.newReview);
-        this.newReview = '';
+        if (!this.userUid) {
+          alert("로그인이 필요합니다.");
+          return;
+        }
+
+        const newReviewData = {
+          content: this.newReview,
+          writer: this.userUid,
+          createdAt: new Date().toISOString(),
+        };
+
+        const reviewsRef = ref(database, 'reviews');
+        push(reviewsRef, newReviewData)
+          .then(() => {
+            alert('리뷰가 성공적으로 제출되었습니다.');
+            this.newReview = ''; // 제출 후 리뷰 내용 초기화
+            this.fetchReviews(); // 새로운 리뷰 제출 후 목록 업데이트
+          })
+          .catch((error) => {
+            console.error('리뷰 제출 중 오류 발생:', error);
+            alert('리뷰 제출에 실패했습니다. 다시 시도해 주세요.');
+          });
       } else {
-        alert('리뷰 내용을 입력해 주세요.'); // 빈 리뷰 제출 방지
+        alert('리뷰 내용을 입력해 주세요.');
       }
     },
-    viewReviews() {
-      // 리뷰 목록 보기 로직 구현
-      alert('리뷰 목록 보기 기능은 아직 구현되지 않았습니다.'); // 예시
-    }
-  }
+    fetchReviews() {
+      const reviewsRef = ref(database, 'reviews');
+      onValue(reviewsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          this.reviews = Object.keys(data)
+            .map((key) => ({
+              id: key,
+              ...data[key],
+            }))
+            .filter((review) => review.writer === this.userUid);
+        } else {
+          this.reviews = [];
+        }
+      });
+    },
+  },
+  created() {
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        this.userUid = user.uid;
+        this.fetchReviews(); // 로그인된 사용자의 리뷰 불러오기
+      } else {
+        this.userUid = '';
+        this.reviews = []; // 로그아웃 시 리뷰 초기화
+      }
+    });
+  },
 };
 </script>
 
 <style scoped>
 .reviews-container {
   padding: 20px;
-  background-color: #f4f9e9; /* 전체 배경색 */
+  background-color: #ffffff; /* 배경색을 흰색으로 변경 */
   border-radius: 15px; /* 테두리 둥글게 */
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
-  max-width: 600px; /* 최대 너비 설정 */
+  max-width: 700px; /* 최대 너비 설정 */
   margin: auto; /* 가운데 정렬 */
+}
+
+h2 {
+  font-size: 1.8em;
+  margin-bottom: 1em;
+  text-align: center;
+  color: #6c4fbd; /* 보라색 */
+}
+
+h3 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  color: #6c4fbd; /* 보라색 */
+  font-weight: bold;
 }
 
 .write-review {
   margin-bottom: 20px;
+  text-align: center; /* 가운데 정렬 */
 }
 
 textarea {
   width: 100%;
-  height: 100px;
+  height: 150px; /* 크기 조정 */
   padding: 10px;
-  border-radius: 5px;
+  border-radius: 8px;
   border: 1px solid #ddd;
   margin-bottom: 10px;
-  font-size: 14px; /* 폰트 크기 조정 */
+  font-size: 16px; /* 폰트 크기 증가 */
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 button {
-  padding: 10px 15px;
-  background-color: #4CAF50; /* 버튼 배경색 */
+  padding: 12px 20px; /* 크기 증가 */
+  background-color: #6c4fbd; /* 보라색 */
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px; /* 폰트 크기 조정 */
-  margin-right: 10px; /* 버튼 간격 */
+  font-size: 16px; /* 폰트 크기 증가 */
+  transition: background-color 0.3s;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 button:hover {
-  background-color: #45A049; /* 버튼 호버 색상 */
-}
-
-.view-reviews-button {
-  background-color: #007BFF; /* 다른 색상으로 변경 */
-}
-
-.view-reviews-button:hover {
-  background-color: #0056b3; /* 버튼 호버 색상 */
+  background-color: #5a3c9a; /* 다크 보라색 */
 }
 
 .review-list ul {
@@ -98,8 +161,10 @@ button:hover {
   padding: 0;
 }
 
-.review-list li {
-  margin-bottom: 10px;
-  font-size: 14px; /* 폰트 크기 조정 */
+.review-item {
+  margin-bottom: 15px; /* 간격 증가 */
+  font-size: 16px; /* 폰트 크기 증가 */
+  color: #6c4fbd; /* 보라색 */
+  text-align: center; /* 리뷰 텍스트 중앙 정렬 */
 }
 </style>
