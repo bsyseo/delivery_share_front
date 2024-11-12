@@ -17,9 +17,24 @@
         </div>
 
         <!-- 답글 입력 -->
-        <textarea v-model="question.reply" placeholder="답글을 작성하세요" class="reply-input"></textarea>
+        <textarea 
+          v-if="!question.answered" 
+          v-model="question.reply" 
+          placeholder="답글을 작성하세요" 
+          class="reply-input">
+        </textarea>
+        
         <div class="submit-container">
-          <button @click="submitAnswer(question.id, question.reply, question.writer)" class="submit-btn">답글 제출</button>
+          <button 
+            @click="submitAnswer(question)" 
+            class="submit-btn" 
+            :disabled="question.answered">
+            답글 제출
+          </button>
+        </div>
+
+        <div v-if="question.answered">
+          <p><strong>답변 완료:</strong> {{ question.answer }}</p>
         </div>
       </div>
     </div>
@@ -32,7 +47,7 @@
 </template>
 
 <script>
-import { ref, onValue, push, remove } from "firebase/database";
+import { ref, onValue, push, update } from "firebase/database";
 import { database } from "@/firebase";
 
 export default {
@@ -54,6 +69,8 @@ export default {
             id: key,
             ...data[key],
             reply: '', // 답글 입력을 위한 속성 초기화
+            answered: data[key].answered || false, // 질문의 답변 상태 초기화
+            answer: data[key].answer || '' // 기존 답변 내용 초기화
           }));
         } else {
           this.questions = [];
@@ -62,14 +79,14 @@ export default {
     },
 
     // 답글을 제출하는 메소드
-    submitAnswer(questionId, reply, questionWriter) {
-      if (reply.trim()) {
-        // 답글 데이터를 Firebase에 저장할 형식
+    submitAnswer(question) {
+      const reply = question.reply.trim();
+      if (reply) {
         const answerData = {
-          questionId: questionId, // 해당 질문 ID
+          questionId: question.id, // 해당 질문 ID
           answer: reply, // 사용자가 작성한 답글
           answeredAt: new Date().toISOString(), // 답글 작성 시간
-          questionWriter: questionWriter, // 질문을 작성한 사람 (사용자 정보)
+          questionWriter: question.writer, // 질문을 작성한 사람 (사용자 정보)
           answerer: '관리자', // 답변자는 '관리자'로 설정
         };
 
@@ -82,8 +99,20 @@ export default {
               alert('답글 저장 성공');
               this.successMessageShown = true;
             }
-            // 답글을 작성한 후 해당 질문을 Firebase에서 삭제하고, UI에서 제거
-            this.removeQuestionFromList(questionId);
+
+            // 질문을 답변 완료 상태로 업데이트
+            const questionRef = ref(database, `questions/${question.id}`);
+            update(questionRef, { 
+              answered: true, // 답변 완료 상태로 업데이트
+              answer: reply  // 답변 내용 업데이트
+            })
+            .then(() => {
+              // 질문 목록을 새로고침하여 답변이 달린 질문으로 업데이트
+              this.fetchQuestions();
+            })
+            .catch((error) => {
+              console.error('질문 업데이트 중 오류 발생:', error);
+            });
           })
           .catch((error) => {
             console.error('답글 저장 중 오류 발생:', error);
@@ -92,20 +121,6 @@ export default {
         alert('답글 내용을 입력해 주세요.');
       }
     },
-
-    // 질문을 Firebase에서 삭제하고 UI에서 제거하는 메소드
-    removeQuestionFromList(questionId) {
-      // Firebase에서 해당 질문 삭제
-      const questionRef = ref(database, `questions/${questionId}`);
-      remove(questionRef)
-        .then(() => {
-          // Firebase에서 질문 삭제 후 배열에서 해당 질문을 제거하고 UI에 실시간 반영
-          this.questions = this.questions.filter((q) => q.id !== questionId);
-        })
-        .catch((error) => {
-          console.error('삭제 중 오류 발생:', error);
-        });
-    }
   },
   created() {
     this.fetchQuestions(); // 페이지 로드 시 질문 목록 불러오기
@@ -202,6 +217,11 @@ h2 {
 
 .submit-btn:active {
   transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 
 .no-questions {
