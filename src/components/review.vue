@@ -10,7 +10,7 @@
     </div>
 
     <!-- 제출된 리뷰 표시 -->
-    <div class="review-list" v-if="reviews.length">
+    <div class="submitted-questions" v-if="reviews.length">
       <h3>제출된 리뷰</h3>
       <ul>
         <li v-for="review in reviews" :key="review.id">
@@ -156,15 +156,33 @@ button:hover {
   background-color: #5a3c9a; /* 다크 보라색 */
 }
 
-.review-list ul {
-  list-style-type: none;
+.submitted-questions {
+  margin-top: 40px;
+}
+
+.submitted-questions ul {
+  list-style: none;
   padding: 0;
 }
 
-.review-item {
-  margin-bottom: 15px; /* 간격 증가 */
-  font-size: 16px; /* 폰트 크기 증가 */
+.submitted-questions li {
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: #f7f9fc;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+}
+
+.submitted-questions li strong {
+  font-size: 1em;
   color: #6c4fbd; /* 보라색 */
-  text-align: center; /* 리뷰 텍스트 중앙 정렬 */
+  margin-bottom: 5px;
+  display: block;
+}
+
+.submitted-questions p {
+  text-align: center;
+  color: #888;
+  font-size: 1em;
 }
 </style>

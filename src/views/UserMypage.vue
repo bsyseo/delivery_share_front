@@ -13,27 +13,35 @@
       <div class="user-info">
         <h3>{{ userName }}님</h3>
         <p>전화번호: {{ userPhone }}</p>
-        <h3>최근 주문 내역</h3>
-        <ul class="order-list">
-          <li v-for="order in recentOrders" :key="order.id" class="order-item">
-            <p>메뉴: {{ order.menuName }}</p>
-            <p>가격: {{ order.price }} 원</p>
-            <p>수량: {{ order.quantity }}</p>
-          </li>
-        </ul>
-        <h3>예약 진행 중인 주문</h3>
-        <ul class="order-list">
-          <li v-for="reservation in ongoingReservations" :key="reservation.id" class="reservation-item">
-            <p>{{ reservation.details }}</p>
-          </li>
-        </ul>
-      </div>
-      
-      <OrderHistoryComponent />
 
-      <div class="nav-buttons">
-        <button class="home-button" @click="goToHome">홈으로 가기</button>
-        <button class="order-button" @click="goToOrderPage">주문 페이지로 가기</button>
+        <h3>최근 주문 내역</h3>
+        
+        <!-- Date Picker for Orders -->
+        <div class="calendar-section">
+          <label for="order-date">주문 날짜 선택</label><br>
+          <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
+        </div>
+        
+        <div v-if="orders.length === 0" class="no-orders">
+          <p>해당 날짜에 들어온 주문이 없습니다.</p>
+        </div>
+        <div v-else class="order-list">
+          <div v-for="order in orders" :key="order.orderID" class="order-card">
+            <div class="order-header">
+              <p class="order-date">{{ formatDate(order.createdAt) }} 주문</p>
+            </div>
+            <p class="order-status">{{ order.status || '예약됨' }} ({{ statusDescriptions[order.status] || '주문 전송 상태' }})</p>
+            <div class="order-details">
+              <p>메뉴: {{ order.menu }}</p>
+              <p>수량: {{ order.quantity }}</p>
+              <p>가격: {{ order.price }} 원</p>
+            </div>
+          </div>
+        </div>
+        <div class="nav-buttons">
+          <button class="home-button" @click="goToHome">홈으로 가기</button>
+          <button class="order-button" @click="goToOrderPage">주문 페이지로 가기</button>
+        </div>
       </div>
     </div>
   </div>
@@ -42,21 +50,28 @@
 <script>
 import { getDatabase, ref, get, query, orderByChild, equalTo } from "firebase/database";
 import { onAuthStateChanged } from "firebase/auth";
+import moment from 'moment';
 import { auth } from '@/firebase';
-import OrderHistoryComponent from '@/components/OrderHistoryComponent.vue';
+
 
 export default {
   name: 'UserMypage',
-  components: {
-    OrderHistoryComponent,
-  },
+
   data() {
     return {
       userName: '',
       userPhone: '',
       recentOrders: [],
       ongoingReservations: [],
-      userUid: '',
+      userUid: '', // 사용자의 UID 저장
+      selectedDate: moment().format('YYYY-MM-DD'), // 기본값으로 오늘 날짜 설정
+      orders: [], // 선택된 날짜의 주문을 저장하는 배열
+      statusDescriptions: { 
+        '승인됨': '주문이 승인되었습니다.',
+        '거절됨': '주문이 거절되었습니다.',
+        'pending': '주문 전송 상태',
+        '예약됨': '주문이 예약되었습니다.'
+      }
     };
   },
   created() {
@@ -76,42 +91,47 @@ export default {
           this.userUid = data.uid;
           this.userName = data.name;
           this.userPhone = data.phone;
-          this.fetchRecentOrders();
-          this.fetchOngoingReservations();
+          this.fetchOrdersByDate(); // 페이지 로드 시 기본적으로 오늘 날짜 주문을 불러옵니다.
         }
       }).catch((error) => {
         console.error('사용자 데이터를 불러오는 중 오류 발생:', error);
       });
     },
-    fetchRecentOrders() {
-      const db = getDatabase();
-      const ordersRef = query(ref(db, 'orders'), orderByChild('creatorUid'), equalTo(this.userUid));
+    fetchOrdersByDate() {
+      // userUid가 정의되어 있는지 확인 후 쿼리 실행
+      if (!this.userUid) {
+        console.warn('userUid가 정의되지 않았습니다.');
+        return;
+      }
       
+      const db = getDatabase();
+      const selectedDay = moment(this.selectedDate).format('YYYY-MM-DD');
+      
+      // 현재 사용자의 UID와 선택된 날짜에 맞는 주문을 필터링
+      const ordersRef = query(ref(db, 'orders'), orderByChild('creatorUid'), equalTo(this.userUid));
+
       get(ordersRef).then((snapshot) => {
         if (snapshot.exists()) {
-          const ordersData = snapshot.val();
-          this.recentOrders = Object.keys(ordersData).map((key) => ({
-            id: key,
-            ...ordersData[key],
-          }));
+          const data = snapshot.val();
+          const filteredOrders = Object.keys(data).map((orderId) => {
+            const orderData = data[orderId];
+            const orderDate = moment(orderData.createdAt).format('YYYY-MM-DD');
+            // 선택한 날짜와 일치하는 주문만 반환
+            if (orderDate === selectedDay) {
+              return {
+                orderID: orderId,
+                ...orderData
+              };
+            }
+            return null;
+          }).filter(order => order !== null);
+          
+          this.orders = filteredOrders;
         } else {
-          this.recentOrders = [];
+          this.orders = [];
         }
       }).catch((error) => {
-        console.error('주문 내역을 불러오는 중 오류 발생:', error);
-      });
-    },
-    fetchOngoingReservations() {
-      const db = getDatabase();
-      const reservationsRef = ref(db, `reservations/${this.userUid}/ongoing`);
-      get(reservationsRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          this.ongoingReservations = snapshot.val();
-        } else {
-          this.ongoingReservations = [];
-        }
-      }).catch((error) => {
-        console.error('진행 중인 예약을 불러오는 중 오류 발생:', error);
+        console.error('선택된 날짜의 주문 내역을 불러오는 중 오류 발생:', error);
       });
     },
     goToHome() {
@@ -119,10 +139,14 @@ export default {
     },
     goToOrderPage() {
       this.$router.push('/Order');
+    },
+    formatDate(date) {
+      return moment(date).format('YYYY-MM-DD');
     }
   },
 };
 </script>
+
 
 <style scoped>
 @font-face {
