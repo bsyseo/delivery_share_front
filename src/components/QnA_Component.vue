@@ -156,7 +156,6 @@ export default {
 };
 </script>
 
-
 <style scoped>
 .qna-container {
   padding: 20px;
@@ -173,7 +172,7 @@ h2 {
   font-size: 1.8em;
   margin-bottom: 0.5em;
   text-align: center;
-  color: #1a73e8;
+  color: #6c4fbd; /* 보라색 */
 }
 
 h3 {
@@ -197,7 +196,7 @@ h3 {
 .faq-section strong {
   display: block;
   margin-bottom: 5px;
-  color: #1a73e8;
+  color: #6c4fbd; /* 보라색 */
 }
 
 .ask-question {
@@ -222,7 +221,7 @@ input {
 
 button {
   padding: 10px 20px;
-  background-color: #1a73e8;
+  background-color: #6c4fbd; /* 보라색 */
   color: white;
   border: none;
   border-radius: 8px;
@@ -232,7 +231,7 @@ button {
 }
 
 button:hover {
-  background-color: #155ab4;
+  background-color: #5a3c9a; /* 다크 보라색 */
 }
 
 .submitted-questions {
@@ -254,7 +253,7 @@ button:hover {
 
 .submitted-questions li strong {
   font-size: 1em;
-  color: #1a73e8;
+  color: #6c4fbd; /* 보라색 */
   margin-bottom: 5px;
   display: block;
 }
