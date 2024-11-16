@@ -94,6 +94,7 @@
       <div class="popup-content">
         <p>예약 정보</p>
         <p><strong>예약 시간:</strong> {{ formatReservationTime(selectedOrder?.reservationTime) }}</p>
+        <p><strong>주소:</strong> {{ selectedOrder?.address || '주소 정보 없음' }}</p>
         <p><strong>메뉴 이름:</strong> {{ selectedOrder?.menuName || '메뉴 정보 없음' }}</p>
         <p><strong>가격:</strong> {{ selectedOrder?.price ? selectedOrder.price + '원' : '가격 없음' }}</p>
         <p><strong>수량:</strong> {{ selectedOrder?.quantity }}</p>
@@ -103,7 +104,7 @@
             : '배달비 없음' }}
         </p>
         <p><strong>참여 인원:</strong> {{ selectedOrder?.participantsCount }}</p>
-        <button class="button green2" @click="openMenuSelection" :disabled="isOrderClosed(selectedOrder)">참여하기</button>
+        <button class="button green2" @click="openMenuSelection">참여하기</button>
         <button class="button green2" @click="closePopup">닫기</button>
       </div>
     </div>
@@ -154,7 +155,6 @@ export default {
       selectedMenuId: '',
       menuQuantity: 1,
       currentUserId: null,
-      selectedOrder: null,
     };
   },
   created() {
@@ -209,10 +209,7 @@ export default {
                   quantity: order.quantity,
                   price: order.price,
                   reservationTime: reservationTime.format('YYYY-MM-DD HH:mm'),
-                  closeTime: order.closeTime, // closeTime 추가
-                  participantsCount: order.participantsCount,
-                  people: order.people, // 희망 참여 인원
-
+                  address: order.address, // 주소 정보 추가
                   ...order
                 });
               }
@@ -294,12 +291,6 @@ export default {
         return;
       }
 
-      // 마감 조건 확인
-      if (this.isOrderClosed(this.selectedOrder)) {
-        alert('주문이 마감되었습니다.');
-        return;
-      }
-
       const totalAmount = selectedMenu.price * this.menuQuantity;
       
       var IMP = window.IMP;
@@ -327,7 +318,7 @@ export default {
         return;
       }
 
-      const selectedMenu = this.storeMenus.find(menu => menu.id === this.selectedMenuId);
+      const selectedMenu = this.storeMenus.find((menu) => menu.id === this.selectedMenuId);
       const currentKSTTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
 
       const memberRef = push(ref(database, 'member'));
@@ -338,6 +329,7 @@ export default {
         quantity: this.menuQuantity,
         price: selectedMenu.price,
         participate_time: currentKSTTime,
+        address: this.selectedOrder?.address || '주소 정보 없음',
       };
 
       set(memberRef, memberData)
@@ -345,17 +337,25 @@ export default {
           const orderRef = ref(database, `orders/${this.selectedOrderId}`);
           return get(orderRef);
         })
-        .then(snapshot => {
+        .then((snapshot) => {
           if (snapshot.exists()) {
             const orderData = snapshot.val();
             const updatedParticipants = (orderData.participantsCount || 0) + 1;
-            const isClosed = this.isOrderClosed(orderData);
 
-            // 주문 상태 업데이트
-            return update(ref(database, `orders/${this.selectedOrderId}`), { 
-              participantsCount: updatedParticipants, 
-              status: isClosed ? 'closed' : 'open' 
-            });
+            const updates = {
+              participantsCount: updatedParticipants,
+            };
+
+            // 마감 조건 확인
+            const currentTime = moment().tz('Asia/Seoul');
+            const isParticipantsReached = updatedParticipants >= orderData.desiredParticipants;
+            const isTimeExceeded = currentTime.isAfter(moment(orderData.desiredEndTime));
+
+            if (isParticipantsReached || isTimeExceeded) {
+              updates.status = 'closed'; // 주문 마감
+            }
+
+            return update(ref(database, `orders/${this.selectedOrderId}`), updates);
           } else {
             throw new Error('해당 주문을 찾을 수 없습니다.');
           }
@@ -364,26 +364,18 @@ export default {
           alert('참여 완료!');
           this.closeMenuPopup();
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('참여 처리 중 오류 발생:', error);
         });
     },
-    isOrderClosed(order) {
-      if (!order || !order.closeTime) {
-      return false; // 주문 또는 closeTime이 없으면 주문 마감 아님
-    }
-
-    const currentKSTTime = moment().tz('Asia/Seoul');
-    const closeTime = moment(order.closeTime);
-    const participantsReached = order.participantsCount >= order.people;
-
-    // 마감 시간이 지났거나 참여 인원이 충족되면 주문 마감
-    return currentKSTTime.isAfter(closeTime) || participantsReached;
-  }
+    closeMenuPopup() {
+      this.isMenuPopupVisible = false;
+      this.selectedMenuId = '';
+      this.menuQuantity = 1;
+    },
   },
 };
 </script>
-
 
 <style scoped>
 .main-container {
