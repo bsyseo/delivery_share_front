@@ -36,10 +36,13 @@
           </select>
         </div>
 
-        <!-- 주문 수량 선택 -->
+        <!-- Pickup Zone selection -->
         <div class="form-group">
-          <label for="people" class="input-label">희망 모집 인원</label>
-          <input type="number" id="people" v-model="people" min="1" required class="input-field" />
+          <label for="pickup-zone" class="input-label">픽업존</label>
+          <select id="pickup-zone" v-model="selectedPickupZone" class="input-field">
+            <option value="">픽업존을 선택하세요</option>
+            <option v-for="zone in pickupZones" :key="zone.id" :value="zone.detail">{{ zone.detail }}</option>
+          </select>
         </div>
 
         <!-- Display the selected menu price -->
@@ -58,17 +61,23 @@
           <input type="number" id="quantity" v-model="menuQuantity" min="1" required class="input-field" />
         </div>
 
+        <!-- 희망 인원 -->
+        <div class="form-group">
+          <label for="desired-participants" class="input-label">희망 인원</label>
+          <input type="number" id="desired-participants" v-model="desiredParticipants" min="1" required class="input-field" />
+        </div>
+
+        <!-- 희망 마감 시간 -->
+        <div class="form-group">
+          <label for="desired-end-time" class="input-label">희망 마감 시간</label>
+          <input type="datetime-local" id="desired-end-time" v-model="desiredEndTime" required class="input-field" />
+        </div>
+
         <!-- Pickup time -->
         <div class="form-group">
           <label for="pickup-time" class="input-label">예약 시간</label>
           <input type="datetime-local" id="pickup-time" v-model="pickupTime" @input="validateTime" required class="input-field" />
           <p v-if="timeAdjustmentMessage" class="time-message">{{ timeAdjustmentMessage }}</p>
-        </div>
-
-        <!-- Close time -->
-        <div class="form-group">
-          <label for="close-time" class="input-label">예약 마감 시간</label>
-          <input type="datetime-local" id="close-time" v-model="closetime" required class="input-field" />
         </div>
 
         <button type="submit" class="submit-button" :disabled="!isFormValid">결제 및 예약하기</button>
@@ -90,72 +99,117 @@ export default {
       categories: ['한식', '중식', '일식', '치킨', '피자', '아시안푸드', '패스트푸드', '양식', '디저트', '건강식'],
       stores: [],
       menus: [],
+      pickupZones: [], // 픽업존 데이터를 저장할 배열
       selectedCategory: '',
       selectedStore: '',
       selectedMenu: '',
+      selectedPickupZone: '', // 선택된 픽업존
       deliveryFee: 0,
       pickupTime: '',
-      closetime: '',
-      people: '1',
+      desiredParticipants: 0, // 희망 인원
+      desiredEndTime: '', // 희망 마감 시간
       menuQuantity: 1,
-      timeAdjustmentMessage: ''
+      timeAdjustmentMessage: '',
     };
   },
   computed: {
+    // 폼 유효성 검사
     isFormValid() {
-      return this.selectedCategory && this.selectedStore && this.selectedMenu && this.pickupTime && this.people && this.closetime;
+      return (
+        this.selectedCategory &&
+        this.selectedStore &&
+        this.selectedMenu &&
+        this.selectedPickupZone &&
+        this.pickupTime &&
+        this.desiredParticipants &&
+        this.desiredEndTime
+      );
     }
   },
   mounted() {
+    // 컴포넌트가 로드되면 가게 데이터와 픽업존 가져오기
     this.fetchStores();
+    this.fetchPickupZones();
   },
   methods: {
+    // 픽업존 데이터 가져오기
+    fetchPickupZones() {
+      const pickupZonesRef = ref(database, 'pickupZones');
+      get(pickupZonesRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            const zones = snapshot.val();
+            this.pickupZones = Object.keys(zones).map((key) => ({
+              id: key,
+              ...zones[key],
+            }));
+          } else {
+            this.pickupZones = [];
+          }
+        })
+        .catch((error) => {
+          console.error('픽업존 데이터를 가져오는 데 실패했습니다:', error);
+        });
+    },
+
+    // 카테고리에 따라 가게 가져오기
     fetchStores() {
       const storesRef = ref(database, 'store');
-      get(storesRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          const allStores = snapshot.val();
-          this.stores = Object.keys(allStores)
-            .filter(key => allStores[key].storeType === this.selectedCategory)
-            .map(key => ({
-              id: key,
-              name: allStores[key].storeName,
-              phone: allStores[key].contact,
-            }));
-        } else {
-          this.stores = [];
-        }
-      }).catch((error) => {
-        console.error('가게 목록을 불러오는 데 실패했습니다:', error);
-      });
+      get(storesRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            const allStores = snapshot.val();
+            this.stores = Object.keys(allStores)
+              .filter((key) => allStores[key].storeType === this.selectedCategory)
+              .map((key) => ({
+                id: key,
+                name: allStores[key].storeName,
+                address: allStores[key].address,
+                phone: allStores[key].contact,
+              }));
+          } else {
+            this.stores = [];
+          }
+        })
+        .catch((error) => {
+          console.error('가게 데이터를 가져오는 데 실패했습니다:', error);
+        });
     },
+
+    // 가게 선택에 따른 메뉴와 배달비 가져오기
     fetchMenusAndDeliveryFee() {
       const menuRef = ref(database, `store/${this.selectedStore.id}/menu`);
-      get(menuRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          this.menus = Object.keys(snapshot.val()).map(key => ({
-            id: key,
-            ...snapshot.val()[key],
-            price: snapshot.val()[key].price
-          }));
-        } else {
-          this.menus = [];
-        }
-      }).catch((error) => {
-        console.error('메뉴 목록을 불러오는 데 실패했습니다:', error);
-      });
+      get(menuRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            this.menus = Object.keys(snapshot.val()).map((key) => ({
+              id: key,
+              ...snapshot.val()[key],
+              price: snapshot.val()[key].price,
+            }));
+          } else {
+            this.menus = [];
+          }
+        })
+        .catch((error) => {
+          console.error('메뉴 데이터를 가져오는 데 실패했습니다:', error);
+        });
 
       const storeRef = ref(database, `store/${this.selectedStore.id}/deliveryFee`);
-      get(storeRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          this.deliveryFee = snapshot.val() || 0;
-        } else {
-          this.deliveryFee = 0;
-        }
-      }).catch((error) => {
-        console.error('배달비를 불러오는 데 실패했습니다:', error);
-      });
+      get(storeRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            this.deliveryFee = snapshot.val() || 0;
+          } else {
+            this.deliveryFee = 0;
+          }
+        })
+        .catch((error) => {
+          console.error('배달비 데이터를 가져오는 데 실패했습니다:', error);
+        });
     },
+
+    // 시간 유효성 검사 및 조정
     validateTime() {
       const inputTime = moment.tz(this.pickupTime, 'Asia/Seoul');
       const minutes = inputTime.minutes();
@@ -169,35 +223,42 @@ export default {
       this.pickupTime = inputTime.format('YYYY-MM-DDTHH:mm');
       this.timeAdjustmentMessage = `${inputTime.format('HH:mm')}으로 설정되었습니다.`;
     },
+
+    // 결제 요청
     initiatePayment() {
+      const totalAmount = this.selectedMenu.price * this.menuQuantity;
+
       var IMP = window.IMP;
-      IMP.init('imp75487318'); // 아임포트 가맹점 식별코드로 초기화
-      IMP.request_pay({
-        pg: 'html5_inicis',
-        pay_method: 'card',
-        merchant_uid: `order_${new Date().getTime()}`, // 주문 고유 ID
-        amount: this.selectedMenu.price * this.menuQuantity, // 결제 금액
-        name: this.selectedMenu.name, // 상품 이름
-        buyer_name: '테스트 사용자', // 구매자 이름
-        buyer_tel: '010-1234-5678', // 구매자 전화번호
-        buyer_email: 'test@example.com', // 구매자 이메일
-      }, rsp => {
-        if (rsp.success) {
-          // 결제 성공 시 주문 정보 저장 및 예약
-          this.submitOrder();
-        } else {
-          // 결제 실패 시 처리
-          alert(`결제에 실패했습니다: ${rsp.error_msg}`);
+      IMP.init('imp75487318'); // 아임포트 PG 초기화
+      IMP.request_pay(
+        {
+          pg: 'html5_inicis',
+          pay_method: 'card',
+          merchant_uid: `order_${new Date().getTime()}`,
+          amount: totalAmount,
+          name: this.selectedMenu.name,
+          buyer_name: '테스트 사용자',
+          buyer_tel: '010-1234-5678',
+          buyer_email: 'test@example.com',
+        },
+        (rsp) => {
+          if (rsp.success) {
+            this.submitOrder();
+          } else {
+            alert(`결제에 실패했습니다: ${rsp.error_msg}`);
+          }
         }
-      });
+      );
     },
+
+    // 주문 저장
     async submitOrder() {
       const auth = getAuth();
       onAuthStateChanged(auth, async (user) => {
         if (user) {
           const createdAt = moment().tz('Asia/Seoul').format();
           const reservationTime = moment.tz(this.pickupTime, 'Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
-          const closeTime = moment.tz(this.closetime, 'Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
+          const desiredEndTimeFormatted = moment.tz(this.desiredEndTime, 'Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
           const orderRef = ref(database, 'orders');
           const newOrderRef = push(orderRef);
 
@@ -206,25 +267,37 @@ export default {
             createdAt: createdAt,
             storeUid: this.selectedStore.id,
             storeType: this.selectedCategory,
+            pickupZone: this.selectedPickupZone, // 선택된 픽업존 추가
             status: 'reserved',
             reservationTime: reservationTime,
-            closeTime: closeTime,
-            participantsCount: 1,
+            desiredParticipants: this.desiredParticipants, // 희망 참여 인원
+            desiredEndTime: desiredEndTimeFormatted, // 희망 마감 시간
+            participantsCount: 1, // 기본값 1 (주문 생성자가 포함됨)
             menu: this.selectedMenu.name,
             price: this.selectedMenu.price,
             quantity: this.menuQuantity,
             deliveryFee: this.deliveryFee,
-            people: this.people
           };
 
           await set(newOrderRef, orderData);
-          this.saveMember(user.uid, this.selectedMenu.name, this.selectedMenu.price, this.menuQuantity);
+
+          // 멤버 데이터 저장
+          this.saveMember(
+            user.uid,
+            newOrderRef.key,
+            this.selectedMenu.name,
+            this.selectedMenu.price,
+            this.menuQuantity,
+            this.selectedPickupZone
+          );
         } else {
           alert('로그인이 필요합니다.');
         }
       });
     },
-    saveMember(uid, menu, price, quantity) {
+
+    // 참여자를 member 데이터베이스에 저장
+    saveMember(uid, orderId, menu, price, quantity, pickupZone) {
       const memberRef = ref(database, 'member');
       const newMemberRef = push(memberRef);
 
@@ -232,10 +305,12 @@ export default {
 
       const memberData = {
         uid: uid,
+        orderID: orderId, // 주문 ID와 연결
         menu: menu,
         price: price,
         quantity: quantity,
         participate_time: participateTime,
+        pickupZone: pickupZone || '픽업존 정보 없음',
       };
 
       set(newMemberRef, memberData)
@@ -246,15 +321,20 @@ export default {
           console.error('Error saving member data:', error);
         });
     },
+
+    // 폼 초기화
     resetForm() {
       this.selectedCategory = '';
       this.selectedStore = '';
       this.selectedMenu = '';
       this.pickupTime = '';
+      this.desiredParticipants = 0;
+      this.desiredEndTime = '';
       this.menuQuantity = 1;
       this.timeAdjustmentMessage = '';
-    }
-  }
+      this.selectedPickupZone = '';
+    },
+  },
 };
 </script>
 
