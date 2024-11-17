@@ -49,59 +49,81 @@ export default {
     this.fetchOrders(); // 컴포넌트가 마운트될 때 주문 기록 가져오기
   },
   methods: {
-    fetchOrders() {
+    async fetchOrders() {
       const auth = getAuth();
       const user = auth.currentUser;
 
-      if (user) {
+      if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      try {
         const memberRef = ref(database, 'member'); // member 경로에서 데이터 가져오기
         onValue(memberRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
             // 로그인된 사용자의 주문 기록만 필터링
-            this.orders = Object.keys(data).map((key) => {
-              const member = data[key];
-              if (member.uid === user.uid) {
-                return {
-                  orderID: member.orderID,
-                  menu: member.menu,
-                  quantity: member.quantity,
-                  participate_time: member.participate_time,
-                };
-              }
-              return null;
-            }).filter(order => order !== null);
+            this.orders = Object.keys(data)
+              .map((key) => {
+                const member = data[key];
+                if (member.uid === user.uid) {
+                  return {
+                    orderID: member.orderID,
+                    menu: member.menu,
+                    quantity: member.quantity,
+                    participate_time: member.participate_time,
+                  };
+                }
+                return null;
+              })
+              .filter((order) => order !== null);
 
             // 예약 시간을 기준으로 오름차순 정렬
-            this.orders.sort((a, b) => new Date(a.participate_time) - new Date(b.participate_time));
+            this.orders.sort(
+              (a, b) => new Date(a.participate_time) - new Date(b.participate_time)
+            );
           } else {
             this.orders = [];
           }
         });
-      } else {
-        alert('로그인이 필요합니다.');
+      } catch (error) {
+        console.error('주문 기록을 가져오는 중 오류가 발생했습니다:', error);
+        alert('주문 데이터를 불러오는 중 오류가 발생했습니다.');
       }
     },
-    openOrderPopup(orderID) {
-      // orders/{orderID}에서 주문 정보 가져오기
-      const orderRef = ref(database, `orders/${orderID}`);
-      get(orderRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          this.selectedOrder = snapshot.val();
+    async openOrderPopup(orderID) {
+      try {
+        // orders/{orderID}에서 주문 정보 가져오기
+        const orderRef = ref(database, `orders/${orderID}`);
+        const orderSnapshot = await get(orderRef);
+
+        if (orderSnapshot.exists()) {
+          this.selectedOrder = orderSnapshot.val();
 
           // store/{storeUid} 경로에서 가게 정보 가져오기
           const storeUid = this.selectedOrder.storeUid;
           const storeRef = ref(database, `store/${storeUid}`);
-          get(storeRef).then((storeSnapshot) => {
-            if (storeSnapshot.exists()) {
-              this.storeDetails = storeSnapshot.val();
-            }
-          });
+          const storeSnapshot = await get(storeRef);
+
+          if (storeSnapshot.exists()) {
+            this.storeDetails = storeSnapshot.val();
+          } else {
+            console.warn('가게 정보를 찾을 수 없습니다.');
+            alert('가게 정보를 불러오는 중 오류가 발생했습니다.');
+          }
+        } else {
+          console.warn('주문 정보를 찾을 수 없습니다.');
+          alert('주문 정보를 불러오는 중 오류가 발생했습니다.');
         }
-      });
+      } catch (error) {
+        console.error('주문 상세 정보를 가져오는 중 오류가 발생했습니다:', error);
+        alert('주문 상세 데이터를 불러오는 중 오류가 발생했습니다.');
+      }
     },
     closeOrderPopup() {
       this.selectedOrder = null; // 팝업 닫기
+      this.storeDetails = {}; // 가게 정보 초기화
     },
     formatReservationTime(reservationTime) {
       if (!reservationTime) return '정보 없음';
@@ -119,6 +141,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 .order-history {
@@ -199,3 +222,4 @@ strong {
   background-color: #5a3c9a; /* 다크 보라색 */
 }
 </style>
+
