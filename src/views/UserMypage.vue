@@ -15,14 +15,10 @@
         <p>전화번호: {{ userPhone }}</p>
 
         <h3>최근 주문 내역</h3>
-        
-        <!-- Date Picker for Orders -->
-        <div class="calendar-section">
-          <label for="order-date">주문 날짜 선택</label><br>
-          <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
-          <button @click="fetchAllOrders">모든 주문 보기</button>
-        </div>
-        
+
+        <!-- OrderHistory 컴포넌트를 사용하여 주문 내역 표시 -->
+        <order-history :selected-date="selectedDate" @update-orders="updateOrders" />
+
         <div v-if="orders.length === 0" class="no-orders">
           <p>해당 날짜에 들어온 주문이 없습니다.</p>
         </div>
@@ -31,7 +27,10 @@
             <div class="order-header">
               <p class="order-date">{{ formatDate(order.createdAt) }} 주문</p>
             </div>
-            <p class="order-status">{{ order.status || '예약됨' }} ({{ statusDescriptions[order.status] || '주문 전송 상태' }})</p>
+            <p class="order-status">
+              {{ order.status || '예약됨' }}
+              ({{ statusDescriptions[order.status] || '주문 전송 상태' }})
+            </p>
             <div class="order-details">
               <p>메뉴: {{ order.menu }}</p>
               <p>수량: {{ order.quantity }}</p>
@@ -49,125 +48,68 @@
 </template>
 
 <script>
-import { getDatabase, ref, get, query, orderByChild, equalTo } from "firebase/database";
 import { onAuthStateChanged } from "firebase/auth";
-import moment from 'moment';
-import { auth } from '@/firebase';
+import moment from "moment";
+import { auth } from "@/firebase";
+import OrderHistory from "@/components/OrderHistoryComponent.vue"; // OrderHistory 컴포넌트 import
 
 export default {
-  name: 'UserMypage',
+  name: "UserMypage",
+
+  components: {
+    OrderHistory,
+  },
 
   data() {
     return {
-      userName: '',
-      userPhone: '',
-      recentOrders: [],
-      ongoingReservations: [],
-      userUid: '', // 사용자의 UID 저장
-      selectedDate: moment().format('YYYY-MM-DD'), // 기본값으로 오늘 날짜 설정
-      orders: [], // 선택된 날짜의 주문을 저장하는 배열
-      statusDescriptions: { 
-        '승인됨': '주문이 승인되었습니다.',
-        '거절됨': '주문이 거절되었습니다.',
-        'pending': '주문 전송 상태',
-        '예약됨': '주문이 예약되었습니다.'
-      }
+      userName: "",
+      userPhone: "",
+      userUid: "", // 현재 사용자의 UID
+      selectedDate: moment().format("YYYY-MM-DD"), // 기본값으로 오늘 날짜 설정
+      orders: [], // 선택된 날짜의 주문 데이터 저장
+      statusDescriptions: {
+        승인됨: "주문이 승인되었습니다.",
+        거절됨: "주문이 거절되었습니다.",
+        pending: "주문 전송 상태",
+        예약됨: "주문이 예약되었습니다.",
+      },
     };
   },
+
   created() {
+    // 사용자 인증 상태 확인
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        this.fetchUserUid(user.uid);
+        this.userName = user.displayName || "사용자";
+        this.userPhone = user.phoneNumber || "전화번호 없음";
+        this.userUid = user.uid;
+      } else {
+        console.warn("로그인이 필요합니다.");
+        this.$router.push("/login"); // 로그인 페이지로 리다이렉트
       }
     });
   },
+
   methods: {
-    fetchUserUid(authUid) {
-      const db = getDatabase();
-      const userRef = ref(db, `users/${authUid}`);
-      get(userRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          this.userUid = data.uid;
-          this.userName = data.name;
-          this.userPhone = data.phone;
-          this.fetchOrdersByDate(); // 페이지 로드 시 기본적으로 오늘 날짜 주문을 불러옵니다.
-        }
-      }).catch((error) => {
-        console.error('사용자 데이터를 불러오는 중 오류 발생:', error);
-      });
+    updateOrders(orders) {
+      // OrderHistory 컴포넌트에서 전달된 주문 데이터를 저장
+      this.orders = orders;
     },
-    fetchOrdersByDate() {
-      if (!this.userUid) {
-        console.warn('userUid가 정의되지 않았습니다.');
-        return;
-      }
 
-      const db = getDatabase();
-      const selectedDay = moment(this.selectedDate).format('YYYY-MM-DD');
-      const ordersRef = query(ref(db, 'orders'), orderByChild('creatorUid'), equalTo(this.userUid));
-
-      get(ordersRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const filteredOrders = Object.keys(data).map((orderId) => {
-            const orderData = data[orderId];
-            const orderDate = moment(orderData.createdAt).format('YYYY-MM-DD');
-            if (orderDate === selectedDay) {
-              return {
-                orderID: orderId,
-                ...orderData
-              };
-            }
-            return null;
-          }).filter(order => order !== null);
-          
-          this.orders = filteredOrders;
-        } else {
-          this.orders = [];
-        }
-      }).catch((error) => {
-        console.error('선택된 날짜의 주문 내역을 불러오는 중 오류 발생:', error);
-      });
-    },
-    fetchAllOrders() {
-      if (!this.userUid) {
-        console.warn('userUid가 정의되지 않았습니다.');
-        return;
-      }
-
-      const db = getDatabase();
-      const ordersRef = query(ref(db, 'orders'), orderByChild('creatorUid'), equalTo(this.userUid));
-
-      get(ordersRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          this.orders = Object.keys(data).map((orderId) => {
-            return {
-              orderID: orderId,
-              ...data[orderId]
-            };
-          });
-        } else {
-          this.orders = [];
-        }
-      }).catch((error) => {
-        console.error('모든 주문을 불러오는 중 오류 발생:', error);
-      });
-    },
     goToHome() {
-      this.$router.push('/');
+      this.$router.push("/");
     },
+
     goToOrderPage() {
-      this.$router.push('/Order');
+      this.$router.push("/Order");
     },
+
     formatDate(date) {
-      return moment(date).format('YYYY-MM-DD');
-    }
+      return moment(date).format("YYYY-MM-DD");
+    },
   },
 };
 </script>
-
 
 <style scoped>
 @font-face {
@@ -293,3 +235,4 @@ export default {
   background-color: #7f67be;
 }
 </style>
+
