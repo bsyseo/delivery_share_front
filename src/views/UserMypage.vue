@@ -13,6 +13,7 @@
       <div class="user-info">
         <h3>{{ userName }}님</h3>
         <p>전화번호: {{ userPhone }}</p>
+        <p>주소: {{ userAddress }}</p>
 
         <h3>최근 주문 내역</h3>
 
@@ -49,9 +50,10 @@
 
 <script>
 import { onAuthStateChanged } from "firebase/auth";
+import { ref, get } from "firebase/database"; // Realtime Database 관련 함수 가져오기
+import { auth, database } from "@/firebase"; // Firebase Realtime Database 초기화된 모듈 가져오기
 import moment from "moment";
-import { auth } from "@/firebase";
-import OrderHistory from "@/components/OrderHistoryComponent.vue"; // OrderHistory 컴포넌트 import
+import OrderHistory from "@/components/OrderHistoryComponent.vue";
 
 export default {
   name: "UserMypage",
@@ -62,8 +64,9 @@ export default {
 
   data() {
     return {
-      userName: "",
-      userPhone: "",
+      userName: "", // 사용자 이름 저장
+      userPhone: "", // 사용자 전화번호 저장
+      userAddress: "", // 사용자 주소 저장
       userUid: "", // 현재 사용자의 UID
       selectedDate: moment().format("YYYY-MM-DD"), // 기본값으로 오늘 날짜 설정
       orders: [], // 선택된 날짜의 주문 데이터 저장
@@ -77,12 +80,11 @@ export default {
   },
 
   created() {
-    // 사용자 인증 상태 확인
-    onAuthStateChanged(auth, (user) => {
+    // Firebase 인증 상태 확인
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
-        this.userName = user.displayName || "사용자";
-        this.userPhone = user.phoneNumber || "전화번호 없음";
-        this.userUid = user.uid;
+        this.userUid = user.uid; // 사용자 UID 설정
+        await this.fetchUserInfo(); // Realtime Database에서 사용자 정보 가져오기
       } else {
         console.warn("로그인이 필요합니다.");
         this.$router.push("/login"); // 로그인 페이지로 리다이렉트
@@ -91,6 +93,25 @@ export default {
   },
 
   methods: {
+    async fetchUserInfo() {
+      try {
+        // Realtime Database에서 사용자 정보 가져오기
+        const userRef = ref(database, `users/${this.userUid}`); // 'users' 경로 아래 사용자 UID 사용
+        const userSnapshot = await get(userRef);
+
+        if (userSnapshot.exists()) {
+          const userData = userSnapshot.val();
+          this.userName = userData.name || "사용자"; // Realtime Database에서 이름 가져오기
+          this.userPhone = userData.phone || "전화번호 없음"; // Realtime Database에서 전화번호 가져오기
+          this.userAddress = userData.address || "주소 없음"; // Realtime Database에서 주소 가져오기
+        } else {
+          console.warn("사용자 정보가 없습니다.");
+        }
+      } catch (error) {
+        console.error("사용자 정보를 가져오는 데 실패했습니다:", error);
+      }
+    },
+
     updateOrders(orders) {
       // OrderHistory 컴포넌트에서 전달된 주문 데이터를 저장
       this.orders = orders;
@@ -112,6 +133,7 @@ export default {
 </script>
 
 <style scoped>
+/* 스타일은 기존과 동일 */
 @font-face {
   font-family: 'IBMPlexSansKR';
   src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
