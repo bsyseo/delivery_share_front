@@ -1,69 +1,65 @@
 <template>
   <div class="menu-container">
+    <!-- 상단 네비게이션 -->
     <div class="top-navigation">
       <button class="nav-button" @click="$router.push('/')">홈 화면으로 돌아가기</button>
-      <button class="nav-button" @click="$router.push('/store_information')">스토어 관리 페이지로 돌아가기</button>
+      <button class="nav-button" @click="$router.push('/store_information')">스토어 관리 페이지</button>
       <button class="nav-button" @click="$router.push('/business_information')">사업자 등록 정보</button>
     </div>
 
-    <h2>메뉴 관리</h2>
+    <!-- 메인 섹션 -->
+    <div class="main-header">
+      <h1>메뉴 관리</h1>
+      <p>여기에서 가게 로고를 업로드하거나 메뉴를 관리할 수 있습니다.</p>
+    </div>
 
-    <!-- 가게 타입 및 로고 업로드 -->
-    <form @submit.prevent="uploadLogo">
-      <div class="logo-section">
-        <label for="logo">로고 업로드</label>
-        <input type="file" @change="onFileChange" />
-        <div v-if="storeLogoPreview" class="logo-preview">
-          <h4>로고 미리보기:</h4>
-          <img :src="storeLogoPreview" alt="가게 로고 미리보기" @click="openModal(storeLogoPreview)" />
-        </div>
-        <button type="submit">로고 저장</button>
+    <!-- 로고 업로드 섹션 -->
+    <form @submit.prevent="uploadLogo" class="section">
+      <h3>로고 업로드</h3>
+      <input type="file" @change="onFileChange" class="file-input" />
+      <div v-if="storeLogoPreview" class="logo-preview">
+        <h4>미리보기:</h4>
+        <img :src="storeLogoPreview" alt="가게 로고 미리보기" @click="openModal(storeLogoPreview)" />
       </div>
+      <button type="submit" class="primary-button">로고 저장</button>
     </form>
 
     <!-- 배달비 설정 -->
-    <div class="delivery-fee-section">
+    <div class="section">
       <h3>배달비 설정</h3>
-      <input v-model="deliveryFee" type="number" placeholder="배달비를 입력하세요" />
-      <button @click="saveDeliveryFee">배달비 저장</button>
+      <input v-model="deliveryFee" type="number" placeholder="배달비를 입력하세요" class="text-input" />
+      <button @click="saveDeliveryFee" class="primary-button">배달비 저장</button>
     </div>
 
     <!-- 메뉴 등록 -->
-    <div class="header">
-      <h2>메뉴 등록</h2>
-      <p>새로운 메뉴를 추가해 주세요.</p>
-    </div>
-
-    <div class="menu-form">
-      <input v-model="menuName" placeholder="메뉴 이름을 입력하세요" />
-      <input v-model="menuPrice" type="number" placeholder="메뉴 가격을 입력하세요" />
-      <textarea v-model="menuDescription" placeholder="메뉴 설명을 입력하세요"></textarea>
-      <input type="file" @change="onFileChangeForMenu" />
+    <div class="section">
+      <h3>메뉴 등록</h3>
+      <input v-model="menuName" placeholder="메뉴 이름" class="text-input" />
+      <input v-model="menuPrice" type="number" placeholder="메뉴 가격 (원)" class="text-input" />
+      <textarea v-model="menuDescription" placeholder="메뉴 설명" class="text-area"></textarea>
+      <input type="file" @change="onFileChangeForMenu" class="file-input" />
       <div v-if="menuImagePreview" class="image-preview">
         <h4>이미지 미리보기:</h4>
-        <img :src="menuImagePreview" alt="메뉴 이미지 미리보기" @click="openModal(menuImagePreview)" />
+        <img :src="menuImagePreview" alt="메뉴 이미지 미리보기" />
       </div>
-      <button @click="saveMenu">메뉴 저장</button>
+      <button @click="saveMenu" class="primary-button">메뉴 저장</button>
     </div>
 
     <!-- 등록된 메뉴 목록 -->
-    <div class="menu-list">
+    <div class="section">
       <h3>등록된 메뉴 목록</h3>
-      <ul>
-        <li v-for="menu in menus" :key="menu.id">
-          <strong>{{ menu.name }}</strong> - {{ menu.price }}원
-          <p>{{ menu.description }}</p>
-          <img v-if="menu.imageUrl" :src="menu.imageUrl" alt="메뉴 이미지" @click="openModal(menu.imageUrl)" />
-          <button @click="deleteMenu(menu.id)" class="delete-button">메뉴 삭제</button> 
+      <ul class="menu-list">
+        <li v-for="menu in menus" :key="menu.id" class="menu-item">
+          <div class="menu-details">
+            <strong>{{ menu.name }}</strong> - {{ menu.price }}원
+            <p>{{ menu.description }}</p>
+          </div>
+          <div v-if="menu.imageUrl" class="menu-image-container">
+            <img :src="menu.imageUrl" alt="메뉴 이미지" @click="openModal(menu.imageUrl)" />
+          </div>
+          <button @click="deleteMenu(menu.id)" class="delete-button">삭제</button>
         </li>
       </ul>
-    </div>
-
-    <!-- 이미지 모달 팝업 -->
-    <div v-if="isModalOpen" class="modal-overlay" @click="closeModal">
-      <div class="modal-content">
-        <img :src="modalImage" alt="큰 이미지" class="modal-image" />
-      </div>
     </div>
   </div>
 </template>
@@ -112,17 +108,23 @@ export default {
       }
     },
     onFileChangeForMenu(e) {
-      const file = e.target.files[0];
-      this.menuImage = file;
-
+      const file = e.target.files[0]; // 첫 번째 파일 선택
       if (file) {
-        const reader = new FileReader();
+        // 파일 타입 확인 (이미지인지 확인)
+        if (!file.type.startsWith('image/')) {
+          alert('이미지 파일만 업로드 가능합니다.');
+          return;
+        }
+
+        this.menuImage = file; // 메뉴 이미지 데이터에 저장
+
+        const reader = new FileReader(); // FileReader 객체 생성
         reader.onload = (e) => {
-          this.menuImagePreview = e.target.result;
+          this.menuImagePreview = e.target.result; // 미리보기 URL 저장
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(file); // 파일 읽기 시작
       } else {
-        this.menuImagePreview = null;
+        this.menuImagePreview = null; // 파일이 선택되지 않은 경우 초기화
       }
     },
     uploadLogo() {
@@ -295,272 +297,164 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
-/* 배달비 섹션 스타일 추가 */
-.delivery-fee-section {
-  background-color: white;
-  padding: 20px;
-  text-align: center;
-  border-radius: 10px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  width: 300px;
-  max-width: 600px;
-  margin-top: 2vh;
+
+@font-face {
+  font-family: 'IBMPlexSansKR';
+  src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
 }
 
-.delivery-fee-section h3 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 10px;
+* {
+  font-family: 'IBMPlexSansKR', sans-serif;
 }
-
-.delivery-fee-section input {
-  padding: 10px;
-  margin-top: 10px;
-  border: 2px solid #ccc;
-  border-radius: 10px;
-  font-size: 16px;
-  width: 100%;
-  box-sizing: border-box;
-  outline: none;
-  transition: border-color 0.3s ease;
-}
-
-.delivery-fee-section input:focus {
-  border-color: #4CAF50;
-}
-
-.delivery-fee-section button {
-  padding: 12px;
-  margin-top: 15px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  width: 100%;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.delivery-fee-section button:hover {
-  background-color: #45a049;
-  transform: translateY(-3px);
-}
-
+/* 공통 스타일 */
 .menu-container {
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: 'Roboto', sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #F3F6ED;
-  padding: 20px;
 }
 
+/* 상단 네비게이션 */
 .top-navigation {
   display: flex;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 1200px;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
 .nav-button {
-  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  background-color: #6750A4;
   color: white;
+  padding: 12px 20px;
   border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 8px;
+  font-size: 14px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .nav-button:hover {
-  background: linear-gradient(135deg, #45A049, #5CB85C);
-  transform: translateY(-3px);
+  background-color: #5E47A3;
+  transform: scale(1.05);
 }
 
-.header, .logo-section, .menu-form {
-  background-color: white;
-  padding: 20px;
+/* 메인 섹션 */
+.main-header {
   text-align: center;
-  border-radius: 10px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  width: 300px;
-  max-width: 600px;
-  margin-top: 2vh;
+  margin-bottom: 30px;
 }
 
-.header h2, .logo-section h2 {
-  font-size: 24px;
+.main-header h1 {
+  font-size: 32px;
   color: #333;
   margin-bottom: 10px;
 }
 
-.custom-select {
-  width: 100%;
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 10px;
+.main-header p {
   font-size: 16px;
-  transition: border-color 0.3s ease;
-  background-color: #F3F6ED;
-  appearance: none;
+  color: #666;
 }
 
-.custom-select:focus {
-  border-color: #4CAF50;
-  box-shadow: 0px 0px 8px rgba(76, 175, 80, 0.3);
-}
-
-.logo-section input,
-.menu-form input,
-.menu-form textarea {
-  padding: 10px;
-  margin-top: 10px;
-  border: 2px solid #ccc;
-  border-radius: 10px;
-  font-size: 16px;
+/* 공통 섹션 */
+.section {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
   width: 100%;
-  box-sizing: border-box;
-  outline: none;
-  transition: border-color 0.3s ease;
+  max-width: 800px;
 }
 
-.logo-section input:focus,
-.menu-form input:focus,
-.menu-form textarea:focus {
-  border-color: #4CAF50;
-}
-
-.logo-section button,
-.menu-form button {
+/* 입력 필드 */
+.text-input,
+.text-area,
+.file-input {
+  width: 80%;
   padding: 12px;
-  margin-top: 15px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
+  margin-bottom: 12px;
+  border: 1px solid #D0D0D0;
+  border-radius: 8px;
   font-size: 16px;
+}
+
+.text-input:focus,
+.text-area:focus,
+.file-input:focus {
+  outline: 2px solid #6750A4;
+  border-color: #6750A4;
+}
+
+/* 버튼 */
+.primary-button {
+  background-color: #6750A4;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease;
   width: 100%;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.logo-section button:hover,
-.menu-form button:hover {
-  background-color: #45a049;
-  transform: translateY(-3px);
+.primary-button:hover {
+  background-color: #5E47A3;
+  transform: scale(1.03);
 }
 
-.logo-preview, .image-preview {
-  margin-top: 10px;
-  text-align: center;
-}
-
-.logo-preview img, .image-preview img {
+/* 미리보기 */
+.logo-preview img,
+.image-preview img {
   width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
+  height: auto;
+  border-radius: 8px;
+  margin-top: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* 메뉴 리스트 */
 .menu-list {
-  width: 100%;
-  max-width: 600px;
-  margin-top: 20px;
-}
-
-.menu-list ul {
   list-style: none;
   padding: 0;
 }
 
-.menu-list li {
-  background-color: white;
-  margin-bottom: 15px;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+.menu-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: space-between;
+  background-color: #F9F9F9;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
 }
 
-.menu-list li strong {
-  font-size: 18px;
-  color: #333;
+.menu-details {
+  flex: 1;
 }
 
-.menu-list li p {
-  margin: 5px 0;
-  color: #777;
-}
-
-
-.menu-list img {
-  margin-top: 10px;
-  border-radius: 10px;
-  width: 100px;
-  height: 100px;
+.menu-image-container img {
+  width: 80px;
+  height: 80px;
   object-fit: cover;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-}
-
-/* 모달 스타일 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 90%;
-  max-height: 90%;
-}
-
-.modal-image {
-  max-width: 100%;
-  max-height: 100%;
+  border-radius: 8px;
 }
 
 .delete-button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #ff4d4d;
+  background-color: #FF4D4D;
   color: white;
-  font-size: 16px;
-  font-weight: bold;
   border: none;
-  border-radius: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
 }
 
 .delete-button:hover {
-  background-color: #e60000;
-  transform: translateY(-3px);
-  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+  background-color: #E84343;
 }
-
 </style>
