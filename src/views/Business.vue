@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import BusinessComponent from '@/components/BusinessComponent.vue';
+import BusinessComponent from '@/components/User/BusinessComponent.vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getDatabase, ref, onValue } from 'firebase/database';
 

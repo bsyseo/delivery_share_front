@@ -34,8 +34,8 @@
 </template>
 
 <script>
-import MapComponent from '@/components/MapComponent.vue';
-import OrderComponent from '@/components/OrderComponent.vue';
+import MapComponent from '@/components/Order/MapComponent.vue';
+import OrderComponent from '@/components/Order/OrderComponent.vue';
 import { database, ref, onValue } from '@/firebase';
 
 export default {

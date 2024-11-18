@@ -50,7 +50,7 @@
 </template>
 
 <script>
-import MapComponent from '@/components/MapComponent.vue';
+import MapComponent from '@/components/Order/MapComponent.vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getDatabase, ref, set, get, onValue } from 'firebase/database';
 import { auth, database } from '@/firebase';

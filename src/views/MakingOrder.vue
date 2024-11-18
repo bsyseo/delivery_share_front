@@ -29,7 +29,7 @@ If enough people join, you might even get free delivery!
 </template>
 
 <script>
-import MakingOrderComponent from '@/components/MakingOrderComponent.vue';
+import MakingOrderComponent from '@/components/Order/MakingOrderComponent.vue';
 
 export default {
   name: 'SpotOrderDashboard',

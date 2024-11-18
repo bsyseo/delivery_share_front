@@ -27,14 +27,14 @@
 <script>
 import { getAuth, signOut } from "firebase/auth"; // Firebase 로그아웃을 위해 import
 
-import AdminOrderManagement from '@/components/AdminOrderManagement.vue';
-import AdminCouponManagement from '@/components/AdminCouponManagement.vue';
-import AdminAdvertisementManagement from '@/components/AdminAdvertisementManagement.vue';
-import AdminQnAManagement from '@/components/AdminQnAManagement.vue';
-import AdminPickUpZoneManagement from '@/components/AdminPickUpZoneManagement.vue';
-import AdminUserManagement from '@/components/AdminUserManagement.vue';
-import AdminStoreManagement from '@/components/AdminStoreManagement.vue';
-import AdminConnectionStatistics from '@/components/AdminConnectionStatistics.vue';
+import AdminOrderManagement from '@/components/Admin/AdminOrderManagement.vue';
+import AdminCouponManagement from '@/components/Admin/AdminCouponManagement.vue';
+import AdminAdvertisementManagement from '@/components/Admin/AdminAdvertisementManagement.vue';
+import AdminQnAManagement from '@/components/Admin/AdminQnAManagement.vue';
+import AdminPickUpZoneManagement from '@/components/Admin/AdminPickUpZoneManagement.vue';
+import AdminUserManagement from '@/components/Admin/AdminUserManagement.vue';
+import AdminStoreManagement from '@/components/Admin/AdminStoreManagement.vue';
+import AdminConnectionStatistics from '@/components/Admin/AdminConnectionStatistics.vue';
 
 export default {
   name: 'AdminView',

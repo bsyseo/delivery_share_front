@@ -53,7 +53,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { ref, get } from "firebase/database"; // Realtime Database 관련 함수 가져오기
 import { auth, database } from "@/firebase"; // Firebase Realtime Database 초기화된 모듈 가져오기
 import moment from "moment";
-import OrderHistory from "@/components/OrderHistoryComponent.vue";
+import OrderHistory from "@/components/Order/OrderHistoryComponent.vue";
 
 export default {
   name: "UserMypage",

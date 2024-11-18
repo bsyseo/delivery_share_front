@@ -1,34 +1,34 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 
-import SignUpView from '@/components/SignUpComponent.vue';
+import SignUpView from '@/components/Authentication/SignUpComponent.vue';
 import OrderView from '@/views/order.vue';
 import ResetIDnPW from '@/views/Reset_IDnPW.vue';
-import ResetPasswordComponent from '@/components/ResetPasswordComponent.vue';
+import ResetPasswordComponent from '@/components/Authentication/ResetPasswordComponent.vue';
 import BusinessView from '@/views/Business.vue';
-import BusinessInformation from '@/components/BusinessInformation.vue';
-import BusinessMenu from '@/components/BusinessMenu.vue';
-import BusinessAdvertisement from '@/components/BusinessAdvertisement.vue';
+import BusinessInformation from '@/components/User/BusinessInformation.vue';
+import BusinessMenu from '@/components/User/BusinessMenu.vue';
+import BusinessAdvertisement from '@/components/User/BusinessAdvertisement.vue';
 
 // 관리자 관련 컴포넌트들
 import AdminView from '@/views/Admin.vue';
-import AdminOrderManagement from '@/components/AdminOrderManagement.vue';
-import AdminCouponManagement from '@/components/AdminCouponManagement.vue';
-import AdminAdvertisementManagement from '@/components/AdminAdvertisementManagement.vue';
-import AdminQnAManagement from '@/components/AdminQnAManagement.vue';
-import AdminPickUpZoneManagement from '@/components/AdminPickUpZoneManagement.vue';
-import AdminUserManagement from '@/components/AdminUserManagement.vue';
-import AdminStoreManagement from '@/components/AdminStoreManagement.vue';
-import AdminTemporary from '@/components/AdminTemporary.vue';
-import AdminConnectionStatistics from '@/components/AdminConnectionStatistics.vue';
+import AdminOrderManagement from '@/components/Admin/AdminOrderManagement.vue';
+import AdminCouponManagement from '@/components/Admin/AdminCouponManagement.vue';
+import AdminAdvertisementManagement from '@/components/Admin/AdminAdvertisementManagement.vue';
+import AdminQnAManagement from '@/components/Admin/AdminQnAManagement.vue';
+import AdminPickUpZoneManagement from '@/components/Admin/AdminPickUpZoneManagement.vue';
+import AdminUserManagement from '@/components/Admin/AdminUserManagement.vue';
+import AdminStoreManagement from '@/components/Admin/AdminStoreManagement.vue';
+import AdminTemporary from '@/components/Admin/AdminTemporary.vue';
+import AdminConnectionStatistics from '@/components/Admin/AdminConnectionStatistics.vue';
 
 import MakingOrderView from '@/views/MakingOrder.vue';
-import StoreInformation from '@/components/store_information.vue';
+import StoreInformation from '@/components/User/store_information.vue';
 import UserMypage from '@/views/UserMypage.vue';
-import OrderHistory from '@/components/OrderHistoryComponent.vue';
-import EditUserInfo from '@/components/EditUserInfo.vue';
-import QnAComponent from '@/components/QnA_Component.vue';
-import UserReview from '@/components/review.vue';
+import OrderHistory from '@/components/Order/OrderHistoryComponent.vue';
+import EditUserInfo from '@/components/User/EditUserInfo.vue';
+import QnAComponent from '@/components/User/QnA_Component.vue';
+import UserReview from '@/components/User/review.vue';
 
 
 
