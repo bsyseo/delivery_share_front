@@ -30,7 +30,6 @@
       <div v-else-if="role === 'business'">
         <button v-on:click="goToMap" class="action-button">가게 등록</button>
         <button v-on:click="goToStoreInfo" class="action-button">스토어 관리</button>
-        <button v-on:click="goToMyMenu" class="action-button">메뉴 관리</button>
       </div>
       <button v-on:click="logout" class="logout-button">로그아웃</button>
       <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button>
@@ -144,9 +143,6 @@ export default {
     },
     goToMap(){
       this.$router.push('/business');
-    },
-    goToMyMenu(){
-      this.$router.push('/business_menu');
     },
     logout() {
       const authInstance = getAuth();
@@ -279,7 +275,7 @@ input:focus {
 /* 액션 버튼 스타일 */
 .action-button {
   margin-top: 24px;
-  width: 100%;
+  width: 30vh;
   padding: 12px;
   background-color: #6eabe4;
   color: #ffffff;
@@ -301,7 +297,7 @@ input:focus {
 .logout-button,
 .delete-button {
   margin-top: 20px;
-  width: 80%;
+  width: 30vh;
   padding: 12px;
   background-color: #ac85de;
   color: #ffffff;

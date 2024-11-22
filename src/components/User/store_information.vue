@@ -68,33 +68,37 @@
             </div>
           </div>
 
-          <!-- Business Hours Setting -->
           <div class="info-box">
-            <label>영업 시간</label>
-            <div class="time-inputs-with-button">
-              <label for="openTime">오픈 시간</label>
-              <input 
-                type="time" 
-                id="openTime"
-                v-model="openTime" 
-                :disabled="!editingOperationHours"
-                class="time-input"
-              />
-              <label for="closeTime">마감 시간</label>
-              <input 
-                type="time" 
-                id="closeTime"
-                v-model="closeTime" 
-                :disabled="!editingOperationHours"
-                class="time-input"
-              />
-              <button v-if="!openTime || !closeTime" @click="setOperationHours" class="edit-button">설정하기</button>
-              <button v-else @click="enableOperationHoursEditing" class="edit-button">
-                {{ editingOperationHours ? '저장' : '변경하기' }}
-              </button>
-            </div>
-          </div>
+          <label>영업 시간</label>
+          <div class="time-inputs-with-button">
+            <label for="openTime">오픈 시간</label>
+            <select 
+              id="openTime"
+              v-model="openTime" 
+              :disabled="!editingOperationHours"
+              class="time-select"
+            >
+              <option v-for="time in timeOptions" :key="time" :value="time">
+                {{ time }}
+              </option>
+            </select>
 
+            <label for="closeTime">마감 시간</label>
+            <select 
+              id="closeTime"
+              v-model="closeTime" 
+              :disabled="!editingOperationHours"
+              class="time-select"
+            >
+              <option v-for="time in timeOptions" :key="time" :value="time">
+                {{ time }}
+              </option>
+            </select>
+
+            <button v-if="editingOperationHours" @click="saveOperationHours" class="edit-button">저장</button>
+            <button v-else @click="enableOperationHoursEditing" class="edit-button">변경하기</button>
+          </div>
+        </div>
           <!-- Day Off Setting -->
           <div class="info-box">
             <label>휴무일 설정</label>
@@ -120,33 +124,41 @@
       <!-- Order History Dashboard -->
       <h2>주문 내역</h2>
 
-      <!-- Date Picker for Orders -->
-      <div class="calendar-section">
-        <label for="order-date">주문 날짜 선택</label>
-        <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
-      </div>
+      <div class="info-box">
+      <label>영업 시간</label>
+      <div class="time-inputs-with-button">
+        <!-- 오픈 시간 설정 -->
+        <label for="openTime">오픈 시간</label>
+        <select 
+          id="openTime"
+          v-model="openTime" 
+          :disabled="!editingOperationHours"
+          class="time-select"
+        >
+          <option v-for="time in timeOptions" :key="time" :value="time">
+            {{ time }}
+          </option>
+        </select>
 
-      <div v-if="orders.length === 0" class="no-orders">
-        <p>해당 날짜에 들어온 주문이 없습니다.</p>
+        <!-- 마감 시간 설정 -->
+        <label for="closeTime">마감 시간</label>
+        <select 
+          id="closeTime"
+          v-model="closeTime" 
+          :disabled="!editingOperationHours"
+          class="time-select"
+        >
+          <option v-for="time in timeOptions" :key="time" :value="time">
+            {{ time }}
+          </option>
+        </select>
+
+        <!-- 저장/변경 버튼 -->
+        <button v-if="editingOperationHours" @click="setOperationHours" class="edit-button">저장</button>
+        <button v-else @click="enableOperationHoursEditing" class="edit-button">변경하기</button>
       </div>
-      <div v-else class="order-list">
-        <div v-for="order in orders" :key="order.orderID" class="order-card">
-          <div class="order-header">
-            <p class="order-date">{{ formatDate(order.createdAt) }} 주문</p>
-          </div>
-          <p class="order-status">{{ order.status || '예약됨' }} ({{ statusDescriptions[order.status] || '주문 전송 상태' }})</p>
-          <div class="order-details">
-            <p>메뉴: {{ order.menu }}</p>
-            <p>수량: {{ order.quantity }}</p>
-            <p>예약 시간: {{ formatTime(order.reservationTime) }}</p>
-          </div>
-          <div class="order-actions">
-            <button class="approve-button" @click="approveOrder(order.orderID)">승인</button>
-            <button class="reject-button" @click="rejectOrder(order.orderID)">거절</button>
-            <button v-if="order.status !== '주문처리완료'" class="reject-button" @click="cancelOrder(order.orderID)">취소</button>
-          </div>
-        </div>
-      </div>
+    </div>
+
     </div>
   </div>
 </template>
@@ -180,7 +192,16 @@ export default {
         '거절됨': '주문이 거절되었습니다.',
         'pending': '주문 전송 상태',
         '예약됨': '주문이 예약되었습니다.'
-      }
+      },
+      // 시간 선택 옵션 (30분 단위)
+      timeOptions: [
+        '00:00', '00:30', '01:00', '01:30', '02:00', '02:30', '03:00', '03:30',
+        '04:00', '04:30', '05:00', '05:30', '06:00', '06:30', '07:00', '07:30',
+        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+        '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30'
+      ]
     };
   },
   mounted() {
@@ -312,6 +333,49 @@ export default {
     enableOperationHoursEditing() {
       this.editingOperationHours = true;
     },
+    setOperationHours() {
+  const auth = getAuth();
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      if (!this.openTime || !this.closeTime) {
+        alert('오픈 시간과 마감 시간을 모두 선택하세요.');
+        return;
+      }
+
+      try {
+        // Firebase 데이터베이스 경로
+        const storeInfoRef = ref(database, `store/${user.uid}`);
+
+        // 기존 데이터 가져오기
+        const existingDataSnapshot = await get(storeInfoRef);
+        const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
+
+        // 새로운 데이터 구성
+        const updatedData = {
+          ...existingData,
+          operationHours: {
+            open: this.openTime,
+            close: this.closeTime,
+          },
+        };
+
+        // 데이터 업데이트
+        await update(storeInfoRef, updatedData);
+
+        // 성공 메시지
+        alert('영업 시간이 성공적으로 저장되었습니다.');
+        this.editingOperationHours = false;
+      } catch (error) {
+        console.error('영업 시간 저장 실패:', error);
+        alert('영업 시간 저장에 실패했습니다. 관리자에게 문의하세요.');
+      }
+    } else {
+      alert('로그인이 필요합니다.');
+    }
+  });
+},
+
+
     enableDayoffEditing() {
       this.editingDayoff = true;
     },
@@ -344,33 +408,41 @@ export default {
         }
       });
     },
-    fetchBusinessInfo() {
-      const auth = getAuth();
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          const businessInfoRef = ref(database, `store/${user.uid}`);
-          get(businessInfoRef).then((snapshot) => {
-            if (snapshot.exists()) {
-              const data = snapshot.val();
-              this.storeName = data.storeName || '';
-
-              // 저장된 시간 정보가 있으면 불러오기
-              this.openTime = (data.operationHours && data.operationHours.open) ? data.operationHours.open : '';
-              this.closeTime = (data.operationHours && data.operationHours.close) ? data.operationHours.close : '';
-
-              this.dayoff = data.dayoff || [];
-              this.closeDays = data.closeDays || [];
-            } else {
-              // 데이터가 없을 경우 기본값 설정 (처음 설정 가능)
-              this.openTime = '';
-              this.closeTime = '';
-              this.dayoff = [];
-              this.closeDays = [];
-            }
-          });
+    async fetchBusinessInfo() {
+  try {
+    const auth = getAuth();
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const businessInfoRef = ref(database, `store/${user.uid}`);
+        const snapshot = await get(businessInfoRef);
+        
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          this.storeName = data.storeName || '';
+          this.openTime = data.operationHours?.open || '';
+          this.closeTime = data.operationHours?.close || '';
+          this.dayoff = data.dayoff || [];
+          this.closeDays = data.closeDays || [];
+        } else {
+          // 데이터가 없을 경우 기본값 설정
+          this.resetBusinessInfo();
         }
-      });
-    }
+      }
+    });
+  } catch (error) {
+    console.error('가게 정보 불러오기 실패:', error);
+    this.resetBusinessInfo(); // 오류가 발생해도 기본값 설정
+  }
+},
+resetBusinessInfo() {
+  // 기본값 설정
+  this.storeName = '';
+  this.openTime = '';
+  this.closeTime = '';
+  this.dayoff = [];
+  this.closeDays = [];
+}
+
   }
 };
 </script>
