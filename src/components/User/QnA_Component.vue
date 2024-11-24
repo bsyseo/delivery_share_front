@@ -34,8 +34,10 @@
     <!-- Submitted Questions Display -->
     <div class="submitted-questions">
       <h3>제출된 질문</h3>
-      <ul v-if="questions.length">
-        <li v-for="(question, index) in questions" :key="index">
+
+      <!-- 최신 3개 질문 표시 -->
+      <ul v-if="recentQuestions.length">
+        <li v-for="(question, index) in recentQuestions" :key="index">
           <strong>{{ question.title }}:</strong> {{ question.content }}
           <div v-if="question.answered">
             <p>답변 완료</p>
@@ -46,6 +48,25 @@
           </div>
         </li>
       </ul>
+
+      <!-- 그 외 질문 표시 -->
+      <div v-if="otherQuestions.length && !showAllQuestions">
+        <p>그 외 질문은 <a href="#" @click="toggleShowAllQuestions">전체 기록 보기</a> 버튼을 클릭하여 확인해주세요.</p>
+      </div>
+      
+      <ul v-if="showAllQuestions && otherQuestions.length">
+        <li v-for="(question, index) in otherQuestions" :key="index">
+          <strong>{{ question.title }}:</strong> {{ question.content }}
+          <div v-if="question.answered">
+            <p>답변 완료</p>
+            <p><strong>답변:</strong> {{ question.answer }}</p>
+          </div>
+          <div v-else>
+            <p>답변 대기 중</p>
+          </div>
+        </li>
+      </ul>
+
       <p v-else>질문이 없습니다.</p>
     </div>
   </div>
@@ -62,7 +83,10 @@ export default {
     return {
       newTitle: '', // 새로 입력할 질문 제목
       newQuestion: '', // 새로 입력할 질문 내용
-      questions: [], // 사용자의 질문 목록
+      questions: [], // 사용자의 모든 질문 목록
+      recentQuestions: [], // 최신 3개 질문
+      otherQuestions: [], // 그 외 질문
+      showAllQuestions: false, // 전체 기록 보기 여부
     };
   },
   mounted() {
@@ -97,6 +121,7 @@ export default {
         alert('제목과 질문을 모두 입력해 주세요.');
       }
     },
+
     fetchUserQuestions() {
       const auth = getAuth();
       const user = auth.currentUser;
@@ -107,7 +132,6 @@ export default {
         onValue(questionsRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
-            // 기존 질문 초기화
             let updatedQuestions = [];
 
             // 각 질문에 대해 답변을 가져오도록 처리
@@ -137,8 +161,13 @@ export default {
                       }
                     });
                   }
+
                   updatedQuestions.push(questionWithAnswer); // 질문에 대한 답변 처리 후 추가
                   this.questions = updatedQuestions; // 새로 업데이트된 질문 목록을 반영
+
+                  // 최신 3개 질문과 나머지 질문 분리
+                  this.recentQuestions = updatedQuestions.slice(0, 3); // 최신 3개
+                  this.otherQuestions = updatedQuestions.slice(3); // 그 외 질문
                 });
               }
             });
@@ -152,6 +181,10 @@ export default {
       } else {
         alert('로그인이 필요합니다.');
       }
+    },
+
+    toggleShowAllQuestions() {
+      this.showAllQuestions = !this.showAllQuestions; // 전체 기록 보기 토글
     }
   },
 };
