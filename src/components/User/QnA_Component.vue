@@ -75,7 +75,7 @@
 <script>
 import { database } from '@/firebase';
 import { getAuth } from 'firebase/auth';
-import { ref, set, push, onValue, query, orderByChild, equalTo } from "firebase/database";
+import { ref, set, push, onValue} from "firebase/database";
 
 export default {
   name: 'QnAComponent',
@@ -134,43 +134,28 @@ export default {
           if (data) {
             let updatedQuestions = [];
 
-            // 각 질문에 대해 답변을 가져오도록 처리
+            // 사용자 UID에 맞는 질문만 필터링
             Object.keys(data).forEach((key) => {
               const question = data[key];
               if (question.writer === user.uid) {
-                const questionWithAnswer = { 
+                // 질문 데이터에 포함된 답변 정보를 가져오기
+                updatedQuestions.push({
                   id: key,
                   title: question.title,
                   content: question.content,
                   createdAt: question.createdAt,
-                  answered: false,
-                  answer: ''
-                };
-
-                // 해당 질문에 대한 답변을 가져오기
-                const answersRef = ref(database, `questions_answer`);
-                const answersQuery = query(answersRef, orderByChild('questionId'), equalTo(key)); // questionId로 필터링
-                onValue(answersQuery, (answerSnapshot) => {
-                  const answers = answerSnapshot.val();
-                  if (answers) {
-                    Object.keys(answers).forEach((answerKey) => {
-                      const answer = answers[answerKey];
-                      if (answer.questionId === key && answer.questionWriter === user.uid) {
-                        questionWithAnswer.answered = true;
-                        questionWithAnswer.answer = answer.answer;
-                      }
-                    });
-                  }
-
-                  updatedQuestions.push(questionWithAnswer); // 질문에 대한 답변 처리 후 추가
-                  this.questions = updatedQuestions; // 새로 업데이트된 질문 목록을 반영
-
-                  // 최신 3개 질문과 나머지 질문 분리
-                  this.recentQuestions = updatedQuestions.slice(0, 3); // 최신 3개
-                  this.otherQuestions = updatedQuestions.slice(3); // 그 외 질문
+                  answered: question.answered || false, // 답변 상태 확인
+                  answer: question.answer || '',        // 답변 내용 확인
+                  answeredAt: question.answeredAt || null, // 답변 시간
+                  answerer: question.answerer || null   // 답변자 정보
                 });
               }
             });
+
+            // 최신 질문 3개와 나머지 질문 분리
+            this.questions = updatedQuestions;
+            this.recentQuestions = updatedQuestions.slice(0, 3); // 최신 3개 질문
+            this.otherQuestions = updatedQuestions.slice(3);     // 나머지 질문
           } else {
             this.questions = [];
           }
