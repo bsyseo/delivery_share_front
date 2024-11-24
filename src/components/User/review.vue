@@ -2,19 +2,40 @@
   <div class="reviews-container">
     <h2>리뷰</h2>
 
+    <!-- 주문 기록 목록 -->
+    <div class="order-history">
+      <h3>주문 목록</h3>
+      <ul v-if="orders.length">
+        <li v-for="order in orders" :key="order.orderID" class="order-item">
+          <strong>주문 번호:</strong> {{ order.orderID }}
+          <p><strong>주문 날짜:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}</p>
+          <p><strong>메뉴:</strong> {{ order.menu }}</p>
+          <p><strong>수량:</strong> {{ order.quantity }}</p>
+          <!-- 각 주문에 대한 리뷰 작성 버튼 -->
+          <button @click="selectOrderForReview(order)">이 주문에 리뷰 작성</button>
+        </li>
+      </ul>
+      <p v-else>주문 기록이 없습니다.</p>
+    </div>
+
     <!-- 리뷰 작성 섹션 -->
-    <div class="write-review">
+    <div v-if="selectedOrder" class="write-review">
       <h3>리뷰 작성</h3>
+      <p><strong>주문 번호:</strong> {{ selectedOrder.orderID }}</p>
+      <p><strong>메뉴:</strong> {{ selectedOrder.menu }}</p>
+      <p><strong>예약 날짜:</strong> {{ formatReservationTime(selectedOrder.participate_time) }}</p>
+      <!-- 리뷰 작성 입력란 -->
       <textarea v-model="newReview" placeholder="리뷰를 작성하세요"></textarea>
-      <button @click="submitReview">리뷰 제출</button>
+      <button @click="submitReview(selectedOrder.orderID)">리뷰 제출</button>
     </div>
 
     <!-- 제출된 리뷰 표시 -->
-    <div class="submitted-questions" v-if="reviews.length">
+    <div class="submitted-reviews" v-if="reviews.length">
       <h3>제출된 리뷰</h3>
       <ul>
         <li v-for="review in reviews" :key="review.id">
           <strong>{{ review.content }}</strong>
+          <p><strong>주문 번호:</strong> {{ review.orderID }}</p> <!-- 주문 번호 표시 -->
         </li>
       </ul>
     </div>
@@ -33,20 +54,52 @@ export default {
       newReview: '',  // 새 리뷰
       reviews: [], // 리뷰 목록
       userUid: '', // 로그인된 사용자 UID
+      orders: [], // 주문 목록
+      selectedOrder: null, // 선택된 주문
     };
   },
   methods: {
-    submitReview() {
-      if (this.newReview.trim()) {
-        if (!this.userUid) {
-          alert("로그인이 필요합니다.");
-          return;
-        }
+    // 주문 기록을 가져오는 메소드
+    fetchOrders() {
+      const auth = getAuth();
+      const user = auth.currentUser;
 
+      if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      const memberRef = ref(database, 'member'); // 'member' 경로에서 주문 기록을 가져옴
+      onValue(memberRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          this.orders = Object.keys(data).map((key) => ({
+            orderID: data[key].orderID,
+            menu: data[key].menu,
+            quantity: data[key].quantity,
+            participate_time: data[key].participate_time,
+            creatorUid: data[key].uid,
+          })).filter(order => order.creatorUid === user.uid); // 로그인된 사용자만 주문 가져오기
+        } else {
+          this.orders = [];
+        }
+      });
+    },
+
+    // 리뷰를 작성할 주문 선택
+    selectOrderForReview(order) {
+      this.selectedOrder = order; // 선택된 주문 정보를 저장
+      this.newReview = ''; // 리뷰 내용 초기화
+    },
+
+    // 리뷰 제출
+    submitReview(orderID) {
+      if (this.newReview.trim()) {
         const newReviewData = {
           content: this.newReview,
           writer: this.userUid,
           createdAt: new Date().toISOString(),
+          orderID: orderID, // 주문 ID와 연결
         };
 
         const reviewsRef = ref(database, 'reviews');
@@ -64,21 +117,37 @@ export default {
         alert('리뷰 내용을 입력해 주세요.');
       }
     },
+
+    // 리뷰 목록을 가져오는 메소드
     fetchReviews() {
       const reviewsRef = ref(database, 'reviews');
       onValue(reviewsRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          this.reviews = Object.keys(data)
-            .map((key) => ({
-              id: key,
-              ...data[key],
-            }))
-            .filter((review) => review.writer === this.userUid);
+          this.reviews = [];
+          Object.keys(data).forEach((key) => {
+            const review = data[key];
+            this.reviews.push(review); // 모든 리뷰 목록 가져오기
+          });
         } else {
           this.reviews = [];
         }
       });
+    },
+
+    // 주문 날짜 포맷팅
+    formatReservationTime(reservationTime) {
+      if (!reservationTime) return '정보 없음';
+      const options = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Seoul',
+        hour12: false,
+      };
+      return new Date(reservationTime).toLocaleString('ko-KR', options);
     },
   },
   created() {
@@ -86,10 +155,12 @@ export default {
     onAuthStateChanged(auth, (user) => {
       if (user) {
         this.userUid = user.uid;
-        this.fetchReviews(); // 로그인된 사용자의 리뷰 불러오기
+        this.fetchOrders(); // 주문 목록을 불러옴
+        this.fetchReviews(); // 리뷰 목록을 불러옴
       } else {
         this.userUid = '';
-        this.reviews = []; // 로그아웃 시 리뷰 초기화
+        this.reviews = [];
+        this.orders = [];
       }
     });
   },
@@ -156,16 +227,22 @@ button:hover {
   background-color: #5a3c9a; /* 다크 보라색 */
 }
 
-.submitted-questions {
+.submitted-reviews {
   margin-top: 40px;
 }
 
-.submitted-questions ul {
+.submitted-reviews ul {
   list-style: none;
   padding: 0;
 }
 
-.submitted-questions li {
+.order-history ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.submitted-reviews li {
   padding: 12px 15px;
   border-radius: 8px;
   background-color: #f7f9fc;
@@ -173,16 +250,42 @@ button:hover {
   border: 1px solid #ddd;
 }
 
-.submitted-questions li strong {
+.submitted-reviews li strong {
   font-size: 1em;
   color: #6c4fbd; /* 보라색 */
   margin-bottom: 5px;
   display: block;
 }
 
-.submitted-questions p {
+.submitted-reviews p {
   text-align: center;
   color: #888;
   font-size: 1em;
+}
+
+.order-history {
+  margin-top: 20px;
+}
+
+.order-item {
+  margin-bottom: 10px;
+  background-color: #f7f7f7;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.order-item button {
+  background-color: #6c4fbd;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 8px 16px;
+  margin-top: 10px;
+}
+
+.order-item button:hover {
+  background-color: #5a3c9a;
 }
 </style>
