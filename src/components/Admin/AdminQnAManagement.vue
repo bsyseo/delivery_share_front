@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import { ref, onValue, push, update } from "firebase/database";
+import { ref, onValue, update } from "firebase/database";
 import { database } from "@/firebase";
 
 export default {
@@ -82,41 +82,24 @@ export default {
     submitAnswer(question) {
       const reply = question.reply.trim();
       if (reply) {
+        const questionRef = ref(database, `questions/${question.id}`);
+        
         const answerData = {
-          questionId: question.id, // 해당 질문 ID
-          answer: reply, // 사용자가 작성한 답글
+          answer: reply,                      // 사용자가 입력한 답글
           answeredAt: new Date().toISOString(), // 답글 작성 시간
-          questionWriter: question.writer, // 질문을 작성한 사람 (사용자 정보)
-          answerer: '관리자', // 답변자는 '관리자'로 설정
+          answerer: '관리자'                   // 답변자 정보
         };
 
-        // Firebase의 'questions_answer' 경로에 답글 저장
-        const answersRef = ref(database, 'questions_answer');
-        push(answersRef, answerData)
-          .then(() => {
-            // 답글 저장 성공 시 성공 메시지를 한 번만 띄움
-            if (!this.successMessageShown) {
-              alert('답글 저장 성공');
-              this.successMessageShown = true;
-            }
-
-            // 질문을 답변 완료 상태로 업데이트
-            const questionRef = ref(database, `questions/${question.id}`);
-            update(questionRef, { 
-              answered: true, // 답변 완료 상태로 업데이트
-              answer: reply  // 답변 내용 업데이트
-            })
-            .then(() => {
-              // 질문 목록을 새로고침하여 답변이 달린 질문으로 업데이트
-              this.fetchQuestions();
-            })
-            .catch((error) => {
-              console.error('질문 업데이트 중 오류 발생:', error);
-            });
-          })
-          .catch((error) => {
-            console.error('답글 저장 중 오류 발생:', error);
-          });
+        // 질문 경로에 답변 데이터를 추가
+        update(questionRef, answerData) // answered 필드 제거
+        .then(() => {
+          alert('답변이 성공적으로 저장되었습니다.');
+          this.fetchQuestions(); // 질문 목록 새로고침
+        })
+        .catch((error) => {
+          console.error('답변 저장 중 오류 발생:', error);
+          alert('답변 저장 중 오류가 발생했습니다.');
+        });
       } else {
         alert('답글 내용을 입력해 주세요.');
       }
