@@ -2,8 +2,11 @@
   <div class="order-history">
     <h2>주문 기록</h2>
     <p v-if="orders.length === 0">주문 기록이 없습니다.</p>
-    <ul v-else>
-      <li v-for="(order, index) in orders" :key="order.orderID" class="order-item">
+
+    <!-- 최신 3개 주문 -->
+    <h3>최근 주문 기록</h3>
+    <ul v-if="recentOrders.length">
+      <li v-for="(order, index) in recentOrders" :key="order.orderID" class="order-item">
         <div class="order-header">
           <strong>주문 {{ index + 1 }}</strong> <!-- 순서 표시 -->
         </div>
@@ -15,6 +18,27 @@
         <strong>예약 시간:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}<br />
       </li>
     </ul>
+
+    <!-- "주문 기록 보기" 버튼 -->
+    <button @click="showAllOrders = !showAllOrders" v-if="recentOrders.length > 0">주문 기록 보기</button>
+
+    <!-- 전체 주문 기록 표시 -->
+    <div v-if="showAllOrders">
+      <h3>전체 주문 기록</h3>
+      <ul>
+        <li v-for="(order, index) in orders" :key="order.orderID" class="order-item">
+          <div class="order-header">
+            <strong>주문 {{ index + 1 }}</strong>
+          </div>
+          <strong>주문 번호:</strong>
+          <a href="#" @click.prevent="openOrderPopup(order.orderID)" class="order-link">{{ order.orderID }}</a>
+          <br />
+          <strong>메뉴 이름:</strong> {{ order.menu || '정보 없음' }}<br />
+          <strong>수량:</strong> {{ order.quantity || '정보 없음' }}<br />
+          <strong>예약 시간:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}<br />
+        </li>
+      </ul>
+    </div>
 
     <!-- 주문 상세 팝업 -->
     <div v-if="selectedOrder" class="popup-overlay" @click="closeOrderPopup">
@@ -40,9 +64,11 @@ export default {
   name: 'OrderHistory',
   data() {
     return {
-      orders: [], // 주문 기록 배열
+      orders: [], // 전체 주문 기록 배열
+      recentOrders: [], // 최신 3개의 주문 기록 배열
       selectedOrder: null, // 선택된 주문
       storeDetails: {}, // 가게 정보
+      showAllOrders: false, // 전체 주문 보기 여부
     };
   },
   mounted() {
@@ -64,7 +90,7 @@ export default {
           const data = snapshot.val();
           if (data) {
             // 로그인된 사용자의 주문 기록만 필터링
-            this.orders = Object.keys(data)
+            const allOrders = Object.keys(data)
               .map((key) => {
                 const member = data[key];
                 if (member.uid === user.uid) {
@@ -80,11 +106,16 @@ export default {
               .filter((order) => order !== null);
 
             // 예약 시간을 기준으로 오름차순 정렬
-            this.orders.sort(
-              (a, b) => new Date(a.participate_time) - new Date(b.participate_time)
-            );
+            allOrders.sort((a, b) => new Date(b.participate_time) - new Date(a.participate_time));
+
+            // 전체 주문 기록
+            this.orders = allOrders;
+
+            // 최신 3개의 주문만 가져오기
+            this.recentOrders = allOrders.slice(0, 3);
           } else {
             this.orders = [];
+            this.recentOrders = [];
           }
         });
       } catch (error) {
@@ -141,7 +172,6 @@ export default {
   },
 };
 </script>
-
 
 <style scoped>
 .order-history {
@@ -222,4 +252,3 @@ strong {
   background-color: #5a3c9a; /* 다크 보라색 */
 }
 </style>
-
