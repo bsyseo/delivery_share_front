@@ -71,18 +71,20 @@
             <div class="logo-box">
               <img v-if="logos[storeUid]" :src="logos[storeUid]" alt="Store Logo" />
               <div v-else>로고 없음</div>
+              <div class="store-info">
+                <p class="store-name">{{ storeNames[storeUid] || '가게 이름 없음' }}</p>
+                <button class="review-button" @click="openReviewPopup(storeUid)">[리뷰 보기]</button>
+              </div>
             </div>
 
             <!-- 하단 시간표 박스 -->
             <div class="time-box">
-              <p v-for="order in orderList.slice(0, 4)" :key="order.id" @click="showPopup(order)">
+              <p v-for="order in orderList" :key="order.id" @click="showPopup(order)">
+                <span :style="getDayIndicatorStyle(order.reservationTime)">
+                  {{ getDayIndicator(order.reservationTime) }}
+                </span>
                 {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
               </p>
-              <div v-if="orderList.length > 4" class="more-orders">
-                <div v-for="order in orderList.slice(0, 4)" :key="order.id" @click="showPopup(order)">
-                  {{ formatReservationTime(order.reservationTime) || '시간 없음' }}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -93,21 +95,31 @@
     <div v-if="isPopupVisible" class="popup-overlay" @click="closePopup">
       <div class="popup-content">
         <p>예약 정보</p>
-        <p><strong>예약 시간:</strong> {{ formatReservationTime(selectedOrder?.reservationTime) }}</p>
-        <p><strong>주소:</strong> {{ selectedOrder?.address || '주소 정보 없음' }}</p>
-        <p><strong>메뉴 이름:</strong> {{ selectedOrder?.menuName || '메뉴 정보 없음' }}</p>
-        <p><strong>가격:</strong> {{ selectedOrder?.price ? selectedOrder.price + '원' : '가격 없음' }}</p>
-        <p><strong>수량:</strong> {{ selectedOrder?.quantity }}</p>
+        <!-- 예약 시간 -->
+        <p><strong>예약 시간:</strong> {{ formatFullReservationTime(selectedOrder?.reservationTime) }}</p>
+        <!-- 주소 -->
+        <p><strong>주소:</strong> {{ selectedOrder?.pickupZone || '주소 정보 없음' }}</p>
+        <!-- 현재 배달비 -->
         <p><strong>현재 배달비:</strong> 
           {{ selectedOrder?.deliveryFee && selectedOrder?.participantsCount 
             ? (selectedOrder.deliveryFee / selectedOrder.participantsCount).toFixed(0) + '원' 
             : '배달비 없음' }}
         </p>
+        <!-- 참여 인원 -->
         <p><strong>참여 인원:</strong> {{ selectedOrder?.participantsCount }}</p>
+
+        <!-- 무료 배송 인원 -->
+        <p><strong>무료 배송 인원:</strong> {{ selectedOrder?.desiredParticipants || '정보 없음' }}</p>
+
+        <!-- 참여하기 버튼 -->
         <button class="button green2" @click="openMenuSelection">참여하기</button>
+
+        <!-- 닫기 버튼 -->
         <button class="button green2" @click="closePopup">닫기</button>
       </div>
     </div>
+
+
 
     <!-- 두 번째 팝업 -->
     <div v-if="isMenuPopupVisible" class="popup-overlay" @click="closeMenuPopup">
@@ -131,18 +143,30 @@
         <button class="button green2" @click.stop="closeMenuPopup">닫기</button>
       </div>
     </div>
+    <div v-if="isReviewPopupVisible" class="popup-overlay" @click="closeReviewPopup">
+      <div class="popup-content" @click.stop>
+        <h3>리뷰 목록</h3>
+        <ul>
+          <li v-for="(review, index) in exampleReviews" :key="index">
+            {{ review }}
+          </li>
+        </ul>
+        <button class="button green2" @click="closeReviewPopup">닫기</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import moment from 'moment-timezone';
-import { ref, query, orderByChild, get, update, push, set } from 'firebase/database';
+import { ref, query, orderByChild, get, set, push } from 'firebase/database';
 import { database } from '@/firebase';
 import { getAuth } from 'firebase/auth';
+import { reactive } from 'vue';
 
 export default {
   name: 'OrderComponent',
-  data() {
+    data() {
     return {
       selectedMenu: '',
       logos: [],
@@ -155,15 +179,56 @@ export default {
       selectedMenuId: '',
       menuQuantity: 1,
       currentUserId: null,
+      participantSummary: [], // 참여자 메뉴 요약
+      totalPrice: 0, // 총 가격
+      storeNames: reactive({}), // 반응형 객체로 변경
+      isReviewPopupVisible: false,
+      exampleReviews: ['맛있어요!', '친절해요.', '배달이 빨라요.'], // 임의의 리뷰 데이터
+      selectedStoreReviews: [], // 선택된 가게의 리뷰
     };
   },
   created() {
+    if (!this.currentUserId) {
+        console.error('사용자가 로그인되지 않았습니다. 초기화를 중단합니다.');
+        return;
+    }
     this.setCurrentUser();
   },
+ 
   methods: {
+    // 예약 시간 포맷 함수 (날짜 포함)
+    formatFullReservationTime(reservationTime) {
+      if (!reservationTime) return '정보 없음';
+      const options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'Asia/Seoul',
+        hour12: false,
+      };
+      return new Date(reservationTime).toLocaleString('ko-KR', options);
+    },
     setCurrentUser() {
       const auth = getAuth();
       const user = auth.currentUser;
+
+      if (!auth.currentUser) {
+        console.error('Firebase 인증 문제1: 로그인되지 않은 사용자입니다.');
+        return;
+      }
+
+      if (!user) {
+        console.error('Firebase 인증 문제2: 로그인되지 않은 사용자입니다.');
+      } else {
+        console.log('인증된 사용자 UID:', user.uid);
+      }
+
+      this.currentUserId = user.uid;
+      console.log('Logged in user UID:', this.currentUserId);
 
       if (user) {
         this.currentUserId = user.uid;
@@ -198,6 +263,9 @@ export default {
 
               if (order.storeType === this.selectedMenu && reservationTime.isAfter(currentKSTTime)) {
                 const storeUid = order.storeUid;
+
+                console.log('Order StoreUid:', order.storeUid);
+
                 if (!groupedOrders[storeUid]) {
                   groupedOrders[storeUid] = [];
                 }
@@ -209,9 +277,25 @@ export default {
                   quantity: order.quantity,
                   price: order.price,
                   reservationTime: reservationTime.format('YYYY-MM-DD HH:mm'),
-                  address: order.address, // 주소 정보 추가
+                  pickupZone: order.pickupZone || '픽업존 정보 없음', // 픽업존 추가
                   ...order
                 });
+
+                // 가게 이름 가져오기
+                if (!this.storeNames[storeUid]) {
+                  const storeNameRef = ref(database, `store/${storeUid}/storeName`);
+                  get(storeNameRef)
+                    .then((storeSnapshot) => {
+                      if (storeSnapshot.exists()) {
+                        this.storeNames[storeUid] = storeSnapshot.val(); // 직접 설정
+                      } else {
+                        this.storeNames[storeUid] = '가게 이름 없음';
+                      }
+                    })
+                    .catch((error) => {
+                      console.error(`Failed to fetch store name for ${storeUid}:`, error);
+                    });
+                }
               }
             });
 
@@ -230,6 +314,7 @@ export default {
           console.error('주문 정보를 가져오는 데 실패했습니다:', error);
         });
     },
+
     fetchLogos() {
       Object.keys(this.orders).forEach((storeUid) => {
         const logoRef = ref(database, `store/${storeUid}/logo`);
@@ -253,10 +338,89 @@ export default {
       return `${hours}:${minutes}`;
     },
     showPopup(order) {
-      this.selectedOrder = order;
-      this.selectedOrderId = order.id;
-      this.isPopupVisible = true;
-    },
+  // 기존 기능 유지
+  this.selectedOrder = { ...order, desiredParticipants: '정보 로딩 중...' }; // 기본값 추가
+  this.selectedOrderId = order.id;
+  this.isPopupVisible = true;
+
+  // 가게의 무료 배송 인원(desiredParticipants) 가져오기
+  const storeRef = ref(database, `store/${this.selectedOrder.storeUid}/desiredParticipants`);
+  get(storeRef)
+    .then((snapshot) => {
+      if (snapshot.exists()) {
+        this.selectedOrder.desiredParticipants = snapshot.val(); // 무료 배송 인원 저장
+      } else {
+        this.selectedOrder.desiredParticipants = '정보 없음';
+      }
+    })
+    .catch((error) => {
+      console.error('무료 배송 인원 정보를 가져오는 데 실패했습니다:', error);
+      this.selectedOrder.desiredParticipants = '정보 없음';
+    });
+
+  // 추가 데이터 가져오기 로직
+  const participantRef = ref(database, `member/${this.selectedOrderId}/participants`);
+  const orderDataRef = ref(database, `orders/${this.selectedOrderId}`);
+
+  // 초기 데이터를 가져오기
+  get(orderDataRef)
+    .then((orderSnapshot) => {
+      if (orderSnapshot.exists()) {
+        const orderData = orderSnapshot.val();
+
+        // orderID 데이터를 초기값으로 설정
+        const initialSummary = {
+          menu: orderData.menu || "메뉴 정보 없음",
+          quantity: orderData.quantity || 0,
+          price: orderData.price || 0,
+        };
+
+        // 참여자 데이터를 가져오기
+        return get(participantRef).then((participantSnapshot) => {
+          const menuSummary = {};
+          let totalPrice = 0;
+
+          // orderID 데이터를 합산 시작점으로 설정
+          if (!menuSummary[initialSummary.menu]) {
+            menuSummary[initialSummary.menu] = 0;
+          }
+          menuSummary[initialSummary.menu] += initialSummary.quantity;
+          totalPrice += initialSummary.price;
+
+          if (participantSnapshot.exists()) {
+            const participants = participantSnapshot.val();
+
+            // participants 데이터 합산
+            Object.values(participants).forEach((participant) => {
+              if (!menuSummary[participant.menu]) {
+                menuSummary[participant.menu] = 0;
+              }
+              menuSummary[participant.menu] += participant.quantity;
+              totalPrice += participant.price * participant.quantity;
+            });
+          }
+
+          // 병합된 데이터를 participantSummary와 totalPrice에 반영
+          this.participantSummary = Object.entries(menuSummary).map(([menu, quantity]) => ({
+            menu,
+            quantity,
+          }));
+
+          this.totalPrice = totalPrice;
+        });
+      } else {
+        // orderID 데이터가 없는 경우 기본값 설정
+        this.participantSummary = [];
+        this.totalPrice = 0;
+      }
+    })
+    .catch((error) => {
+      console.error("데이터를 가져오는 데 실패했습니다:", error);
+      this.participantSummary = [];
+      this.totalPrice = 0;
+    });
+},
+
     closePopup() {
       this.isPopupVisible = false;
       this.selectedOrder = null;
@@ -314,51 +478,78 @@ export default {
     },
     confirmMenuSelection() {
       if (!this.selectedOrderId || !this.selectedMenuId) {
-        alert('선택된 주문이나 메뉴가 없습니다.');
+        console.error('선택된 주문 또는 메뉴가 없습니다. 작업을 중단합니다.');
         return;
       }
 
       const selectedMenu = this.storeMenus.find((menu) => menu.id === this.selectedMenuId);
       const currentKSTTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
 
-      const memberRef = push(ref(database, 'member'));
-      const memberData = {
-        uid: this.currentUserId,
+      // 참여자의 정보 저장 경로: member/{임의의 key}/
+      const memberRef = ref(database, 'member');
+      const newMemberRef = push(memberRef); // 새로운 key 생성
+
+      const participantData = {
         orderID: this.selectedOrderId,
         menu: selectedMenu.name,
-        quantity: this.menuQuantity,
         price: selectedMenu.price,
+        quantity: this.menuQuantity,
         participate_time: currentKSTTime,
-        address: this.selectedOrder?.address || '주소 정보 없음',
+        uid: this.currentUserId,
       };
 
-      set(memberRef, memberData)
+      set(newMemberRef, participantData)
         .then(() => {
-          const orderRef = ref(database, `orders/${this.selectedOrderId}`);
-          return get(orderRef);
+          console.log('참여자 정보가 member에 저장되었습니다.');
+
+          // orders/{선택된 주문 ID}/participantsCount 증가
+          const orderRef = ref(database, `orders/${this.selectedOrderId}/participantsCount`);
+          return get(orderRef).then((snapshot) => {
+
+            console.log("OrderRef Snapshot:", snapshot.val());
+            console.log("Snapshot Exists:", snapshot.exists());
+
+            const currentCount = snapshot.exists() ? snapshot.val() : 0;
+
+            console.log("Current Count Before Increment:", currentCount);
+
+            // 새 값 계산
+            const newCount = currentCount + 1;
+
+          console.log("Current Count Before Increment:", currentCount);
+          console.log("Attempting to set New Count:", newCount);
+
+          // 업데이트 시도
+          return set(orderRef, newCount)
+            .then(() => {
+              console.log("참가자 수 증가 성공. New Count:", newCount);
+            })
+            .catch((error) => {
+              console.error("참가자 수 증가 실패:", error);
+            });
+          });
         })
-        .then((snapshot) => {
-          if (snapshot.exists()) {
-            const orderData = snapshot.val();
-            const updatedParticipants = (orderData.participantsCount || 0) + 1;
+        .then(() => {
+          // 주문 상태 확인 및 업데이트
+          const orderDataRef = ref(database, `orders/${this.selectedOrderId}`);
+          return get(orderDataRef).then((snapshot) => {
+            if (snapshot.exists()) {
+              const orderData = snapshot.val();
 
-            const updates = {
-              participantsCount: updatedParticipants,
-            };
+              const currentTime = moment().tz('Asia/Seoul');
+              const isParticipantsReached = orderData.participantsCount >= orderData.desiredParticipants;
+              const isTimeExceeded = currentTime.isAfter(moment(orderData.desiredEndTime));
 
-            // 마감 조건 확인
-            const currentTime = moment().tz('Asia/Seoul');
-            const isParticipantsReached = updatedParticipants >= orderData.desiredParticipants;
-            const isTimeExceeded = currentTime.isAfter(moment(orderData.desiredEndTime));
+              const updates = {};
+              if (isParticipantsReached || isTimeExceeded) {
+                updates.status = 'closed'; // 주문 마감
+              }
 
-            if (isParticipantsReached || isTimeExceeded) {
-              updates.status = 'closed'; // 주문 마감
+              if (Object.keys(updates).length > 0) {
+                return set(orderDataRef, { ...orderData, ...updates });
+              }
             }
-
-            return update(ref(database, `orders/${this.selectedOrderId}`), updates);
-          } else {
-            throw new Error('해당 주문을 찾을 수 없습니다.');
-          }
+          });
         })
         .then(() => {
           alert('참여 완료!');
@@ -368,11 +559,67 @@ export default {
           console.error('참여 처리 중 오류 발생:', error);
         });
     },
+
     closeMenuPopup() {
       this.isMenuPopupVisible = false;
       this.selectedMenuId = '';
       this.menuQuantity = 1;
     },
+    getDayIndicator(reservationTime) {
+      const currentKST = moment().tz('Asia/Seoul').startOf('day'); // 현재 한국 시각 기준으로 00:00 기준
+      const reservationDay = moment(reservationTime).startOf('day');
+      const dayDifference = reservationDay.diff(currentKST, 'days');
+
+      if (dayDifference === 0) return 'Today';
+      if (dayDifference > 0) return `Day +${dayDifference}`;
+      return ''; // 과거 날짜는 표시하지 않음
+    },
+    getDayIndicatorStyle(reservationTime) {
+      const dayIndicator = this.getDayIndicator(reservationTime);
+      if (dayIndicator) {
+        return {
+          color: 'red',
+          marginRight: '8px',
+          fontWeight: 'bold',
+        };
+      }
+      return {}; // 표시할 내용이 없으면 스타일 없음
+    },
+  },
+  fetchStoreNames() {
+    Object.keys(this.orders).forEach((storeUid) => {
+      const storeNameRef = ref(database, `store/${storeUid}/storeName`);
+      get(storeNameRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            this.$set(this.storeNames, storeUid, snapshot.val());
+          } else {
+            this.$set(this.storeNames, storeUid, '가게 이름 없음');
+          }
+        })
+        .catch((error) => {
+          console.error('가게 이름을 가져오는 데 실패했습니다:', error);
+        });
+    });
+  },
+  openReviewPopup(storeUid) {
+    const reviewRef = ref(database, `store/${storeUid}/reviews`);
+    get(reviewRef)
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          this.selectedStoreReviews = Object.values(snapshot.val());
+        } else {
+          this.selectedStoreReviews = ['리뷰가 없습니다.'];
+        }
+        this.isReviewPopupVisible = true;
+      })
+      .catch((error) => {
+        console.error('리뷰를 가져오는 데 실패했습니다:', error);
+      });
+  },
+  closeReviewPopup() {
+    this.isReviewPopupVisible = false;
+    this.selectedStoreReviews = [];
   },
 };
 </script>
@@ -493,34 +740,45 @@ export default {
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* 수직 정렬을 상단 기준으로 */
   margin-top: 20px;
   gap: 20px;
 }
 
-.logo-box{
-  width: 150px;
-  margin: 2vh;
-  height: 120px;
-  background-color: #F0F4FF;
-  border-radius: 15px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+.logo-time-pair {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
+  flex-direction: column; /* 상단 로고와 하단 박스를 수직 정렬 */
+  justify-content: flex-start; /* 상단 정렬 */
+  align-items: center; /* 중앙 정렬 */
 }
-.time-box{
+
+.logo-box {
   width: 150px;
-  margin: 2vh;
-  height: 220px;
+  height: auto; /* 높이를 내용에 맞게 자동 설정 */
   background-color: #F0F4FF;
   border-radius: 15px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column; /* 로고와 텍스트 수직 정렬 */
+  justify-content: center; /* 내부 요소 중앙 정렬 */
+  align-items: center; /* 내부 요소 중앙 정렬 */
   text-align: center;
+  padding: 10px;
+}
+.time-box {
+  width: 150px;
+  height: 220px; /* 높이를 고정 */
+  background-color: #F0F4FF;
+  border-radius: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* 상단 정렬 */
+  align-items: center; /* 중앙 정렬 */
+  text-align: center;
+  overflow-y: auto; /* 스크롤 가능 */
+  padding: 10px;
+  margin-top: 20px; /* 로고와 시간표 간의 간격 */
 }
 
 .logo-box img, .time-box p {
@@ -618,6 +876,24 @@ export default {
 .time-box p {
   font-size: 0.9rem;
   color: #333;
+  margin: 5px 0; /* 항목 간 간격 설정 */
+}
+
+.time-box::-webkit-scrollbar {
+  width: 8px; /* 스크롤바 너비 */
+}
+
+.time-box::-webkit-scrollbar-thumb {
+  background-color: #B3C5FF; /* 스크롤바 색상 */
+  border-radius: 4px; /* 스크롤바 둥글게 */
+}
+
+.time-box::-webkit-scrollbar-thumb:hover {
+  background-color: #8DA4FF; /* 스크롤바 호버 색상 */
+}
+
+.time-box::-webkit-scrollbar-track {
+  background-color: #F0F4FF; /* 스크롤 트랙 색상 */
 }
 
 select,
@@ -674,4 +950,44 @@ input[type="number"]::-webkit-outer-spin-button {
 * {
     font-family: 'IBMPlexSansKR', sans-serif;
 }
+.logo-box .store-info {
+  margin-top: 8px; /* 로고와 이름 간 간격 */
+  text-align: center;
+}
+.logo-box .store-name {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.logo-box .review-button {
+  background-color: transparent;
+  border: none;
+  color: #007BFF;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.logo-box .review-button:hover {
+  color: #0056b3;
+}
+
+.popup-content h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.popup-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.popup-content ul li {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #444;
+}
+
 </style>
