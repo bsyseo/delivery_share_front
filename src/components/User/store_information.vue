@@ -121,43 +121,10 @@
         </div>
       </div>
 
-      <!-- Order History Dashboard -->
-      <h2>주문 내역</h2>
+      <!-- 이거 없애야 하는 부분 아님?? Order History Dashboard -->
+      <h2>주문 내역</h2> 
 
-      <div class="info-box">
-      <label>영업 시간</label>
-      <div class="time-inputs-with-button">
-        <!-- 오픈 시간 설정 -->
-        <label for="openTime">오픈 시간</label>
-        <select 
-          id="openTime"
-          v-model="openTime" 
-          :disabled="!editingOperationHours"
-          class="time-select"
-        >
-          <option v-for="time in timeOptions" :key="time" :value="time">
-            {{ time }}
-          </option>
-        </select>
-
-        <!-- 마감 시간 설정 -->
-        <label for="closeTime">마감 시간</label>
-        <select 
-          id="closeTime"
-          v-model="closeTime" 
-          :disabled="!editingOperationHours"
-          class="time-select"
-        >
-          <option v-for="time in timeOptions" :key="time" :value="time">
-            {{ time }}
-          </option>
-        </select>
-
-        <!-- 저장/변경 버튼 -->
-        <button v-if="editingOperationHours" @click="setOperationHours" class="edit-button">저장</button>
-        <button v-else @click="enableOperationHoursEditing" class="edit-button">변경하기</button>
-      </div>
-    </div>
+      
 
     </div>
   </div>
@@ -166,7 +133,7 @@
 
 <script>
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { ref, update, onValue, get } from 'firebase/database';
+import { ref, update, onValue, get, set } from 'firebase/database';
 import { database } from '@/firebase';
 import moment from 'moment-timezone';
 
@@ -286,7 +253,7 @@ export default {
         onAuthStateChanged(auth, (user) => {
           if (user) {
             const storeNameRef = ref(database, `store/${user.uid}/storeName`);
-            update(storeNameRef, { storeName: this.storeName })
+            set(storeNameRef, this.storeName) // 중첩 없이 storeName 바로 저장
               .then(() => {
                 this.storeNameRegistered = true;
                 alert('가게 이름이 등록되었습니다.');
@@ -309,13 +276,13 @@ export default {
         onAuthStateChanged(auth, (user) => {
           if (user) {
             const storeNameRef = ref(database, `store/${user.uid}/storeName`);
-            update(storeNameRef, { storeName: this.storeName })
+            set(storeNameRef, this.storeName) // 중첩 없이 단일 값 저장
               .then(() => {
                 this.editingStoreName = false;
-                alert('가게 이름이 변경되었습니다.');
+                alert('가게 이름이 저장되었습니다.');
               })
               .catch((error) => {
-                console.error('가게 이름 변경 실패:', error);
+                console.error('가게 이름 저장 실패:', error);
               });
           }
         });
@@ -418,7 +385,7 @@ export default {
         
         if (snapshot.exists()) {
           const data = snapshot.val();
-          this.storeName = data.storeName || '';
+          this.storeName = data.storeName || ''; // storeName 값 바로 할당
           this.openTime = data.operationHours?.open || '';
           this.closeTime = data.operationHours?.close || '';
           this.dayoff = data.dayoff || [];
