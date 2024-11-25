@@ -16,6 +16,7 @@
         <strong>메뉴 이름:</strong> {{ order.menu || '정보 없음' }}<br />
         <strong>수량:</strong> {{ order.quantity || '정보 없음' }}<br />
         <strong>예약 시간:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}<br />
+        <strong>음식 금액:</strong> {{ calculateOrderTotal(order) || '정보 없음' }}원
       </li>
     </ul>
 
@@ -36,6 +37,7 @@
           <strong>메뉴 이름:</strong> {{ order.menu || '정보 없음' }}<br />
           <strong>수량:</strong> {{ order.quantity || '정보 없음' }}<br />
           <strong>예약 시간:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}<br />
+          <strong>음식 금액:</strong> {{ calculateOrderTotal(order) || '정보 없음' }}원
         </li>
       </ul>
     </div>
@@ -98,6 +100,7 @@ export default {
                     orderID: member.orderID,
                     menu: member.menu,
                     quantity: member.quantity,
+                    price: member.price,
                     participate_time: member.participate_time,
                   };
                 }
@@ -123,6 +126,14 @@ export default {
         alert('주문 데이터를 불러오는 중 오류가 발생했습니다.');
       }
     },
+
+    calculateOrderTotal(order) {
+      if (!order.price || !order.quantity) {
+        return '정보 없음'; // 가격 또는 수량이 누락된 경우
+      }
+      return order.price * order.quantity; // 총 금액 계산
+    },
+
     async openOrderPopup(orderID) {
       try {
         // orders/{orderID}에서 주문 정보 가져오기
