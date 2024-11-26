@@ -11,7 +11,6 @@
           <p><strong>주문 날짜:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}</p>
           <p><strong>메뉴:</strong> {{ order.menu }}</p>
           <p><strong>수량:</strong> {{ order.quantity }}</p>
-          <!-- 각 주문에 대한 리뷰 작성 버튼 -->
           <button @click="selectOrderForReview(order)">이 주문에 리뷰 작성</button>
         </li>
       </ul>
@@ -24,18 +23,17 @@
       <p><strong>주문 번호:</strong> {{ selectedOrder.orderID }}</p>
       <p><strong>메뉴:</strong> {{ selectedOrder.menu }}</p>
       <p><strong>예약 날짜:</strong> {{ formatReservationTime(selectedOrder.participate_time) }}</p>
-      <!-- 리뷰 작성 입력란 -->
       <textarea v-model="newReview" placeholder="리뷰를 작성하세요"></textarea>
-      <button @click="submitReview(selectedOrder.orderID)">리뷰 제출</button>
+      <button @click="submitReview(selectedOrder)">리뷰 제출</button>
     </div>
 
     <!-- 제출된 리뷰 표시 -->
     <div class="submitted-reviews" v-if="reviews.length">
       <h3>제출된 리뷰</h3>
       <ul>
-        <li v-for="review in reviews" :key="review.id">
+        <li v-for="review in reviews" :key="review.createdAt">
           <strong>{{ review.content }}</strong>
-          <p><strong>주문 번호:</strong> {{ review.orderID }}</p> <!-- 주문 번호 표시 -->
+          <p><strong>작성 시각:</strong> {{ formatReservationTime(review.createdAt) }}</p>
         </li>
       </ul>
     </div>
@@ -44,16 +42,16 @@
 
 <script>
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { ref, push, onValue } from "firebase/database";
+import { ref, set, get, onValue } from "firebase/database";
 import { database } from "@/firebase";
 
 export default {
-  name: 'UserReview',
+  name: "UserReview",
   data() {
     return {
-      newReview: '',  // 새 리뷰
+      newReview: "", // 새 리뷰
       reviews: [], // 리뷰 목록
-      userUid: '', // 로그인된 사용자 UID
+      userUid: "", // 로그인된 사용자 UID
       orders: [], // 주문 목록
       selectedOrder: null, // 선택된 주문
     };
@@ -65,107 +63,156 @@ export default {
       const user = auth.currentUser;
 
       if (!user) {
-        alert('로그인이 필요합니다.');
+        alert("로그인이 필요합니다.");
         return;
       }
 
-      const memberRef = ref(database, 'member'); // 'member' 경로에서 주문 기록을 가져옴
-      onValue(memberRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          this.orders = Object.keys(data).map((key) => ({
-            orderID: data[key].orderID,
-            menu: data[key].menu,
-            quantity: data[key].quantity,
-            participate_time: data[key].participate_time,
-            creatorUid: data[key].uid,
-          })).filter(order => order.creatorUid === user.uid); // 로그인된 사용자만 주문 가져오기
-        } else {
+      const memberRef = ref(database, "member");
+      const ordersRef = ref(database, "orders");
+
+      // Step 1: member 데이터 가져오기
+      onValue(memberRef, (memberSnapshot) => {
+        const memberData = memberSnapshot.val();
+        if (!memberData) {
           this.orders = [];
+          return;
         }
+
+        // Step 2: orders 데이터 가져오기
+        get(ordersRef)
+          .then((orderSnapshot) => {
+            const orderData = orderSnapshot.val();
+            if (!orderData) {
+              console.error("주문 데이터를 찾을 수 없습니다.");
+              this.orders = [];
+              return;
+            }
+
+            // Step 3: member와 order를 매핑하여 storeId 추가
+            this.orders = Object.keys(memberData)
+              .map((key) => {
+                const member = memberData[key];
+                const order = orderData[member.orderID];
+
+                if (order) {
+                  return {
+                    orderID: member.orderID,
+                    menu: member.menu,
+                    quantity: member.quantity,
+                    participate_time: member.participate_time,
+                    creatorUid: member.uid,
+                    memberId: key,
+                    storeId: order.storeUid, // storeId 추가
+                  };
+                }
+                return null;
+              })
+              .filter((order) => order && order.creatorUid === user.uid); // 로그인한 사용자 필터링
+          })
+          .catch((error) => {
+            console.error("주문 데이터를 가져오는 중 오류가 발생했습니다:", error);
+            this.orders = [];
+          });
       });
     },
 
     // 리뷰를 작성할 주문 선택
     selectOrderForReview(order) {
-      this.selectedOrder = order; // 선택된 주문 정보를 저장
-      this.newReview = ''; // 리뷰 내용 초기화
+      this.selectedOrder = order; // 선택된 주문 정보 저장
+      this.newReview = ""; // 리뷰 초기화
+      this.fetchReviews(order.memberId); // 선택된 주문에 대한 리뷰 가져오기
     },
 
     // 리뷰 제출
-    submitReview(orderID) {
+    submitReview(order) {
+      if (!order || !order.memberId) {
+        console.error("order 또는 memberId가 누락되었습니다.", order);
+        alert("리뷰를 제출할 대상이 올바르지 않습니다.");
+        return;
+      }
+
       if (this.newReview.trim()) {
         const newReviewData = {
           content: this.newReview,
-          writer: this.userUid,
-          createdAt: new Date().toISOString(),
-          orderID: orderID, // 주문 ID와 연결
+          createdAt: new Date().toISOString(), // 작성 시각
+          uid: this.userUid, // 현재 로그인한 사용자의 UID
         };
 
-        const reviewsRef = ref(database, 'reviews');
-        push(reviewsRef, newReviewData)
+        if (!this.userUid) {
+          console.error("현재 사용자의 UID가 누락되었습니다.");
+          alert("로그인 상태를 확인해 주세요.");
+          return;
+        }
+
+        // 리뷰 저장 경로: review/{storeId}/{memberId}
+        const reviewRef = ref(database, `review/${order.storeId}/${order.memberId}`);
+        set(reviewRef, newReviewData) // push 대신 set 사용
           .then(() => {
-            alert('리뷰가 성공적으로 제출되었습니다.');
-            this.newReview = ''; // 제출 후 리뷰 내용 초기화
-            this.fetchReviews(); // 새로운 리뷰 제출 후 목록 업데이트
+            alert("리뷰가 성공적으로 제출되었습니다.");
+            this.newReview = ""; // 리뷰 초기화
+            this.fetchReviews(order.memberId); // 리뷰 목록 업데이트
           })
           .catch((error) => {
-            console.error('리뷰 제출 중 오류 발생:', error);
-            alert('리뷰 제출에 실패했습니다. 다시 시도해 주세요.');
+            console.error("리뷰 제출 중 오류 발생:", error);
+            alert("리뷰 제출에 실패했습니다. 다시 시도해 주세요.");
           });
       } else {
-        alert('리뷰 내용을 입력해 주세요.');
+        alert("리뷰 내용을 입력해 주세요.");
       }
     },
 
-    // 리뷰 목록을 가져오는 메소드
-    fetchReviews() {
-      const reviewsRef = ref(database, 'reviews');
-      onValue(reviewsRef, (snapshot) => {
+    // 선택된 주문의 리뷰 목록 가져오기
+    fetchReviews(memberId) {
+      const reviewRef = ref(database, `member/${memberId}/reviews`);
+      onValue(reviewRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          this.reviews = [];
-          Object.keys(data).forEach((key) => {
-            const review = data[key];
-            this.reviews.push(review); // 모든 리뷰 목록 가져오기
-          });
+          this.reviews = Object.keys(data).map((key) => ({
+            ...data[key],
+            id: key,
+          }));
         } else {
           this.reviews = [];
         }
       });
     },
 
-    // 주문 날짜 포맷팅
-    formatReservationTime(reservationTime) {
-      if (!reservationTime) return '정보 없음';
+    // 날짜 포맷팅
+    formatReservationTime(time) {
+      if (!time) return "정보 없음";
       const options = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Asia/Seoul',
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Seoul",
         hour12: false,
       };
-      return new Date(reservationTime).toLocaleString('ko-KR', options);
+      return new Date(time).toLocaleString("ko-KR", options);
     },
   },
   created() {
     const auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        this.userUid = user.uid;
-        this.fetchOrders(); // 주문 목록을 불러옴
-        this.fetchReviews(); // 리뷰 목록을 불러옴
+
+    onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        this.userUid = currentUser.uid; // 로그인한 사용자의 UID 저장
+        this.fetchOrders(); // 주문 목록 가져오기
       } else {
-        this.userUid = '';
-        this.reviews = [];
-        this.orders = [];
+        this.resetUserData(); // 로그아웃 상태 처리
       }
     });
   },
+  resetUserData() {
+    this.userUid = ""; // UID 초기화
+    this.orders = []; // 주문 목록 초기화
+    this.reviews = []; // 리뷰 목록 초기화
+  },
 };
 </script>
+
+
 
 <style scoped>
 .reviews-container {
