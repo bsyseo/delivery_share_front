@@ -5,32 +5,7 @@
       <ul class="no-bullets">
         <li>
           <button class="sidebar-button" @click="$router.push('/business_menu')">
-            가게 정보 & 메뉴
-          </button>
-        </li>
-        <li>
-          <button @click="showUnderConstruction" class="sidebar-button">
-            상품 관리
-          </button>
-        </li>
-        <li>
-          <button @click="showUnderConstruction" class="sidebar-button">
-            판매 관리
-          </button>
-        </li>
-        <li>
-          <button @click="showUnderConstruction" class="sidebar-button">
-            정산 관리
-          </button>
-        </li>
-        <li>
-          <button @click="showUnderConstruction" class="sidebar-button">
-            문의 / 상담
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-button" @click="navigateTo('order_status')">
-            주문 현황
+            가게 정보 & 메뉴 설정
           </button>
         </li>
         <li>
@@ -109,7 +84,7 @@
               </label>
             </div>
             <div class="calendar-selection">
-              <label>날짜 선택</label>
+              <label style="margin-right: 10px;">날짜 선택</label>
               <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
             </div>
             <div class="selected-days-with-button">
@@ -121,13 +96,37 @@
         </div>
       </div>
 
-      <!-- 이거 없애야 하는 부분 아님?? Order History Dashboard -->
-      <h2>주문 내역</h2> 
+     
+      <h2>주문 내역</h2>
+      <!-- Date Picker for Orders -->
+      <div class="calendar-section" >
+        <label for="order-date" style="margin-right: 10px;">주문 날짜 선택</label>
+        <input type="date" v-model="selectedDate" @change="fetchOrdersByDate" class="date-picker" />
+      </div>
 
-      
-
-    </div>
-  </div>
+      <div v-if="orders.length === 0" class="no-orders">
+        <p>해당 날짜에 들어온 주문이 없습니다.</p>
+      </div>
+      <div v-else class="order-list">
+        <div v-for="order in orders" :key="order.orderID" class="order-card">
+          <div class="order-header">
+            <p class="order-date">{{ formatDate(order.createdAt) }} 주문</p>
+          </div>
+          <p class="order-status">{{ order.status || '예약됨' }} ({{ statusDescriptions[order.status] || '주문 전송 상태' }})</p>
+          <div class="order-details">
+            <p>메뉴: {{ order.menu }}</p>
+            <p>수량: {{ order.quantity }}</p>
+            <p>예약 시간: {{ formatTime(order.reservationTime) }}</p>
+          </div>
+          <div class="order-actions">
+            <button class="approve-button" @click="approveOrder(order.orderID)">승인</button>
+            <button class="reject-button" @click="rejectOrder(order.orderID)">거절</button>
+            <button v-if="order.status !== '주문처리완료'" class="reject-button" @click="cancelOrder(order.orderID)">취소</button>
+          </div>
+        </div>
+      </div>
+      </div>
+      </div>
 </template>
 
 
@@ -510,6 +509,7 @@ p {
 
 /* Order card styling */
 .order-card {
+    margin-top: 2vh;
     padding: 20px;
     background-color: #ffffff;
     border-radius: 10px;
@@ -554,6 +554,7 @@ p {
     border: 1px solid #ddd;
     font-size: 16px;
     margin-top: 10px; /* 위아래 여백 추가 */
+
 }
 
 /* Combo box styling */
@@ -587,7 +588,7 @@ button {
     transition: background-color 0.3s, box-shadow 0.3s;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 16px;
-    margin-right: 8px; /* 버튼과 텍스트 간 여백 추가 */
+    margin-left: 10px;
 }
 
 button:hover {
@@ -677,3 +678,4 @@ button:active {
     font-family: 'IBMPlexSansKR', sans-serif;
 }
 </style>
+
