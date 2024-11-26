@@ -7,14 +7,12 @@
 
     <div class="menu-section">
       <button @click="navigateTo('AdminOrderManagement')">주문 모집 관리</button>
-      <button @click="navigateTo('AdminCouponManagement')">쿠폰 관리</button>
-      <button @click="navigateTo('AdminAdvertisementManagement')">광고 관리</button>
+      <button @click="navigateTo('AdminReviewManagement')">review 관리</button>
       <button @click="navigateTo('AdminQnAManagement')">Q&A 관리</button>
       <button @click="navigateTo('AdminPickUpZoneManagement')">PICK-UP-ZONE 관리</button>
       <button @click="navigateTo('AdminUserManagement')">사용자 관리</button>
       <button @click="navigateTo('AdminStoreManagement')">점포 관리</button>
       <button @click="navigateTo('AdminTemporary')">예비</button>
-      <button @click="navigateTo('AdminConnectionStatistics')">접속자 통계</button>
     </div>
   </div>
 </template>
