@@ -17,6 +17,7 @@
         <strong>수량:</strong> {{ order.quantity || '정보 없음' }}<br />
         <strong>예약 시간:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}<br />
         <strong>음식 금액:</strong> {{ calculateOrderTotal(order) || '정보 없음' }}원
+        <strong>배달비:</strong> {{ order.personalDeliveryFee || '정보 없음' }}원<br />
       </li>
     </ul>
 
@@ -38,6 +39,7 @@
           <strong>수량:</strong> {{ order.quantity || '정보 없음' }}<br />
           <strong>예약 시간:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}<br />
           <strong>음식 금액:</strong> {{ calculateOrderTotal(order) || '정보 없음' }}원
+          <strong>배달비:</strong> {{ order.personalDeliveryFee || '정보 없음' }}원<br />
         </li>
       </ul>
     </div>
@@ -87,11 +89,10 @@ export default {
       }
 
       try {
-        const memberRef = ref(database, 'member'); // member 경로에서 데이터 가져오기
-        onValue(memberRef, (snapshot) => {
+        const memberRef = ref(database, 'member');
+        onValue(memberRef, async (snapshot) => {
           const data = snapshot.val();
           if (data) {
-            // 로그인된 사용자의 주문 기록만 필터링
             const allOrders = Object.keys(data)
               .map((key) => {
                 const member = data[key];
@@ -108,14 +109,21 @@ export default {
               })
               .filter((order) => order !== null);
 
-            // 예약 시간을 기준으로 오름차순 정렬
             allOrders.sort((a, b) => new Date(b.participate_time) - new Date(a.participate_time));
 
             // 전체 주문 기록
-            this.orders = allOrders;
+            this.orders = await Promise.all(
+              allOrders.map(async (order) => {
+                const personalDeliveryFee = await this.fetchLatestPersonalDeliveryFee(order.orderID);
+                return {
+                  ...order,
+                  personalDeliveryFee, // 최신 personalDeliveryFee 추가
+                };
+              })
+            );
 
             // 최신 3개의 주문만 가져오기
-            this.recentOrders = allOrders.slice(0, 3);
+            this.recentOrders = this.orders.slice(0, 3);
           } else {
             this.orders = [];
             this.recentOrders = [];
@@ -124,6 +132,27 @@ export default {
       } catch (error) {
         console.error('주문 기록을 가져오는 중 오류가 발생했습니다:', error);
         alert('주문 데이터를 불러오는 중 오류가 발생했습니다.');
+      }
+    },
+
+    async fetchLatestPersonalDeliveryFee(orderID) {
+      try {
+        const memberRef = ref(database, 'member');
+        const snapshot = await get(memberRef);
+
+        if (snapshot.exists()) {
+          const members = Object.values(snapshot.val())
+            .filter((member) => member.orderID === orderID) // 동일한 orderID를 가진 데이터 필터링
+            .sort((a, b) => new Date(b.participate_time) - new Date(a.participate_time)); // 참여 시간 기준 내림차순 정렬
+
+          if (members.length > 0) {
+            return members[0].personalDeliveryFee || '정보 없음'; // 가장 최신 데이터의 personalDeliveryFee 반환
+          }
+        }
+        return '정보 없음';
+      } catch (error) {
+        console.error('배달비 정보를 가져오는 중 오류가 발생했습니다:', error);
+        return '정보 없음';
       }
     },
 
