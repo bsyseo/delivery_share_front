@@ -11,7 +11,12 @@
           <p><strong>주문 날짜:</strong> {{ formatReservationTime(order.participate_time) || '정보 없음' }}</p>
           <p><strong>메뉴:</strong> {{ order.menu }}</p>
           <p><strong>수량:</strong> {{ order.quantity }}</p>
-          <button @click="selectOrderForReview(order)">이 주문에 리뷰 작성</button>
+          <button
+            :disabled="order.hasReview"
+            @click="selectOrderForReview(order)"
+            :class="{ completed: order.hasReview }">
+            {{ order.hasReview ? "리뷰 작성 완료" : "이 주문에 리뷰 작성" }}
+          </button>
         </li>
       </ul>
       <p v-else>주문 기록이 없습니다.</p>
@@ -54,6 +59,7 @@ export default {
       userUid: "", // 로그인된 사용자 UID
       orders: [], // 주문 목록
       selectedOrder: null, // 선택된 주문
+      selectedReviewOrder: null, // 리뷰를 표시할 주문
     };
   },
   methods: {
@@ -108,6 +114,16 @@ export default {
                 return null;
               })
               .filter((order) => order && order.creatorUid === user.uid); // 로그인한 사용자 필터링
+
+              // Step 4: 리뷰 상태 확인
+              this.orders.forEach((order, index) => {
+                const reviewCheckRef = ref(database, `review/${order.storeId}/${order.memberId}`);
+                get(reviewCheckRef).then((snapshot) => {
+                  if (snapshot.exists()) {
+                    this.orders[index].hasReview = true;
+                  }
+                });
+              });
           })
           .catch((error) => {
             console.error("주문 데이터를 가져오는 중 오류가 발생했습니다:", error);
