@@ -301,27 +301,42 @@ export default {
 
     // 참여자를 member 데이터베이스에 저장
     saveMember(uid, orderId, menu, price, quantity, pickupZone) {
-      const memberRef = ref(database, 'member');
-      const newMemberRef = push(memberRef);
+      const orderRef = ref(database, `orders/${orderId}`);
+      get(orderRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            const orderData = snapshot.val();
+            const personalDeliveryFee = orderData.deliveryFee / orderData.participantsCount;
 
-      const participateTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
+            const memberRef = ref(database, 'member');
+            const newMemberRef = push(memberRef);
 
-      const memberData = {
-        uid: uid,
-        orderID: orderId,
-        menu: menu,
-        price: price,
-        quantity: quantity,
-        participate_time: participateTime,
-        pickupZone: pickupZone || '픽업존 정보 없음',
-      };
+            const participateTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
 
-      set(newMemberRef, memberData)
-        .then(() => {
-          console.log(`Member saved successfully. Member ID: ${newMemberRef.key}`);
+            const memberData = {
+              uid: uid,
+              orderID: orderId,
+              menu: menu,
+              price: price,
+              quantity: quantity,
+              participate_time: participateTime,
+              pickupZone: pickupZone || '픽업존 정보 없음',
+              personalDeliveryFee: personalDeliveryFee, // 개인 배달비 추가
+            };
+
+            set(newMemberRef, memberData)
+              .then(() => {
+                console.log(`Member saved successfully. Member ID: ${newMemberRef.key}`);
+              })
+              .catch((error) => {
+                console.error('Error saving member data:', error);
+              });
+          } else {
+            console.error('Order data not found for orderId:', orderId);
+          }
         })
         .catch((error) => {
-          console.error('Error saving member data:', error);
+          console.error('Error retrieving order data:', error);
         });
     },
 
