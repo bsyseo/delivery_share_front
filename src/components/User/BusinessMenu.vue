@@ -31,6 +31,13 @@
       <button @click="saveDeliveryFee" class="primary-button">배달비 저장</button>
     </div>
 
+    <!-- 무료배달인원 설정 -->
+    <div class="section">
+      <h3>무료배달인원 설정</h3>
+      <input v-model="desiredParticipants" type="number" placeholder="무료배달인원을 입력하세요" class="text-input" />
+      <button @click="savedesiredParticipants" class="primary-button">무료배달인원 저장</button>
+    </div>
+
     <!-- 메뉴 등록 -->
     <div class="section">
       <h3>메뉴 등록</h3>
@@ -83,6 +90,7 @@ export default {
       storeLogoPreview: null,
       menus: [],
       deliveryFee: '', // 배달비
+      desiredParticipants: '',//무료배달인원
       isModalOpen: false, 
       modalImage: null 
     };
@@ -90,7 +98,8 @@ export default {
   mounted() {
     this.fetchMenus();
     this.fetchStoreLogo();
-    this.fetchDeliveryFee(); // 배달비 불러오기
+    this.fetchDeliveryFee();// 배달비 불러오기
+    this.fetchdesiredParticipants(); // 무료배달인원 불러오기
   },
   methods: {
     onFileChange(e) {
@@ -262,6 +271,50 @@ export default {
         }
       });
     },
+
+    async savedesiredParticipants() {
+      if (!this.desiredParticipants) {
+        alert('무료배달인원을 입력하세요.');
+        return;
+      }
+
+      const auth = getAuth();
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          const storeRef = ref(database, `store/${user.uid}`);
+          try {
+            // 기존 데이터 가져오기
+            const existingDataSnapshot = await get(storeRef);
+            const existingData = existingDataSnapshot.exists() ? existingDataSnapshot.val() : {};
+
+            // 기존 데이터를 유지하면서 무료배달인원 추가
+            const updatedData = {
+              ...existingData,
+              desiredParticipants: this.desiredParticipants,
+            };
+
+            // 데이터베이스에 저장
+            await set(storeRef, updatedData);
+            alert('무료배달인원이 저장되었습니다.');
+          } catch (error) {
+            console.error('무료배달인원 저장 실패:', error);
+            alert('무료배달인원 저장에 실패했습니다.');
+          }
+        }
+      });
+    },
+    fetchdesiredParticipants() {
+      const auth = getAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const storeRef = ref(database, `store/${user.uid}/desiredParticipants`);
+          onValue(storeRef, (snapshot) => {
+            this.desiredParticipants = snapshot.val() || '';
+          });
+        }
+      });
+    },
+
     deleteMenu(menuId) {
       const auth = getAuth();
       onAuthStateChanged(auth, (user) => {
