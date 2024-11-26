@@ -29,6 +29,8 @@ import OrderHistory from '@/components/Order/OrderHistoryComponent.vue';
 import EditUserInfo from '@/components/User/EditUserInfo.vue';
 import QnAComponent from '@/components/User/QnA_Component.vue';
 import UserReview from '@/components/User/review.vue';
+import BrowseReview from '@/components/User/BrowseReview.vue'; // 새 리뷰 페이지 임포트
+
 
 
 
@@ -163,6 +165,12 @@ const routes = [
     path: '/review',
     name: 'Review',
     component: UserReview
+  },
+  {
+    path: '/browse-review/:storeUid',
+    name: 'BrowseReview',
+    component: BrowseReview,
+    props: true,
   },
 
 ];
