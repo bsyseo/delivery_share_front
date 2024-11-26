@@ -13,14 +13,12 @@ import BusinessAdvertisement from '@/components/User/BusinessAdvertisement.vue';
 // 관리자 관련 컴포넌트들
 import AdminView from '@/views/Admin.vue';
 import AdminOrderManagement from '@/components/Admin/AdminOrderManagement.vue';
-import AdminCouponManagement from '@/components/Admin/AdminCouponManagement.vue';
-import AdminAdvertisementManagement from '@/components/Admin/AdminAdvertisementManagement.vue';
+import AdminReviewManagement from '@/components/Admin/AdminReviewManagement.vue';  // 수정된 부분
 import AdminQnAManagement from '@/components/Admin/AdminQnAManagement.vue';
 import AdminPickUpZoneManagement from '@/components/Admin/AdminPickUpZoneManagement.vue';
 import AdminUserManagement from '@/components/Admin/AdminUserManagement.vue';
 import AdminStoreManagement from '@/components/Admin/AdminStoreManagement.vue';
 import AdminTemporary from '@/components/Admin/AdminTemporary.vue';
-import AdminConnectionStatistics from '@/components/Admin/AdminConnectionStatistics.vue';
 
 import MakingOrderView from '@/views/MakingOrder.vue';
 import StoreInformation from '@/components/User/store_information.vue';
@@ -92,14 +90,9 @@ const routes = [
     component: AdminOrderManagement
   },
   {
-    path: '/admin/coupon-management',
-    name: 'AdminCouponManagement',
-    component: AdminCouponManagement
-  },
-  {
-    path: '/admin/advertisement-management',
-    name: 'AdminAdvertisementManagement',
-    component: AdminAdvertisementManagement
+    path: '/admin/review-management',
+    name: 'AdminReviewManagement',  // 수정된 부분
+    component: AdminReviewManagement  // 수정된 부분
   },
   {
     path: '/admin/qna-management',
@@ -125,11 +118,6 @@ const routes = [
     path: '/admin/temporary',
     name: 'AdminTemporary',
     component: AdminTemporary
-  },
-  {
-    path: '/admin/connection-statistics',
-    name: 'AdminConnectionStatistics',
-    component: AdminConnectionStatistics
   },
   {
     path: '/making_order',
