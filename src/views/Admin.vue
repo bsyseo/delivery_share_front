@@ -10,13 +10,11 @@
     <div class="nav-tabs">
       <!-- 네비게이션 탭 -->
       <button @click="currentView = 'orderManagement'">주문 관리</button>
-      <button @click="currentView = 'couponManagement'">쿠폰 관리</button>
-      <button @click="currentView = 'advertisementManagement'">광고 관리</button>
+      <button @click="currentView = 'reviewManagement'">review 관리</button>
       <button @click="currentView = 'qnaManagement'">Q&A 관리</button>
       <button @click="currentView = 'pickUpZoneManagement'">픽업존 관리</button>
       <button @click="currentView = 'userManagement'">사용자 관리</button>
       <button @click="currentView = 'storeManagement'">스토어 관리</button>
-      <button @click="currentView = 'connectionStatistics'">접속 통계</button>
     </div>
 
     <!-- 현재 선택된 컴포넌트를 보여주는 영역 -->
@@ -28,13 +26,11 @@
 import { getAuth, signOut } from "firebase/auth"; // Firebase 로그아웃을 위해 import
 
 import AdminOrderManagement from '@/components/Admin/AdminOrderManagement.vue';
-import AdminCouponManagement from '@/components/Admin/AdminCouponManagement.vue';
-import AdminAdvertisementManagement from '@/components/Admin/AdminAdvertisementManagement.vue';
+import AdminReviewManagement from '@/components/Admin/AdminReviewManagement.vue';
 import AdminQnAManagement from '@/components/Admin/AdminQnAManagement.vue';
 import AdminPickUpZoneManagement from '@/components/Admin/AdminPickUpZoneManagement.vue';
 import AdminUserManagement from '@/components/Admin/AdminUserManagement.vue';
 import AdminStoreManagement from '@/components/Admin/AdminStoreManagement.vue';
-import AdminConnectionStatistics from '@/components/Admin/AdminConnectionStatistics.vue';
 
 export default {
   name: 'AdminView',
@@ -47,13 +43,11 @@ export default {
     currentViewComponent() {
       switch (this.currentView) {
         case 'orderManagement': return AdminOrderManagement;
-        case 'couponManagement': return AdminCouponManagement;
-        case 'advertisementManagement': return AdminAdvertisementManagement;
+        case 'reviewManagement': return AdminReviewManagement;
         case 'qnaManagement': return AdminQnAManagement;
         case 'pickUpZoneManagement': return AdminPickUpZoneManagement;
         case 'userManagement': return AdminUserManagement;
         case 'storeManagement': return AdminStoreManagement;
-        case 'connectionStatistics': return AdminConnectionStatistics;
         default: return AdminOrderManagement;
       }
     }
@@ -77,13 +71,11 @@ export default {
   },
   components: {
     AdminOrderManagement,
-    AdminCouponManagement,
-    AdminAdvertisementManagement,
+    AdminReviewManagement,
     AdminQnAManagement,
     AdminPickUpZoneManagement,
     AdminUserManagement,
-    AdminStoreManagement,
-    AdminConnectionStatistics
+    AdminStoreManagement
   }
 };
 </script>
