@@ -472,71 +472,46 @@ export default {
       const selectedMenu = this.storeMenus.find((menu) => menu.id === this.selectedMenuId);
       const currentKSTTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
 
-      // 참여자의 정보 저장 경로: member/{임의의 key}/
-      const memberRef = ref(database, 'member');
-      const newMemberRef = push(memberRef); // 새로운 key 생성
-
-      const participantData = {
-        orderID: this.selectedOrderId,
-        menu: selectedMenu.name,
-        price: selectedMenu.price,
-        quantity: this.menuQuantity,
-        participate_time: currentKSTTime,
-        uid: this.currentUserId,
-      };
-
-      set(newMemberRef, participantData)
-        .then(() => {
-          console.log('참여자 정보가 member에 저장되었습니다.');
-
-          // orders/{선택된 주문 ID}/participantsCount 증가
-          const orderRef = ref(database, `orders/${this.selectedOrderId}/participantsCount`);
-          return get(orderRef).then((snapshot) => {
-
-            console.log("OrderRef Snapshot:", snapshot.val());
-            console.log("Snapshot Exists:", snapshot.exists());
-
-            const currentCount = snapshot.exists() ? snapshot.val() : 0;
-
-            console.log("Current Count Before Increment:", currentCount);
-
-            // 새 값 계산
+      // orders/{선택된 주문 ID}/participantsCount 증가
+      const orderRef = ref(database, `orders/${this.selectedOrderId}`);
+      get(orderRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            const orderData = snapshot.val();
+            const currentCount = orderData.participantsCount || 0;
             const newCount = currentCount + 1;
 
-          console.log("Current Count Before Increment:", currentCount);
-          console.log("Attempting to set New Count:", newCount);
-
-          // 업데이트 시도
-          return set(orderRef, newCount)
-            .then(() => {
-              console.log("참가자 수 증가 성공. New Count:", newCount);
-            })
-            .catch((error) => {
-              console.error("참가자 수 증가 실패:", error);
-            });
-          });
+            // participantsCount 업데이트
+            return set(ref(database, `orders/${this.selectedOrderId}/participantsCount`), newCount).then(() => ({
+              ...orderData,
+              participantsCount: newCount, // 업데이트된 participantsCount 포함
+            }));
+          } else {
+            throw new Error('Order not found.');
+          }
         })
-        .then(() => {
-          // 주문 상태 확인 및 업데이트
-          const orderDataRef = ref(database, `orders/${this.selectedOrderId}`);
-          return get(orderDataRef).then((snapshot) => {
-            if (snapshot.exists()) {
-              const orderData = snapshot.val();
+        .then((updatedOrder) => {
+          // personalDeliveryFee 계산
+          const personalDeliveryFee =
+            updatedOrder.deliveryFee && updatedOrder.participantsCount
+              ? updatedOrder.deliveryFee / updatedOrder.participantsCount
+              : 0;
 
-              const currentTime = moment().tz('Asia/Seoul');
-              const isParticipantsReached = orderData.participantsCount >= orderData.desiredParticipants;
-              const isTimeExceeded = currentTime.isAfter(moment(orderData.desiredEndTime));
+          // 참여자의 정보 저장 경로: member/{임의의 key}/
+          const memberRef = ref(database, 'member');
+          const newMemberRef = push(memberRef); // 새로운 key 생성
 
-              const updates = {};
-              if (isParticipantsReached || isTimeExceeded) {
-                updates.status = 'closed'; // 주문 마감
-              }
+          const participantData = {
+            orderID: this.selectedOrderId,
+            menu: selectedMenu.name,
+            price: selectedMenu.price,
+            quantity: this.menuQuantity,
+            participate_time: currentKSTTime,
+            uid: this.currentUserId,
+            personalDeliveryFee, // 계산된 personalDeliveryFee 추가
+          };
 
-              if (Object.keys(updates).length > 0) {
-                return set(orderDataRef, { ...orderData, ...updates });
-              }
-            }
-          });
+          return set(newMemberRef, participantData);
         })
         .then(() => {
           alert('참여 완료!');
