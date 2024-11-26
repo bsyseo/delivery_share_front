@@ -73,7 +73,8 @@
               <div v-else>로고 없음</div>
               <div class="store-info">
                 <p class="store-name">{{ storeNames[storeUid] || '가게 이름 없음' }}</p>
-                <button class="review-button" @click="openReviewPopup(storeUid)">[리뷰 보기]</button>
+                <!-- 리뷰 보기 버튼 -->
+                <button class="review-button" @click="$router.push({ name: 'BrowseReview', params: { storeUid } })">[리뷰 보기]</button>
               </div>
             </div>
 
@@ -143,17 +144,6 @@
         <button class="button green2" @click.stop="closeMenuPopup">닫기</button>
       </div>
     </div>
-    <div v-if="isReviewPopupVisible" class="popup-overlay" @click="closeReviewPopup">
-      <div class="popup-content" @click.stop>
-        <h3>리뷰 목록</h3>
-        <ul>
-          <li v-for="(review, index) in exampleReviews" :key="index">
-            {{ review }}
-          </li>
-        </ul>
-        <button class="button green2" @click="closeReviewPopup">닫기</button>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -182,9 +172,6 @@ export default {
       participantSummary: [], // 참여자 메뉴 요약
       totalPrice: 0, // 총 가격
       storeNames: reactive({}), // 반응형 객체로 변경
-      isReviewPopupVisible: false,
-      exampleReviews: ['맛있어요!', '친절해요.', '배달이 빨라요.'], // 임의의 리뷰 데이터
-      selectedStoreReviews: [], // 선택된 가게의 리뷰
     };
   },
   created() {
@@ -601,25 +588,6 @@ export default {
           console.error('가게 이름을 가져오는 데 실패했습니다:', error);
         });
     });
-  },
-  openReviewPopup(storeUid) {
-    const reviewRef = ref(database, `store/${storeUid}/reviews`);
-    get(reviewRef)
-      .then((snapshot) => {
-        if (snapshot.exists()) {
-          this.selectedStoreReviews = Object.values(snapshot.val());
-        } else {
-          this.selectedStoreReviews = ['리뷰가 없습니다.'];
-        }
-        this.isReviewPopupVisible = true;
-      })
-      .catch((error) => {
-        console.error('리뷰를 가져오는 데 실패했습니다:', error);
-      });
-  },
-  closeReviewPopup() {
-    this.isReviewPopupVisible = false;
-    this.selectedStoreReviews = [];
   },
 };
 </script>
