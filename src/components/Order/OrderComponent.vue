@@ -469,6 +469,16 @@ export default {
         return;
       }
 
+      const auth = getAuth(); // Firebase Authentication 객체 가져오기
+      const user = auth.currentUser; // 현재 로그인된 사용자
+
+      if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      const currentUserId = user.uid; // 현재 로그인된 사용자의 UID
+
       const selectedMenu = this.storeMenus.find((menu) => menu.id === this.selectedMenuId);
       const currentKSTTime = moment().tz('Asia/Seoul').format('YYYY-MM-DDTHH:mm:ssZ');
 
@@ -484,7 +494,7 @@ export default {
             // participantsCount 업데이트
             return set(ref(database, `orders/${this.selectedOrderId}/participantsCount`), newCount).then(() => ({
               ...orderData,
-              participantsCount: newCount, // 업데이트된 participantsCount 포함
+              participantsCount: newCount,
             }));
           } else {
             throw new Error('Order not found.');
@@ -507,7 +517,7 @@ export default {
             price: selectedMenu.price,
             quantity: this.menuQuantity,
             participate_time: currentKSTTime,
-            uid: this.currentUserId,
+            uid: currentUserId, // 항상 현재 로그인된 사용자의 UID 저장
             personalDeliveryFee, // 계산된 personalDeliveryFee 추가
           };
 
