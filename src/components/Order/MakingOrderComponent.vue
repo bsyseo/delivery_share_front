@@ -62,12 +62,7 @@
           <input type="number" id="quantity" v-model="menuQuantity" min="1" required class="input-field" />
         </div>
 
-        <!-- 희망 인원 -->
-        <div class="form-group">
-          <label for="desired-participants" class="input-label">희망 인원</label>
-          <input type="number" id="desired-participants" v-model="desiredParticipants" min="1" required class="input-field" />
-        </div>
-
+       
         <!-- 희망 마감 시간 -->
         <div class="form-group">
           <label for="desired-end-time" class="input-label">희망 마감 시간</label>
