@@ -330,7 +330,20 @@ export default {
       this.selectedOrderId = order.id;
       this.isPopupVisible = true;
 
-
+      // 가게의 무료 배송 인원(desiredParticipants) 가져오기
+      const storeRef = ref(database, `store/${this.selectedOrder.storeUid}/desiredParticipants`);
+      get(storeRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            this.selectedOrder.desiredParticipants = snapshot.val(); // 무료 배송 인원 저장
+          } else {
+            this.selectedOrder.desiredParticipants = '정보 없음';
+          }
+        })
+        .catch((error) => {
+          console.error('무료 배송 인원 정보를 가져오는 데 실패했습니다:', error);
+          this.selectedOrder.desiredParticipants = '정보 없음';
+        })
 
   // 추가 데이터 가져오기 로직
   const participantRef = ref(database, `member/${this.selectedOrderId}/participants`);
