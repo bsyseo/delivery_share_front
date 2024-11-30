@@ -326,9 +326,11 @@ export default {
     },
     showPopup(order) {
   // 기존 기능 유지
-      this.selectedOrder = { ...order, desiredParticipants: '정보 로딩 중...' }; // 기본값 추가
+      this.selectedOrder = { ...order }; // order 객체 전체를 그대로 가져옵니다.
       this.selectedOrderId = order.id;
       this.isPopupVisible = true;
+
+
 
   // 추가 데이터 가져오기 로직
   const participantRef = ref(database, `member/${this.selectedOrderId}/participants`);
