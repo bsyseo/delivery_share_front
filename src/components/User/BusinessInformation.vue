@@ -163,33 +163,41 @@ export default {
 
 
 <style scoped>
+/* 컨테이너 스타일 */
 .business-info-container {
   max-width: 700px;
   margin: 50px auto;
-  padding: 40px;
-  border-radius: 20px;
-  background-color: #E7F5E7;
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1), inset 0px 2px 6px rgba(255, 255, 255, 0.5);
-  font-family: 'NanumSquareRound', sans-serif;
+  padding: 32px;
+  border-radius: 16px;
+  background-color: #ffffff; /* 표면 색상 */
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.24); /* Elevation 효과 */
+  font-family: 'Roboto', sans-serif;
+  color: #1C1B1F; /* 표면 위 텍스트 색상 */
 }
 
+/* 제목 스타일 */
 h1 {
   text-align: center;
-  font-size: 30px;
-  color: #2E7D32;
-  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 500;
+  color: #6750A4; /* 주요 색상 */
+  margin-bottom: 24px;
 }
 
+/* 폼 그룹 스타일 */
 .form-group {
   margin-bottom: 20px;
 }
 
 label {
-  font-size: 16px;
-  color: #2E7D32;
+  font-size: 14px;
+  font-weight: 500;
+  color: #49454F; /* 텍스트 보조 색상 */
   margin-bottom: 8px;
+  display: block;
 }
 
+/* 입력 필드 스타일 */
 input[type="text"],
 input[type="tel"],
 input[type="file"],
@@ -197,10 +205,11 @@ input[type="time"],
 input[type="date"] {
   width: 100%;
   padding: 12px;
-  border: 1px solid #2E7D32;
-  border-radius: 10px;
+  border: 1px solid #CAC4D0; /* 테두리 색상 */
+  border-radius: 8px;
   font-size: 16px;
-  background-color: #F1F8E9;
+  background-color: #F4EFF4; /* 입력 필드 배경 색상 */
+  color: #1C1B1F; /* 텍스트 색상 */
   transition: border-color 0.3s, box-shadow 0.3s;
 }
 
@@ -209,66 +218,77 @@ input[type="tel"]:focus,
 input[type="file"]:focus,
 input[type="time"]:focus,
 input[type="date"]:focus {
-  border-color: #388E3C;
-  box-shadow: 0px 4px 8px rgba(56, 142, 60, 0.2);
+  border-color: #6750A4; /* 포커스 상태 테두리 색상 */
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.32); /* 포커스 그림자 */
+  outline: none;
 }
 
+/* 이미지 미리보기 */
 .preview-container {
-  margin-top: 10px;
+  margin-top: 12px;
   text-align: center;
 }
 
 .preview-image {
   max-width: 100%;
   max-height: 150px;
-  border: 1px solid #C8E6C9;
-  border-radius: 10px;
+  border: 1px solid #CAC4D0; /* 테두리 색상 */
+  border-radius: 8px;
+  background-color: #F4EFF4; /* 배경 색상 */
 }
 
+/* 버튼 스타일 */
 .submit-button {
   display: block;
   width: 100%;
-  padding: 15px;
-  background-color: #388E3C;
-  color: #fff;
-  font-size: 18px;
+  padding: 14px;
+  background-color: #6750A4; /* 버튼 배경색 */
+  color: #FFFFFF; /* 버튼 텍스트 색상 */
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s, box-shadow 0.3s, transform 0.3s;
-  box-shadow: 0px 4px 8px rgba(56, 142, 60, 0.2), inset 0px 2px 6px rgba(255, 255, 255, 0.6);
+  transition: background-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.24); /* Elevation 효과 */
 }
 
 .submit-button:hover {
-  background-color: #2E7D32;
-  box-shadow: 0px 6px 12px rgba(46, 125, 50, 0.3), inset 0px 2px 8px rgba(255, 255, 255, 0.6);
-  transform: translateY(-3px);
+  background-color: #4A3780; /* 호버 상태 버튼 배경색 */
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.32); /* 호버 상태 그림자 */
 }
 
-.top-navigation {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
+/* 네비게이션 버튼 스타일 */
 .nav-button {
-  background-color: #66BB6A;
-  color: white;
+  background-color: #625B71; /* 네비게이션 버튼 배경색 */
+  color: #FFFFFF; /* 버튼 텍스트 색상 */
   border: none;
   border-radius: 10px;
   padding: 10px 20px;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: background-color 0.3s, box-shadow 0.3s;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.24); /* Elevation 효과 */
 }
 
 .nav-button:hover {
-  background-color: #43A047;
-  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+  background-color: #4E4758; /* 네비게이션 버튼 호버 색상 */
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.32); /* 호버 상태 그림자 */
+}
+
+/* 공통 설정 */
+* {
+  box-sizing: border-box;
+  
+}
+@font-face {
+  font-family: 'IBMPlexSansKR';
+  src: url('@/assets/font/IBMPlexSansKR-Medium.ttf') format('opentype');
 }
 
 * {
-  box-sizing: border-box;
+  font-family: 'IBMPlexSansKR', sans-serif;
 }
+
 </style>

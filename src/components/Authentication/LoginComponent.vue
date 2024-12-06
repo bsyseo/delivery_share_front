@@ -11,7 +11,7 @@
       <input type="password" v-model="password" id="password" placeholder="PW" /><br />
       <div class="actions">
         <router-link to="/signup">회원가입</router-link>
-        <router-link to="/ResetIDnPW">ID/PW 찾기</router-link>
+        <router-link to="/Reset_IDnPW">ID/PW 찾기</router-link>
       </div>
       <button v-on:click="login" class="login-button">로그인</button>
     </div>
@@ -30,6 +30,7 @@
       <div v-else-if="role === 'business'">
         <button v-on:click="goToMap" class="action-button">가게 등록</button>
         <button v-on:click="goToStoreInfo" class="action-button">스토어 관리</button>
+        <button v-on:click="goToBusinessInfo" class="action-button">사업자 정보 등록</button>
       </div>
       <button v-on:click="logout" class="logout-button">로그아웃</button>
       <button v-on:click="deleteAccount" class="delete-button">탈퇴하기</button>
@@ -143,6 +144,9 @@ export default {
     },
     goToMap(){
       this.$router.push('/business');
+    },
+    goToBusinessInfo(){
+      this.$router.push('/business_information');
     },
     logout() {
       const authInstance = getAuth();

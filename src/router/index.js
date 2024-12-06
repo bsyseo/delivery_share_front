@@ -3,8 +3,6 @@ import Home from '@/views/Home.vue';
 
 import SignUpView from '@/components/Authentication/SignUpComponent.vue';
 import OrderView from '@/views/order.vue';
-import ResetIDnPW from '@/views/Reset_IDnPW.vue';
-import ResetPasswordComponent from '@/components/Authentication/ResetPasswordComponent.vue';
 import BusinessView from '@/views/Business.vue';
 import BusinessInformation from '@/components/User/BusinessInformation.vue';
 import BusinessMenu from '@/components/User/BusinessMenu.vue';
@@ -28,8 +26,7 @@ import EditUserInfo from '@/components/User/EditUserInfo.vue';
 import QnAComponent from '@/components/User/QnA_Component.vue';
 import UserReview from '@/components/User/review.vue';
 import BrowseReview from '@/components/User/BrowseReview.vue'; // 새 리뷰 페이지 임포트
-
-
+import Reset_IDnPW from '@/views/Reset_IDnPW.vue';
 
 
 const routes = [
@@ -52,16 +49,6 @@ const routes = [
     path: '/admin',
     name: 'AdminView',
     component: AdminView
-  },
-  {
-    path: '/reset-idpw',
-    name: 'ResetIDnPW',
-    component: ResetIDnPW
-  },
-  {
-    path: '/reset-password',
-    name: 'ResetPasswordComponent',
-    component: ResetPasswordComponent
   },
   {
     path: '/order',
@@ -160,6 +147,11 @@ const routes = [
     component: BrowseReview,
     props: true,
   },
+  {
+    path: '/Reset_IDnPW',
+    name: 'Reset_IDnPW',
+    component: Reset_IDnPW
+},
 
 ];
 
